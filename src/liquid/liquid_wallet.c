@@ -21,7 +21,6 @@
 #include "../crypto.h"
 #else
 // disable problematic macros when compiling unit tests with CMOCKA
-#define PRINTF(...)
 #define PIC(x) (x)
 #endif
 

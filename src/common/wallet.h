@@ -16,7 +16,7 @@
 #endif
 
 #ifdef HAVE_LIQUID
-#include "liquid_wallet.h"
+#include "../liquid/liquid_wallet.h"
 #endif
 
 // The maximum number of keys supported for CHECKMULTISIG{VERIFY}

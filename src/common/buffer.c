@@ -253,9 +253,9 @@ void *buffer_alloc(buffer_t *buffer, size_t size, bool aligned) {
     size_t padding_size = 0;
 
     if (aligned) {
-        uintptr_t d = (uintptr_t) (buffer->ptr + buffer->offset) % sizeof(void*);
+        uintptr_t d = (uintptr_t) (buffer->ptr + buffer->offset) % BUFFER_ALIGN_BYTES;
         if (d != 0) {
-            padding_size = sizeof(void*) - d;
+            padding_size = BUFFER_ALIGN_BYTES - d;
         }
     }
 
@@ -270,10 +270,10 @@ void *buffer_alloc(buffer_t *buffer, size_t size, bool aligned) {
 
 uint8_t *buffer_get_cur_aligned(const buffer_t *buffer) {
     uint8_t *cur = buffer->ptr + buffer->offset;
-    uintptr_t d = (uintptr_t)cur % sizeof(void*);
-    
+    uintptr_t d = (uintptr_t)cur % BUFFER_ALIGN_BYTES;
+
     if (d != 0) {
-        cur += sizeof(void*) - d;
+        cur += BUFFER_ALIGN_BYTES - d;
         return (uintptr_t)(cur - buffer->ptr) < (uintptr_t)buffer->size ? cur : NULL;
     }
     return cur;

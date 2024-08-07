@@ -19,7 +19,6 @@
 #include "../crypto.h"
 #else
 // disable problematic macros when compiling unit tests with CMOCKA
-#define PRINTF(...)
 #define PIC(x) (x)
 #endif // SKIP_FOR_CMOCKA
 
@@ -2593,6 +2592,7 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
             int count_s = 0;
             int count_e = 0;
             int count_m = 0;
+            UNUSED(count_m); // TODO: consider removing
             size_t children_scriptsize = 0;
             size_t n_children = 0;
             while (cur != NULL) {

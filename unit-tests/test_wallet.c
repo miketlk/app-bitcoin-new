@@ -13,8 +13,7 @@ unsigned int pic(unsigned int linked_address) {
     return linked_address;
 }
 
-#define PRINTF(...) printf
-#define PIC(x)      (x)
+#define PIC(x) (x)
 
 #include "common/wallet.h"
 
@@ -620,7 +619,7 @@ static void test_miniscript_types(void **state) {
     // clang-format on
 }
 
-int main() {
+int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_parse_policy_map_singlesig_1),
         cmocka_unit_test(test_parse_policy_map_singlesig_2),

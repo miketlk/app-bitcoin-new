@@ -398,8 +398,8 @@ static void test_buffer_alloc(void **state) {
             buf = buffer_create(data + offset, 32 * sizeof(uint32_t) - offset);
             // aligned = true doesn't make a difference, since the buffer is aligned
             result = buffer_alloc(&buf, size, true);
-            assert_ptr_equal(result, data + sizeof(void*));
-            assert_int_equal(buf.offset, size + sizeof(void*) - offset);
+            assert_ptr_equal(result, data + BUFFER_ALIGN_BYTES);
+            assert_int_equal(buf.offset, size + BUFFER_ALIGN_BYTES - offset);
         }
     }
 
@@ -416,16 +416,16 @@ static void test_buffer_alloc(void **state) {
     assert_int_equal(buf.offset, 0);
 
     // test with buffer too small (can only allocate 3 bytes because 3 are lost because of the memory alignment)
-    buf = buffer_create(data + 1, (2 * sizeof(void*)) - 2);
-    result = buffer_alloc(&buf, sizeof(void*), true);
+    buf = buffer_create(data + 1, (2 * BUFFER_ALIGN_BYTES) - 2);
+    result = buffer_alloc(&buf, BUFFER_ALIGN_BYTES, true);
     assert_ptr_equal(result, NULL);
     assert_int_equal(buf.offset, 0);
 
     // allocate maximum size, accounting for memory alignment
-    buf = buffer_create(data + 1, (2 * sizeof(void*)) - 1);
-    result = buffer_alloc(&buf, sizeof(void*) - 1, true);
-    assert_ptr_equal(result, data + sizeof(void*));
-    assert_int_equal(buf.offset, (2 * sizeof(void*)) - 2);
+    buf = buffer_create(data + 1, (2 * BUFFER_ALIGN_BYTES) - 1);
+    result = buffer_alloc(&buf, BUFFER_ALIGN_BYTES - 1, true);
+    assert_ptr_equal(result, data + BUFFER_ALIGN_BYTES);
+    assert_int_equal(buf.offset, (2 * BUFFER_ALIGN_BYTES) - 2);
 }
 
 static void test_buffer_is_cur_aligned(void **state) {

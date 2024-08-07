@@ -5,13 +5,11 @@
 #include "crypto.h"
 #include "liquid.h"
 #include "liquid_addr.h"
-#include "../common/wif.h"
 #include "../common/script.h"
 #include "tests.h"
 
 #ifdef SKIP_FOR_CMOCKA
 // disable problematic macros when compiling unit tests with CMOCKA
-#define PRINTF(...)
 #define PIC(x) (x)
 #endif // SKIP_FOR_CMOCKA
 

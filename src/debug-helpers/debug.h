@@ -2,13 +2,18 @@
 
 #include "os.h"
 
-// Workaround
-#ifdef HAVE_SEMIHOSTED_PRINTF
+// Define PRINTF() macro
+#if defined(SKIP_FOR_CMOCKA)
+    #ifdef PRINTF
+        #undef PRINTF
+    #endif
+    #define PRINTF(...)
+#elif defined(HAVE_SEMIHOSTED_PRINTF)
     #ifdef PRINTF
         #undef PRINTF
     #endif
     #define PRINTF semihosted_printf
-#endif // HAVE_SEMIHOSTED_PRINTF
+#endif
 
 void debug_write(const char *buf);
 void debug_write_hex(unsigned int word, unsigned int bytes);

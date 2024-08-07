@@ -4,6 +4,9 @@
 #include <stddef.h>   // size_t
 #include <stdbool.h>  // bool
 
+/// Align unit in bytes: the maximal size of an integer or pointer stored in the buffer.
+#define BUFFER_ALIGN_BYTES (sizeof(uint32_t))
+
 /**
  * Enumeration for endianness.
  */

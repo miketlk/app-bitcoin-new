@@ -13,8 +13,7 @@ unsigned int pic(unsigned int linked_address) {
     return linked_address;
 }
 
-#define PRINTF(...) printf
-#define PIC(x)      (x)
+#define PIC(x) (x)
 
 #include "common/script.h"
 

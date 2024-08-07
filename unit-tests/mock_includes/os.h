@@ -1385,7 +1385,7 @@ void screen_printf(const char *format, ...);
 void screen_printc(unsigned char const c);
 
 // redefined if string.h not included
-int snprintf(char *str, size_t str_size, const char *format, ...);
+// int snprintf(char *str, size_t str_size, const char *format, ...);
 
 #ifndef PRINTF
 #define PRINTF(...)

@@ -102,4 +102,20 @@ uint8_t *sha_256_close(struct Sha_256 *sha_256);
 }
 #endif
 
+/*
+ * @brief Retrieves SHA-256 midstate from hash context.
+ * @param sha_256 A pointer to a previously initialized SHA-256 structure.
+ * @param hash Hash array, where the result is delivered.
+ *
+ * @note After this function has been invoked, the result is available in the hash buffer that initially was provided. A
+ * pointer to the hash value is returned for convenience, but you should feel free to ignore it: it is simply a pointer
+ * to the first byte of your initially provided hash array.
+ *
+ * @note If the passed pointer is NULL, the results are unpredictable.
+ *
+ * @note Invoking this function for a calculation with no data (the writing function has never been invoked, or it only
+ * has been invoked with empty data) is legal. It will calculate the SHA-256 value of the empty string.
+ */
+void sha_256_midstate(const struct Sha_256 *sha_256, uint8_t hash[SIZE_OF_SHA_256_HASH]);
+
 #endif

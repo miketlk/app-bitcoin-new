@@ -2,4 +2,4 @@
 
 #include <assert.h>
 
-#define LEDGER_ASSERT(test, message) assert(test)
+#define LEDGER_ASSERT(test, ...) assert(test)
