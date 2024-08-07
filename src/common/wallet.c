@@ -523,7 +523,11 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
         uint8_t next_character;
         if (!consume_character(in_buf, '/')           // the next character is "/"
             || !buffer_peek(in_buf, &next_character)  // we must be able to read the next character
-            || !(next_character == '*' || next_character == '<')  // and it must be '*' or '<'
+            || !(next_character == '*' || next_character == '<' // and it must be '*' or '<'
+#ifdef HAVE_LIQUID
+                 || (next_character >= '0' && next_character <= '9') // For Liquid /N/* is allowed
+#endif
+                )
         ) {
             return WITH_ERROR(-1, "Expected /** or /<M;N>/* in key placeholder");
         }
@@ -562,6 +566,20 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
                 return WITH_ERROR(-1, "Expected /** or /<M;N>/* in key placeholder");
             }
         }
+#ifdef HAVE_LIQUID
+        else if (next_character >= '0' && next_character <= '9') {
+            if (parse_unsigned_decimal(in_buf, &out->num_first) == -1 ||
+                out->num_first > 0x80000000u) {
+                return WITH_ERROR(
+                    -1,
+                    "Expected a single unhardened decimal number in key placeholder");
+            }
+            out->num_second = out->num_first;
+            if (!consume_characters(in_buf, "/*", 2)) {
+                return WITH_ERROR(-1, "Invalid format of key placeholder");
+            }
+        }
+#endif
     } else {
         return WITH_ERROR(-1, "Invalid version number");
     }

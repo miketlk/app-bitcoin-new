@@ -113,6 +113,28 @@ static void test_parse_policy_map_multisig_1(void **state) {
     check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[2], 2, 0, 1);
 }
 
+#ifdef HAVE_LIQUID
+static void test_parse_policy_map_multisig_placeholder_single_number(void **state) {
+    (void) state;
+
+    uint8_t out[MAX_WALLET_POLICY_MEMORY_SIZE];
+
+    int res = parse_policy("sortedmulti(2,@0/0/*,@1/1/*,@2/999/*,@3/1234567890/*,@4/2147483648/*)", out, sizeof(out));
+
+    assert_true(res >= 0);
+    policy_node_multisig_t *node_1 = (policy_node_multisig_t *) out;
+
+    assert_int_equal(node_1->base.type, TOKEN_SORTEDMULTI);
+    assert_int_equal(node_1->k, 2);
+    assert_int_equal(node_1->n, 5);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[0], 0, 0, 0);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[1], 1, 1, 1);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[2], 2, 999, 999);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[3], 3, 1234567890, 1234567890);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[4], 4, 2147483648, 2147483648);
+}
+#endif
+
 static void test_parse_policy_map_multisig_2(void **state) {
     (void) state;
 
@@ -632,6 +654,9 @@ int main(void) {
         cmocka_unit_test(test_get_policy_segwit_version),
         cmocka_unit_test(test_failures),
         cmocka_unit_test(test_miniscript_types),
+#ifdef HAVE_LIQUID
+        cmocka_unit_test(test_parse_policy_map_multisig_placeholder_single_number),
+#endif
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

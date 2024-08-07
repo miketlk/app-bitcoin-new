@@ -32,28 +32,29 @@ typedef enum {
     KEY_WILDCARD_INTERNAL_CHAIN,
 } policy_map_key_wildcard_id_t;
 
+// TODO: remove
 /// Policy node ct()
 typedef struct {
-    /// Type of this policy node
-    struct policy_node_s base;  // type is TOKEN_MULTI or TOKEN_SORTEDMULTI;        // == TOKEN_CT
+    /// Type of this policy node is TOKEN_MULTI or TOKEN_SORTEDMULTI
+    struct policy_node_s base;
     /// Master blinding key script, typically slip77()
-    policy_node_t *mbk_script;
+    rptr_policy_node_t mbk_script;
     /// Inner script
-    policy_node_t *script;
+    rptr_policy_node_t script;
 } policy_node_ct_t;
 
 /// Policy node containing ELIP 150 blinding public key
 typedef struct {
-    /// Type of this policy node, one of: TOKEN_HEX_PUB, TOKEN_XPUB
-    PolicyNodeType type;
+    /// Type of this policy node is TOKEN_HEX_PUB, TOKEN_XPUB
+    struct policy_node_s base;
     /// Compressed public key
     uint8_t pubkey[33];
 } policy_node_blinding_pubkey_t;
 
 /// Policy node containing ELIP 150 blinding private key
 typedef struct {
-    /// Type of this policy node, one of: TOKEN_SLIP77, TOKEN_HEX_PRV, TOKEN_XPRV
-    PolicyNodeType type;
+    /// Type of this policy node is TOKEN_SLIP77, TOKEN_HEX_PRV, TOKEN_XPRV
+    struct policy_node_s base;
     /// Private key
     uint8_t privkey[32];
 } policy_node_blinding_privkey_t;

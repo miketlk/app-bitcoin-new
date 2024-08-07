@@ -15,10 +15,6 @@
 #include "cx.h"
 #endif
 
-#ifdef HAVE_LIQUID
-#include "../liquid/liquid_wallet.h"
-#endif
-
 // The maximum number of keys supported for CHECKMULTISIG{VERIFY}
 // bitcoin-core supports up to 20, but we limit to 16 as bigger pushes require special handling.
 #define MAX_PUBKEYS_PER_MULTISIG 16
@@ -530,4 +526,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
  */
 void get_policy_wallet_id(policy_map_wallet_header_t *wallet_header, uint8_t out[static 32]);
 
+#endif
+
+#ifdef HAVE_LIQUID
+#include "../liquid/liquid_wallet.h"
 #endif
