@@ -264,6 +264,36 @@ int crypto_get_uncompressed_pubkey(const uint8_t compressed_key[static 33],
     return 0;
 }
 
+bool crypto_generate_compressed_pubkey_pair(const uint8_t privkey[static 32],
+                                            uint8_t pubkey[static 33]) {
+    cx_ecfp_private_key_t privkey_inst;
+    cx_ecfp_public_key_t pubkey_inst;
+
+    // New private key instance from private key
+    bool ok = CX_OK == cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1,
+                                                         privkey,
+                                                         32,
+                                                         &privkey_inst);
+
+    // Generate corresponding public key
+    ok = ok && CX_OK == cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1,
+                                                       &pubkey_inst,
+                                                       &privkey_inst,
+                                                       1);
+
+    // Save produced public key in compressed format
+    if (ok) {
+        pubkey[0] = ((pubkey_inst.W[64] & 1) ? 0x03 : 0x02);
+        memcpy(pubkey + 1, pubkey_inst.W + 1, 32);
+    }
+
+    // Zeroize sensitive data
+    explicit_bzero(&privkey_inst, sizeof(privkey_inst));
+    explicit_bzero(&pubkey_inst, sizeof(pubkey_inst));
+
+    return ok;
+}
+
 bool crypto_get_compressed_pubkey_at_path(const uint32_t bip32_path[],
                                           uint8_t bip32_path_len,
                                           uint8_t pubkey[static 33],

@@ -1162,6 +1162,18 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
     const wallet_derivation_info_t *wdi,
     internal_script_type_e script_type,
     cx_hash_t *hash_context) {
+
+#ifdef HAVE_LIQUID
+    if (TOKEN_CT == policy->type) {
+        return get_wallet_internal_script_hash(
+            dispatcher_context,
+            r_policy_node(&((const policy_node_ct_t *) policy)->script),
+            wdi,
+            script_type,
+            hash_context);
+        }
+#endif
+
     const uint8_t *whitelist;
     size_t whitelist_len;
     switch (script_type) {
@@ -1330,6 +1342,15 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
             case TOKEN_TR:
             case TOKEN_SH:
             case TOKEN_WSH:
+#ifdef HAVE_LIQUID
+            case TOKEN_CT:
+            case TOKEN_SLIP77:
+            case TOKEN_HEX_PUB:
+            case TOKEN_HEX_PRV:
+            case TOKEN_XPUB:
+            case TOKEN_XPRV:
+            case TOKEN_ELIP151:
+#endif
                 PRINTF("Unexpected token type: %d\n", node->policy_node->type);
                 return -1;
 
@@ -1562,6 +1583,16 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
     }
 
     switch (policy->type) {
+#ifdef HAVE_LIQUID
+        case TOKEN_CT: {
+            return get_key_placeholder_by_index(
+                r_policy_node(&((const policy_node_ct_t *) policy)->script),
+                i,
+                out_tapleaf_ptr,
+                out_placeholder);
+        }
+#endif
+
         // terminal nodes with absolutely no keys
         case TOKEN_0:
         case TOKEN_1:
@@ -1719,6 +1750,16 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
             return ret;
         }
 
+#ifdef HAVE_LIQUID
+        case TOKEN_SLIP77:
+        case TOKEN_HEX_PUB:
+        case TOKEN_HEX_PRV:
+        case TOKEN_XPUB:
+        case TOKEN_XPRV:
+        case TOKEN_ELIP151:
+            PRINTF("Invalid token type: %d\n", policy->type);
+            return -1;
+#endif
         case TOKEN_INVALID:
         default:
             PRINTF("Unknown token type: %d\n", policy->type);

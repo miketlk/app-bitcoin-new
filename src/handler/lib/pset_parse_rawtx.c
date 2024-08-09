@@ -1455,7 +1455,7 @@ int call_pset_parse_rawtx(dispatcher_context_t *dispatcher_context,
                           int output_index,
                           txid_parser_outputs_t *outputs,
                           cx_sha256_t *issuance_hash_context) {
-    LOG_PROCESSOR(dispatcher_context, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     cx_sha256_t hash_context;
     cx_sha256_init(&hash_context);
@@ -1531,7 +1531,7 @@ int call_pset_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context
                                         int key_len,
                                         txid_parser_vout_t *output,
                                         cx_sha256_t *hash_context) {
-    LOG_PROCESSOR(dispatcher_context, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     pset_parse_rawtx_state_t flow_state;
 

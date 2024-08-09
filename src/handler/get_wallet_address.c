@@ -157,7 +157,9 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
             return;
         }
 
-#ifdef HAVE_LIQUID
+#ifdef HAVE_LIQUID_WIP
+        // TODO: replace wildcard id with key placeholders
+
         // Get infomation about the first public key to obtain its wildcad.
         policy_map_key_info_t key_info;
         if (!get_key_info(dc, state, 0, &key_info)) {

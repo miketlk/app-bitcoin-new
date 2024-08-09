@@ -3,10 +3,6 @@
 #include "../../boilerplate/dispatcher.h"
 #include "../../common/wallet.h"
 
-#ifdef HAVE_LIQUID
-#include "liquid_policy.h"
-#endif
-
 /**
  * Parses a serialized wallet policy, saving the wallet header, the policy map descriptor and the
  * policy descriptor. Then, it parses the descriptor into the Abstract Syntax Tree into the

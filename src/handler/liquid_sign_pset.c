@@ -11,7 +11,7 @@ It would be possible to generalize to more complex scripts, but it makes it more
 the right paths to identify internal inputs/outputs.
 */
 
-#ifdef HAVE_LIQUID
+#ifdef HAVE_LIQUID_WIP
 
 #include <stdint.h>
 #include <string.h>
@@ -1387,7 +1387,7 @@ void handler_liquid_sign_pset(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
     memset(state, 0, sizeof(sign_pset_state_t));
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // Device must be unlocked
     if (os_global_pin_is_validated() != BOLOS_UX_OK) {
@@ -1402,7 +1402,7 @@ void handler_liquid_sign_pset(dispatcher_context_t *dc) {
 
     if (!buffer_read_bytes(&dc->read_buffer, state->global_map.keys_root, 32) ||
         !buffer_read_bytes(&dc->read_buffer, state->global_map.values_root, 32)) {
-        LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+        LOG_PROCESSOR(__FILE__, __LINE__, __func__);
         SEND_SW(dc, SW_WRONG_DATA_LENGTH);
         return;
     }
@@ -1625,7 +1625,7 @@ void handler_liquid_sign_pset(dispatcher_context_t *dc) {
 static void process_global_map(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint8_t asset_tag[LIQUID_ASSET_TAG_LEN];
     asset_info_ext_t asset;
@@ -1668,7 +1668,7 @@ static void process_global_map(dispatcher_context_t *dc) {
 static void process_input_map(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     if (state->cur_input_index >= state->n_inputs) {
         // all inputs already processed
@@ -1926,7 +1926,7 @@ static void cache_confirmed_input_asset(dispatcher_context_t *dc) {
 static void check_input_commitments(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint8_t blinded_asset_gen[LIQUID_GENERATOR_LEN];
     bool blinded_asset_gen_init = false;
@@ -2021,7 +2021,7 @@ static void check_input_commitments(dispatcher_context_t *dc) {
 static void check_input_owned(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     int is_internal = is_in_out_internal(dc,
                                          state,
@@ -2070,7 +2070,7 @@ static void check_input_owned(dispatcher_context_t *dc) {
 static void alert_external_inputs(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     size_t count_external_inputs = 0;
     for (unsigned int i = 0; i < state->n_inputs; i++) {
@@ -2112,7 +2112,7 @@ static void alert_external_inputs(dispatcher_context_t *dc) {
 static void verify_outputs_init(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     state->outputs_total_value = 0;
 #ifdef LIQUID_HAS_SWAP
@@ -2132,7 +2132,7 @@ static void verify_outputs_init(dispatcher_context_t *dc) {
 static void process_output_map(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // Reset cur struct
     memset(&state->cur, 0, sizeof(state->cur));
@@ -2290,7 +2290,7 @@ static void cache_confirmed_output_asset(dispatcher_context_t *dc) {
 static void check_output_commitments(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint8_t blinded_asset_gen[LIQUID_GENERATOR_LEN];
     bool blinded_asset_gen_init = false;
@@ -2423,7 +2423,7 @@ static void check_output_commitments(dispatcher_context_t *dc) {
 static void check_output_owned(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     int is_internal = is_in_out_internal(dc,
                                          state,
@@ -2456,7 +2456,7 @@ static void check_output_owned(dispatcher_context_t *dc) {
 static void output_validate_external(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // show this output's address
     char output_address[MAX(MAX_ADDRESS_LENGTH_STR + 1, MAX_OPRETURN_OUTPUT_DESC_SIZE)];
@@ -2538,7 +2538,7 @@ static void output_validate_external(dispatcher_context_t *dc) {
 static void output_next(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     ++state->cur_output_index;
     dc->next(process_output_map);
@@ -2573,7 +2573,7 @@ static const char* get_tx_type_by_flags(transaction_type_flags_t flags) {
 static void confirm_transaction(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     if (state->fee_value > UINT64_MAX - state->outputs_total_value || // to avoid overflow
         state->inputs_total_value != state->outputs_total_value + state->fee_value) {
@@ -2649,7 +2649,7 @@ static void confirm_transaction(dispatcher_context_t *dc) {
 static void sign_init(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // find and parse our registered key info in the wallet
     bool our_key_found = false;
@@ -2727,7 +2727,7 @@ static void sign_init(dispatcher_context_t *dc) {
 static void compute_segwit_hashes(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
     PRINT_STACK_POINTER();
 
     // Policy memory is now reused for hashes
@@ -2947,7 +2947,7 @@ static void compute_segwit_hashes(dispatcher_context_t *dc) {
 static void sign_process_input_map(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // skip external inputs
     while (state->cur_input_index < state->n_inputs &&
@@ -3088,7 +3088,7 @@ static void sign_legacy(dispatcher_context_t *dc) {
 
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // sign_non_witness(non_witness_utxo.vout[psbt.tx.input_[i].prevout.n].scriptPubKey, i)
 
@@ -3111,7 +3111,7 @@ static void sign_legacy(dispatcher_context_t *dc) {
 static void sign_legacy_compute_sighash(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     cx_sha256_t sighash_context;
     cx_sha256_init(&sighash_context);
@@ -3239,7 +3239,7 @@ static void sign_legacy_compute_sighash(dispatcher_context_t *dc) {
 static void sign_segwit(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
     PRINT_STACK_POINTER();
 
     int segwit_version;
@@ -3347,7 +3347,7 @@ static void sign_segwit(dispatcher_context_t *dc) {
 static void sign_segwit_v0(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     bool sighash_anyonecanpay = !!(state->cur.input.sighash_type & SIGHASH_ANYONECANPAY);
     bool sighash_rangeproof = !!(state->cur.input.sighash_type & SIGHASH_RANGEPROOF);
@@ -3631,7 +3631,7 @@ static void sign_segwit_v0(dispatcher_context_t *dc) {
 static void sign_segwit_v1(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     cx_sha256_t sighash_context;
     crypto_tr_tagged_hash_init(&sighash_context, BIP0341_sighash_tag, sizeof(BIP0341_sighash_tag));
@@ -3733,7 +3733,7 @@ static void sign_segwit_v1(dispatcher_context_t *dc) {
 static void sign_sighash_ecdsa(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint32_t sign_path[MAX_BIP32_PATH_STEPS];
     for (int i = 0; i < state->our_key_derivation_length; i++) {
@@ -3781,7 +3781,7 @@ static void sign_sighash_ecdsa(dispatcher_context_t *dc) {
 static void sign_sighash_schnorr(dispatcher_context_t *dc) {
     sign_pset_state_t *state = (sign_pset_state_t *) &G_command_state;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     cx_ecfp_private_key_t private_key = {0};
     uint8_t *seckey = private_key.d;  // convenience alias (entirely within the private_key struct)
@@ -3853,7 +3853,7 @@ static void sign_sighash_schnorr(dispatcher_context_t *dc) {
 }
 
 static void finalize(dispatcher_context_t *dc) {
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     // Only if called from swap, the app should terminate after sending the response
     if (G_swap_state.called_from_swap) {

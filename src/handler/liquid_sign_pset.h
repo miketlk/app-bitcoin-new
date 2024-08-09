@@ -1,6 +1,6 @@
 #pragma once
 
-#ifdef HAVE_LIQUID
+#ifdef HAVE_LIQUID_WIP
 
 #include "../boilerplate/dispatcher.h"
 #include "../constants.h"

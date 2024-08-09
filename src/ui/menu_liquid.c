@@ -15,7 +15,7 @@
  *  limitations under the License.
  *****************************************************************************/
 
-#ifdef HAVE_LIQUID
+#ifdef HAVE_LIQUID_WIP
 
 #include "os.h"
 #include "ux.h"
