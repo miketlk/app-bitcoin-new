@@ -4,7 +4,7 @@
 #include "cx.h"
 #include "util.h"
 
-void crypto_get_checksum(const uint8_t *in, uint16_t in_len, uint8_t out[static 4]) {
+__attribute__((weak)) void crypto_get_checksum(const uint8_t *in, uint16_t in_len, uint8_t out[static 4]) {
     uint8_t buffer[32];
     calc_sha_256(buffer, in, in_len);
     calc_sha_256(buffer, buffer, 32);
@@ -20,10 +20,11 @@ __attribute__((weak)) int cx_hash_sha256(const unsigned char WIDE *in,
                                          unsigned int out_len) {
     if(out_len >= SIZE_OF_SHA_256_HASH) {
         calc_sha_256(out, in, len);
+        return CX_SHA256_SIZE;
     } else {
         memset(out, 0, out_len);
+        return 0;
     }
-    return 0;
 }
 
 /**

@@ -161,8 +161,8 @@ static void test_validate_serialized_extended_pubkey_invalid(void **state) {
     // Invalid argument: path is too long
     ret = validate_serialized_extended_pubkey(
         "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 1, 2, 3, 4, 5, 6, 7 },
-        7,
+        (uint32_t[]){ 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+        9,
         0x0488b21e
     );
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_ARGUMENT);

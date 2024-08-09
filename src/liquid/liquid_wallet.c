@@ -7,9 +7,11 @@
 #include "../common/base58.h"
 #include "../common/bip32.h"
 #include "../common/buffer.h"
+#include "../common/read.h"
 #include "../common/script.h"
 #include "../common/segwit_addr.h"
 #include "../common/wallet.h"
+#include "util.h"
 
 #include "../cxram_stash.h"
 
@@ -24,9 +26,18 @@
 #define PIC(x) (x)
 #endif
 
+// Allow overriding Makefile constants for tests using global variables
+#if defined(SKIP_FOR_CMOCKA) && !defined(BIP32_PUBKEY_VERSION) && !defined(BIP32_PRIVKEY_VERSION)
+    extern uint32_t BIP32_PUBKEY_VERSION;
+    extern uint32_t BIP32_PRIVKEY_VERSION;
+#endif
 
 /// Maximum length of blinding key returned token prefix in characters
 #define TOKEN_PREFIX_LEN 7
+
+// TODO: consider removing
+/// Maximum length of public key wildcard in characters
+#define MAX_POLICY_MAP_KEY_WILDCARD_LEN (sizeof("/<0;1>/*") - 1)
 
 /// Bits specifying used characters
 typedef enum {
@@ -82,18 +93,9 @@ typedef struct {
     const char *str;
 } wildcard_signature_t;
 
-// TODO: consider removing
-/// Table of wildcard signatures
-const wildcard_signature_t WILDCARD_SIGNATURES[] = {
-    { .id = KEY_WILDCARD_NONE, .str = "" },
-    { .id = KEY_WILDCARD_ANY, .str = "/**" },
-    { .id = KEY_WILDCARD_STANDARD_CHAINS, .str = "/<0;1>/*" },
-    { .id = KEY_WILDCARD_EXTERNAL_CHAIN, .str = "/0/*" },
-    { .id = KEY_WILDCARD_INTERNAL_CHAIN, .str = "/1/*" }
-};
-/// Number of records in the table of wildcard signatures
-static const size_t N_WILDCARD_SIGNATURES =
-    sizeof(WILDCARD_SIGNATURES) / sizeof(WILDCARD_SIGNATURES[0]);
+// These functions are defined in the main `wallet.c`
+extern bool is_lowercase_hex(char c);
+extern uint8_t lowercase_hex_to_int(char c);
 
 /**
  * Scans a single token in the buffer while keeping its position.
@@ -181,65 +183,52 @@ static int read_lowercase_hex_data(buffer_t *buffer,
 }
 
 /**
- * Finds the numeric wildcard identifier corresponding to a given wildcard string.
- *
- * @param[in] wildcard_str
- *   Wildcard represented as a text string.
- *
- * @return a non-negative wildcard identifier or -1 if not found
- */
-static int find_wildcard(const char *wildcard_str) {
-    for (size_t i = 0; i < N_WILDCARD_SIGNATURES; ++i) {
-        const char *curr_str = (const char *) PIC(WILDCARD_SIGNATURES[i].str);
-        if (0 == strncmp(curr_str, wildcard_str, MAX_POLICY_MAP_KEY_WILDCARD_LEN)) {
-            return (int) PIC(WILDCARD_SIGNATURES[i].id);
-        }
-    }
-    return -1;
-}
-
-/**
  * Prototype for function implementing blinding key parser.
  *
  * This function should parse a BLINDING_KEY expression enclosed in ct() tag as specified in
  * ELIP: 150 and ELIP 151 from the `in_buf` buffer, aallocating the nodes and variables in
  * `out_buf`.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-typedef int (*blinding_key_parser_t)(script_parser_ctx_t *ctx, size_t token_len);
+typedef int (*blinding_key_parser_t)(buffer_t *in_buf, buffer_t *out_buf, size_t token_len);
 
 /**
  * Parses slip77() expression within BLINDING_KEY context.
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_slip77(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_slip77(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
     policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_blinding_privkey_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
     if (NULL == node) {
         return -1;
     }
-    node->type = TOKEN_SLIP77;
+    node->base.type = TOKEN_SLIP77;
+    node->base.flags.is_miniscript = 0;
 
-    bool ok = buffer_skip_data(ctx->in_buf, (const uint8_t*) "slip77(", sizeof("slip77(") - 1);
+    bool ok = buffer_skip_data(in_buf, (const uint8_t*) "slip77(", sizeof("slip77(") - 1);
     ok = ok && sizeof(node->privkey) ==
-            read_lowercase_hex_data(ctx->in_buf, node->privkey, sizeof(node->privkey), ')');
-    ok = ok && buffer_skip_data(ctx->in_buf, (const uint8_t*) ")", 1);
+            read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ')');
+    ok = ok && buffer_skip_data(in_buf, (const uint8_t*) ")", 1);
 
     return ok ? 0 : -1;
 }
@@ -249,25 +238,28 @@ static int parse_ct_slip77(script_parser_ctx_t *ctx, size_t token_len) {
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_hex_pubkey(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_hex_pubkey(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
     policy_node_blinding_pubkey_t *node = (policy_node_blinding_pubkey_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_blinding_pubkey_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_blinding_pubkey_t), true);
     if (NULL == node) {
         return -1;
     }
-    node->type = TOKEN_HEX_PUB;
+    node->base.type = TOKEN_HEX_PUB;
+    node->base.flags.is_miniscript = 0;
 
     bool ok = sizeof(node->pubkey) ==
-        read_lowercase_hex_data(ctx->in_buf, node->pubkey, sizeof(node->pubkey), ',');
+        read_lowercase_hex_data(in_buf, node->pubkey, sizeof(node->pubkey), ',');
 
     return ok && (0x02 == node->pubkey[0] || 0x03 == node->pubkey[0]) ? 0 : -1;
 }
@@ -277,25 +269,28 @@ static int parse_ct_hex_pubkey(script_parser_ctx_t *ctx, size_t token_len) {
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_hex_privkey(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_hex_privkey(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
     policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_blinding_privkey_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
     if (NULL == node) {
         return -1;
     }
-    node->type = TOKEN_HEX_PRV;
+    node->base.type = TOKEN_HEX_PRV;
+    node->base.flags.is_miniscript = 0;
 
     bool ok = sizeof(node->privkey) ==
-        read_lowercase_hex_data(ctx->in_buf, node->privkey, sizeof(node->privkey), ',');
+        read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ',');
 
     return ok ? 0 : -1;
 }
@@ -305,21 +300,23 @@ static int parse_ct_hex_privkey(script_parser_ctx_t *ctx, size_t token_len) {
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_xpub(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_xpub(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     serialized_extended_pubkey_check_t pubkey_check;
     const serialized_extended_pubkey_t *pubkey = &pubkey_check.serialized_extended_pubkey;
 
-    if (!buffer_can_read(ctx->in_buf, token_len)) {
+    if (!buffer_can_read(in_buf, token_len)) {
         return -1;
     }
-    if (sizeof(pubkey_check) != base58_decode((char*) buffer_get_cur(ctx->in_buf),
+    if (sizeof(pubkey_check) != base58_decode((char*) buffer_get_cur(in_buf),
                                               token_len,
                                               (uint8_t *) &pubkey_check,
                                               sizeof(pubkey_check))) {
@@ -333,20 +330,21 @@ static int parse_ct_xpub(script_parser_ctx_t *ctx, size_t token_len) {
     if (!memeq(checksum, pubkey_check.checksum, sizeof(checksum))) {
         return -1;
     }
-    if (read_u32_be(pubkey->version, 0) != ctx->bip32_pubkey_version ||
+    if (read_u32_be(pubkey->version, 0) != BIP32_PUBKEY_VERSION ||
         !(0x02 == pubkey->compressed_pubkey[0] || 0x03 == pubkey->compressed_pubkey[0])) {
         return -1;
     }
 
     policy_node_blinding_pubkey_t *node = (policy_node_blinding_pubkey_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_blinding_pubkey_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_blinding_pubkey_t), true);
     if (NULL == node) {
         return -1;
     }
-    node->type = TOKEN_XPUB;
+    node->base.type = TOKEN_XPUB;
+    node->base.flags.is_miniscript = 0;
     memcpy(node->pubkey, pubkey->compressed_pubkey, sizeof(node->pubkey));
 
-    return buffer_seek_cur(ctx->in_buf, token_len) ? 0 : -1;
+    return buffer_seek_cur(in_buf, token_len) ? 0 : -1;
 }
 
 /**
@@ -354,21 +352,23 @@ static int parse_ct_xpub(script_parser_ctx_t *ctx, size_t token_len) {
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_xprv(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_xprv(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     serialized_extended_privkey_check_t privkey_check;
     const serialized_extended_privkey_t *privkey = &privkey_check.serialized_extended_privkey;
 
-    if (!buffer_can_read(ctx->in_buf, token_len)) {
+    if (!buffer_can_read(in_buf, token_len)) {
         return -1;
     }
-    if (sizeof(privkey_check) != base58_decode((char*) buffer_get_cur(ctx->in_buf),
+    if (sizeof(privkey_check) != base58_decode((char*) buffer_get_cur(in_buf),
                                                token_len,
                                                (uint8_t *) &privkey_check,
                                                sizeof(privkey_check))) {
@@ -382,20 +382,21 @@ static int parse_ct_xprv(script_parser_ctx_t *ctx, size_t token_len) {
     if (!memeq(checksum, privkey_check.checksum, sizeof(checksum))) {
         return -1;
     }
-    if (read_u32_be(privkey->version, 0) != ctx->bip32_privkey_version ||
+    if (read_u32_be(privkey->version, 0) != BIP32_PRIVKEY_VERSION ||
         0 != privkey->null_prefix) {
         return -1;
     }
 
     policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_blinding_privkey_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
     if (NULL == node) {
         return -1;
     }
-    node->type = TOKEN_XPRV;
+    node->base.type = TOKEN_XPRV;
+    node->base.flags.is_miniscript = 0;
     memcpy(node->privkey, privkey->privkey, sizeof(node->privkey));
 
-    return buffer_seek_cur(ctx->in_buf, token_len) ? 0 : -1;
+    return buffer_seek_cur(in_buf, token_len) ? 0 : -1;
 }
 
 /**
@@ -403,26 +404,28 @@ static int parse_ct_xprv(script_parser_ctx_t *ctx, size_t token_len) {
  *
  * Corresponds to `blinding_key_parser_t` type, refer to its description for more details.
  *
- * @param[in,out] ctx
- *   Script parser context.
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
  * @param[in] token_len
  *   Size of key token in characters.
  *
  * @return 0 if successful, a negative number on error.
  */
-static int parse_ct_elip151(script_parser_ctx_t *ctx, size_t token_len) {
+static int parse_ct_elip151(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
-    if (!buffer_skip_data(ctx->in_buf, (const uint8_t*) "elip151", sizeof("elip151") - 1)) {
+    if (!buffer_skip_data(in_buf, (const uint8_t*) "elip151", sizeof("elip151") - 1)) {
         return -1;
     }
 
     policy_node_t *node = (policy_node_t *)
-        buffer_alloc(ctx->out_buf, sizeof(policy_node_t), true);
+        buffer_alloc(out_buf, sizeof(policy_node_t), true);
 
     if (node) {
         node->type = TOKEN_ELIP151;
-        node->node_data = NULL;
+        node->flags.is_miniscript = 0;
         return 0;
     }
     return -1;
@@ -512,77 +515,18 @@ blinding_key_parser_t find_blinding_key_parser(const token_scan_result_t *scan_r
     return NULL;
 }
 
-/**
- * Internal function parsing blinding key script inside ct() descriptor.
- *
- * Parses a BLINDING_KEY expression as specified in ELIP: 150 from the in_buf
- * buffer, allocating the node and variables in out_buf.The initial pointer in
- * out_buf will contain the node of the BLINDING_KEY.
- *
- * @param[in,out] ctx
- *   Script parser context.
- *
- * @return 0 if successful, a negative number on error.
- */
-static int parse_blinding_key_script(script_parser_ctx_t *ctx) {
+int liquid_parse_blinding_key_script(buffer_t *in_buf, buffer_t *out_buf) {
     token_scan_result_t scan_result;
-    if (!scan_token(ctx->in_buf, ',', &scan_result)) {
+    if (!scan_token(in_buf, ',', &scan_result)) {
         return -1;
     }
 
     blinding_key_parser_t key_parser = find_blinding_key_parser(&scan_result);
     if (key_parser) {
-        return (*key_parser)(ctx, scan_result.token_len);
+        return (*key_parser)(in_buf, out_buf, scan_result.token_len);
     }
     return -1;
 }
-
-
-// TODO: make it a function
-#if 0
-
-#ifdef HAVE_LIQUID
-        case TOKEN_CT: {
-            if (depth != 0) {
-                return -16;  // can only be top-level
-            }
-
-            policy_node_ct_t *node =
-                (policy_node_ct_t *) buffer_alloc(ctx->out_buf, sizeof(policy_node_ct_t), true);
-            if (node == NULL) {
-                return -17;
-            }
-            node->type = token;
-
-            inner_context_flags |= CONTEXT_WITHIN_CT;
-
-            // the master blinding key script is recursively parsed (if successful) in the current
-            // location of the output buffer
-            node->mbk_script = (policy_node_t *) buffer_get_cur_aligned(ctx->out_buf);
-            if (NULL == node->mbk_script || 0 > parse_blinding_key_script(ctx)) {
-                // failed while parsing internal script
-                return -18;
-            }
-
-            // scripts must be separated by comma
-            if (!buffer_read_u8(ctx->in_buf, (uint8_t *) &c) || c != ',') {
-                PRINTF("Unexpected char: %c. Was expecting: ,\n", c);
-                return -19;
-            }
-
-            // the internal script is recursively parsed (if successful) in the current location of
-            // the output buffer
-            int res2 = 0;
-            node->script = (policy_node_t *) buffer_get_cur_aligned(ctx->out_buf);
-            if (NULL == node->script || (res2 = parse_script(ctx, depth + 1, inner_context_flags)) < 0) {
-                // failed while parsing internal script
-                return res2 * 100 - 20;
-            }
-            break;
-        }
-#endif // HAVE_LIQUID
-
-#endif
 
 bool policy_is_multisig(const policy_node_t *policy) {
     const policy_node_t *node = policy;
@@ -591,12 +535,12 @@ bool policy_is_multisig(const policy_node_t *policy) {
         switch(node->type)
         {
         case TOKEN_CT:
-            node = ((policy_node_ct_t *)node)->script;
+            node = r_policy_node(&((const policy_node_ct_t *) node)->script);
             break;
 
         case TOKEN_SH:
         case TOKEN_WSH:
-            node = ((policy_node_with_script_t *)node)->script;
+            node = r_policy_node(&((const policy_node_with_script_t *) node)->script);
             break;
 
         case TOKEN_MULTI:
@@ -616,8 +560,8 @@ bool policy_is_multisig(const policy_node_t *policy) {
 // TODO: consider removing
 bool validate_policy_map_extended_pubkey(const policy_map_key_info_t *key_info,
                                          uint32_t bip32_pubkey_version) {
-    int status = validate_serialized_extended_pubkey(
-        key_info->ext_pubkey,
+    int status = validate_extended_pubkey(
+        &key_info->ext_pubkey,
         key_info->master_key_derivation,
         key_info->has_key_origin ? key_info->master_key_derivation_len : -1,
         bip32_pubkey_version

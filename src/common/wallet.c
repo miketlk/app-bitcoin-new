@@ -227,7 +227,10 @@ static bool is_alphanumeric(char c) {
  *
  * @return true if the character is a lowercase hexadecimal digit, false otherwise.
  */
-static bool is_lowercase_hex(char c) {
+#ifndef HAVE_LIQUID
+static
+#endif
+bool is_lowercase_hex(char c) {
     return is_digit(c) || ('a' <= c && c <= 'f');
 }
 
@@ -239,7 +242,10 @@ static bool is_lowercase_hex(char c) {
  *
  * @return integer corresponding to the given hexadecimal digit.
  */
-static uint8_t lowercase_hex_to_int(char c) {
+#ifndef HAVE_LIQUID
+static
+#endif
+uint8_t lowercase_hex_to_int(char c) {
     return (uint8_t) (is_digit(c) ? c - '0' : c - 'a' + 10);
 }
 
@@ -590,6 +596,9 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
 #define CONTEXT_WITHIN_SH  1  // parsing a direct child of SH
 #define CONTEXT_WITHIN_WSH 2  // parsing a direct child of WSH
 #define CONTEXT_WITHIN_TR  4  // parsing a child of TR (direct or not)
+#ifdef HAVE_LIQUID
+#define CONTEXT_WITHIN_CT  128  // parsing a child of ct()
+#endif // HAVE_LIQUID
 
 // forward declaration
 static int parse_script(buffer_t *in_buf,
@@ -767,6 +776,52 @@ static int parse_script(buffer_t *in_buf,
     policy_node_t *parsed_node;
 
     switch (token) {
+#ifdef HAVE_LIQUID
+        case TOKEN_CT: {
+            if (depth != 0) {
+                return WITH_ERROR(-1, "ct can only be a top-level function");
+            }
+
+            policy_node_ct_t *node =
+                (policy_node_ct_t *) buffer_alloc(out_buf, sizeof(policy_node_ct_t), true);
+            if (node == NULL) {
+                return WITH_ERROR(-1, "Out of memory");
+            }
+            parsed_node = (policy_node_t *) node;
+            node->base.type = token;
+            node->base.flags.is_miniscript = 0;
+
+            // the blinding key script is parsed (if successful) in the current location
+            // of the output buffer
+            buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
+            i_policy_node(&node->mbk_script, buffer_get_cur(out_buf));
+            if (0 > liquid_parse_blinding_key_script(in_buf, out_buf)) {
+                // failed while parsing internal script
+                return -1;
+            }
+
+            // consume comma separator
+            if (!consume_character(in_buf, ',')) {
+                return WITH_ERROR(-1, "Expected ','");
+            }
+
+            // The internal script is recursively parsed (if successful) in the current location
+            // of the output buffer. We do not increase the depth to not break the normal processing
+            // of the inner scripts.
+            buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
+            i_policy_node(&node->script, buffer_get_cur(out_buf));
+            if (0 > parse_script(in_buf,
+                                 out_buf,
+                                 version,
+                                 depth,
+                                 context_flags | CONTEXT_WITHIN_CT)) {
+                // failed while parsing internal script
+                return -1;
+            }
+
+            break;
+        }
+#endif
         case TOKEN_0:
         case TOKEN_1: {
             policy_node_constant_t *node =
@@ -1746,7 +1801,11 @@ static int parse_script(buffer_t *in_buf,
         }
     }
 
-    if (depth == 0 && buffer_can_read(in_buf, 1)) {
+    if (depth == 0 && buffer_can_read(in_buf, 1)
+#ifdef HAVE_LIQUID
+        && !(context_flags & CONTEXT_WITHIN_CT)
+#endif
+       ) {
         return WITH_ERROR(-1, "Input buffer too long");
     }
 

@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <string.h>
+#include <stdio.h>
 #include "liquid.h"
 #include "liquid_hash_wrappers.h"
 #include "liquid_assets.h"

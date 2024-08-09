@@ -167,7 +167,27 @@ WARN_UNUSED_RESULT int liquid_get_script_confidential_address(const uint8_t *scr
  * @return pointer to policy node inside ct() tag, or to the root node if the policy is not blinded.
  */
 static inline const policy_node_t* liquid_policy_unwrap_ct(const policy_node_t *policy) {
-    return policy && (TOKEN_CT == policy->type) ? ((const policy_node_ct_t*)policy)->script : policy;
+
+    if (policy && TOKEN_CT == policy->type) {
+        return r_policy_node(&((const policy_node_ct_t *) policy)->script);
+    }
+    return policy;
+}
+
+/**
+ * Returns the policy type, getting it from the inside script if the policy is blinded.
+ *
+ * @param[in] policy
+ *   Pointer to root policy node.
+ *
+ * @return type of the root policy node.
+ */
+static inline PolicyNodeType liquid_policy_type(const policy_node_t *policy) {
+
+    if (TOKEN_CT == policy->type) {
+        return r_policy_node(&((const policy_node_ct_t *) policy)->script)->type;
+    }
+    return policy->type;
 }
 
 /**

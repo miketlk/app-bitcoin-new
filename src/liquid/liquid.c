@@ -431,12 +431,13 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
         return false;
     }
 
-    const policy_node_ct_t *ct = (const policy_node_ct_t*) policy;
-    if (!ct->mbk_script) {
+    const policy_node_t *mbk_script =
+        r_policy_node(&((const policy_node_ct_t *) policy)->mbk_script);
+    if (!mbk_script) {
         return false;
     }
 
-    if (TOKEN_ELIP151 == ct->mbk_script->type) {
+    if (TOKEN_ELIP151 == mbk_script->type) {
         return get_blinding_public_key_elip151(script,
                                                script_length,
                                                pubkey_wildcard_id,
@@ -444,9 +445,9 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
                                                get_script_callback_state,
                                                pubkey);
     } else {
-        pubkey_derivator_proto_t derivator = find_pubkey_derivator(ct->mbk_script->type);
+        pubkey_derivator_proto_t derivator = find_pubkey_derivator(mbk_script->type);
         return NULL == derivator ?
-            false : (*derivator)(ct->mbk_script, script, script_length, pubkey);
+            false : (*derivator)(mbk_script, script, script_length, pubkey);
     }
 }
 
@@ -455,18 +456,19 @@ bool liquid_is_blinding_key_acceptable(const policy_node_t *policy) {
         return false;
     }
 
-    policy_node_ct_t *ct = (policy_node_ct_t *)policy;
-    if(ct->mbk_script) {
+    const policy_node_t *mbk_script =
+        r_policy_node(&((const policy_node_ct_t *) policy)->mbk_script);
+    if(mbk_script) {
         // Ensure we have an appropriate derivation function for this kind of key
-        if (NULL == find_pubkey_derivator(ct->mbk_script->type)) {
+        if (NULL == find_pubkey_derivator(mbk_script->type)) {
             return false;
         }
 
         // For SLIP-0077 derivation verify that the master key is ours, except for the multisig
         // descriptors
-        if (TOKEN_SLIP77 == ct->mbk_script->type && !policy_is_multisig(policy)) {
+        if (TOKEN_SLIP77 == mbk_script->type && !policy_is_multisig(policy)) {
             const policy_node_blinding_privkey_t *slip77 =
-                (const policy_node_blinding_privkey_t *)ct->mbk_script;
+                (const policy_node_blinding_privkey_t *)mbk_script;
             if (!liquid_is_master_blinding_key_ours(slip77->privkey)) {
                 return false;
             }

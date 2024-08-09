@@ -500,6 +500,32 @@ WARN_UNUSED_RESULT int crypto_tr_tweak_seckey(const uint8_t seckey[static 32],
                                               uint8_t out[static 32]);
 
 /**
+ * Validates the extended pubkey at a given path.
+ *
+ * This function verifies:
+ *   - version bytes
+ *   - depth (derivation level), optional
+ *   - parent's key fingerprint (only for master key)
+ *   - child number, optional
+ *   - public key prefix
+ *
+ * @param[in] ext_pubkey
+ *   Base58-encoded extended pubkey, null-terminated string.
+ * @param[in] bip32_path
+ *   Pointer to 32-bit array of BIP-32 derivation steps, may be NULL if bip32_path_len < 1.
+ * @param bip32_path_len
+ *   Number of steps in the BIP32 derivation, -1 if derivation path is not available.
+ * @param bip32_pubkey_version
+ *   Version prefix to use for the pubkey.
+ *
+ * @return one of extended_pubkey_status_t constants: =0 if the pubkey is valid, <0 otherwise.
+ */
+WARN_UNUSED_RESULT int validate_extended_pubkey(const serialized_extended_pubkey_t *ext_pubkey,
+                                                const uint32_t bip32_path[],
+                                                int bip32_path_len,
+                                                uint32_t bip32_pubkey_version);
+
+/**
  * Validates the Base58Check-encoded extended pubkey at a given path.
  *
  * This function verifies:

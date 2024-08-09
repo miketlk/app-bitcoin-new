@@ -22,6 +22,14 @@
 // Version bytes of Liquid main network (liquidv1) xprv
 #define LIQUID_MAIN_XPRV 0x0488ADE4
 
+#if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
+    #error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
+#endif
+
+// Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
+uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
+uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
+
 const liquid_network_config_t config_elementsregtest = {
     .p2pkh_version = 0x6F,
     .p2sh_version = 0x4B,
@@ -37,8 +45,10 @@ static int parse_policy(const char *policy,
                         size_t out_len,
                         uint32_t bip32_pubkey_version,
                         uint32_t bip32_privkey_version) {
+    BIP32_PUBKEY_VERSION = bip32_pubkey_version;
+    BIP32_PRIVKEY_VERSION = bip32_privkey_version;
     buffer_t in_buf = buffer_create((void *) policy, policy_len);
-    return parse_policy_map(&in_buf, out, out_len, bip32_pubkey_version, bip32_privkey_version);
+    return parse_descriptor_template(&in_buf, out, out_len, WALLET_POLICY_VERSION_V2);
 }
 
 #define PARSE_POLICY(policy, out, out_len) parse_policy(policy, sizeof(policy) - 1, out, out_len, LIQUID_MAIN_XPUB, LIQUID_MAIN_XPRV)
@@ -107,8 +117,8 @@ static void test_policy_unwrap_ct(void **state) {
     (void) state;
 
     uint8_t policy_bytes[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
-        "ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))",
+    assert_true(0 <= PARSE_POLICY(
+        "ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))",
         policy_bytes,
         sizeof(policy_bytes)
     ));
@@ -124,7 +134,7 @@ static void test_policy_unwrap_blinded_ct(void **state) {
     (void) state;
 
     uint8_t policy_bytes[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY("wpkh(@0)", policy_bytes, sizeof(policy_bytes)));
+    assert_true(0 <= PARSE_POLICY("wpkh(@0/**)", policy_bytes, sizeof(policy_bytes)));
 
     const policy_node_t *policy = liquid_policy_unwrap_ct((const policy_node_t *)policy_bytes);
 
@@ -137,70 +147,82 @@ static void test_parse_policy_map_blinded_slip77_singlesig(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
-        "ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))",
+    assert_true(0 <= PARSE_POLICY(
+        "ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_privkey_t *mbk = (policy_node_blinding_privkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_SLIP77);
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_SLIP77);
     static const uint8_t ref_mbk[] = {
         0x90, 0x5c, 0xfe, 0x33, 0xa3, 0xdf, 0xb3, 0x7d, 0xb5, 0x13, 0xd1, 0x07, 0x8c, 0x16, 0xbc, 0xfd,
         0xf9, 0x06, 0xec, 0xd9, 0x44, 0xc5, 0xdd, 0xd3, 0x7f, 0xdf, 0xbc, 0xc5, 0xe6, 0x19, 0xc1, 0x41
     };
     assert_memory_equal(mbk->privkey, ref_mbk, sizeof(ref_mbk));
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_WPKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 static void test_parse_policy_map_blinded_slip77_multisig(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
+    assert_true(0 <= PARSE_POLICY(
         "ct(slip77(80b796c76c895bda151cd5c40f3a11afcd96d66f99347a760d3f7b8aaa5815b5),"\
-        "sh(wsh(sortedmulti(5,@0,@1,@2,@3,@4,@5,@6))))",
+        "sh(wsh(sortedmulti(5,@0/**,@1/**,@2/**,@3/**,@4/**,@5/**,@6/**))))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_privkey_t *mbk = (policy_node_blinding_privkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_SLIP77);
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_SLIP77);
     static const char ref_mbk[] =  {
         0x80, 0xb7, 0x96, 0xc7, 0x6c, 0x89, 0x5b, 0xda, 0x15, 0x1c, 0xd5, 0xc4, 0x0f, 0x3a, 0x11, 0xaf,
         0xcd, 0x96, 0xd6, 0x6f, 0x99, 0x34, 0x7a, 0x76, 0x0d, 0x3f, 0x7b, 0x8a, 0xaa, 0x58, 0x15, 0xb5
     };
     assert_memory_equal(mbk->privkey, ref_mbk, sizeof(ref_mbk));
 
-    policy_node_with_script_t *inner1 = (policy_node_with_script_t *) root->script;
-    assert_int_equal(inner1->type, TOKEN_SH);
-    assert_non_null(inner1->script);
+    const policy_node_with_script_t *inner1 =
+        (policy_node_with_script_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner1);
+    assert_int_equal(inner1->base.type, TOKEN_SH);
 
-    policy_node_with_script_t *inner2 = (policy_node_with_script_t *) inner1->script;
-    assert_int_equal(inner2->type, TOKEN_WSH);
-    assert_non_null(inner2->script);
+    const policy_node_with_script_t *inner2 =
+        (policy_node_with_script_t *) r_policy_node(&inner1->script);
+    assert_non_null(inner2);
+    assert_int_equal(inner2->base.type, TOKEN_WSH);
 
-    policy_node_multisig_t *inner3 = (policy_node_multisig_t *) inner2->script;
-    assert_int_equal(inner3->type, TOKEN_SORTEDMULTI);
+    const policy_node_multisig_t *inner3 =
+        (policy_node_multisig_t *) r_policy_node(&inner2->script);
+    assert_non_null(inner3);
+    assert_int_equal(inner3->base.type, TOKEN_SORTEDMULTI);
     assert_int_equal(inner3->k, 5);
     assert_int_equal(inner3->n, 7);
+
+    const policy_node_key_placeholder_t *key_placeholders =
+        r_policy_node_key_placeholder(&inner3->key_placeholders);
+    assert_non_null(key_placeholders);
     for (int i = 0; i < 7; i++) {
-        assert_int_equal(inner3->key_indexes[i], i);
+        assert_int_equal(key_placeholders[i].key_index, i);
+        assert_int_equal(key_placeholders[i].num_first, 0);
+        assert_int_equal(key_placeholders[i].num_second, 1);
     }
 }
 
@@ -209,21 +231,18 @@ static void test_parse_policy_map_blinded_xpub(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
+    assert_true(0 <= PARSE_POLICY(
         "ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5Ja"\
-        "HWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0))",
+        "HWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_pubkey_t *mbk = (policy_node_blinding_pubkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_XPUB);
+    const policy_node_blinding_pubkey_t *mbk =
+        (policy_node_blinding_pubkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_XPUB);
     static const uint8_t ref_pubkey[33] = {
         0x02,
         0xd2, 0xb3, 0x69, 0x00, 0x39, 0x6c, 0x92, 0x82, 0xfa, 0x14, 0x62, 0x85, 0x66, 0x58, 0x2f, 0x20,
@@ -231,9 +250,17 @@ static void test_parse_policy_map_blinded_xpub(void **state) {
     };
     assert_memory_equal(mbk->pubkey, ref_pubkey, sizeof(ref_pubkey));
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_PKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_PKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 // ELIP 150: Valid Descriptor 9
@@ -241,20 +268,17 @@ static void test_parse_policy_map_blinded_hex_pubkey(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
-        "ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))",
+    assert_true(0 <= PARSE_POLICY(
+        "ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_pubkey_t *mbk = (policy_node_blinding_pubkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_HEX_PUB);
+    const policy_node_blinding_pubkey_t *mbk =
+        (policy_node_blinding_pubkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_HEX_PUB);
     static const uint8_t ref_pubkey[33] = {
         0x02,
         0xdc, 0xe1, 0x60, 0x18, 0xbb, 0xbb, 0x8e, 0x36, 0xde, 0x7b, 0x39, 0x4d, 0xf5, 0xb5, 0x16, 0x6e,
@@ -262,9 +286,17 @@ static void test_parse_policy_map_blinded_hex_pubkey(void **state) {
     };
     assert_memory_equal(mbk->pubkey, ref_pubkey, sizeof(ref_pubkey));
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_WPKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 // ELIP 150: View Descriptor
@@ -272,30 +304,35 @@ static void test_parse_policy_map_blinded_xprv(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
+    assert_true(0 <= PARSE_POLICY(
         "ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7"\
-        "iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0))",
+        "iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_privkey_t *mbk = (policy_node_blinding_privkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_XPRV);
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_XPRV);
     static const uint8_t ref_privkey[32] = {
         0x45, 0xb0, 0x6d, 0x52, 0x19, 0x7a, 0xf2, 0x5a, 0xeb, 0x04, 0xd2, 0x4b, 0xa9, 0x3d, 0xbf, 0xfc,
         0xbb, 0x43, 0x76, 0x2d, 0xe2, 0xb5, 0x21, 0x3a, 0x44, 0xf1, 0x20, 0x26, 0x5e, 0xd0, 0x73, 0x4c
     };
     assert_memory_equal(mbk->privkey, ref_privkey, sizeof(ref_privkey));
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_WPKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 // ELIP 150: View Descriptor 2
@@ -303,29 +340,34 @@ static void test_parse_policy_map_blinded_hex_privkey(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
-        "ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))",
+    assert_true(0 <= PARSE_POLICY(
+        "ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
-
-    policy_node_blinding_privkey_t *mbk = (policy_node_blinding_privkey_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_HEX_PRV);
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_HEX_PRV);
     static const uint8_t ref_privkey[32] = {
         0xc2, 0x5d, 0xeb, 0x86, 0xfa, 0x11, 0xe4, 0x9d, 0x65, 0x1d, 0x7e, 0xae, 0x27, 0xc2, 0x20, 0xef,
         0x93, 0x0f, 0xbd, 0x86, 0xea, 0x02, 0x3e, 0xeb, 0xfa, 0x73, 0xe5, 0x48, 0x75, 0x64, 0x79, 0x63
     };
     assert_memory_equal(mbk->privkey, ref_privkey, sizeof(ref_privkey));
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_WPKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 // ELIP 151: Test vector 1
@@ -333,24 +375,29 @@ static void test_parse_policy_map_blinded_elip151(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
-    assert_int_equal(0, PARSE_POLICY(
-        "ct(elip151,elwpkh(@0))",
+    assert_true(0 <= PARSE_POLICY(
+        "ct(elip151,elwpkh(@0/**))",
         out,
         sizeof(out)
     ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
 
-    policy_node_ct_t *root = (policy_node_ct_t *)out;
-    assert_non_null(root);
-    assert_int_equal(root->type, TOKEN_CT);
-    assert_non_null(root->mbk_script);
-    assert_non_null(root->script);
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_ELIP151);
 
-    policy_node_t *mbk = (policy_node_t*) root->mbk_script;
-    assert_int_equal(mbk->type, TOKEN_ELIP151);
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
 
-    policy_node_with_key_t *inner = (policy_node_with_key_t *) root->script;
-    assert_int_equal(inner->type, TOKEN_WPKH);
-    assert_int_equal(inner->key_index, 0);
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_int_equal(key_placeholder->num_first, 0);
+    assert_int_equal(key_placeholder->num_second, 1);
 }
 
 static void test_failures_blinded(void **state) {
@@ -359,10 +406,10 @@ static void test_failures_blinded(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Master blinding key script is required for ct() tag
-    assert_true(0 > PARSE_POLICY("ct(wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(,wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(wpkh(@0),wpkh(@1))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(),wpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(,wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(wpkh(@0/**),wpkh(@1/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(),wpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_slip77(void **state) {
@@ -371,40 +418,40 @@ static void test_failures_blinded_slip77(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))",
+    assert_true(0 <= PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))",
                                   out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0)))",
+    assert_true(0 > PARSE_POLICY("sh(ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**)))",
                                  out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141)wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141)wpkh(@0/**))",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141) wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141) wpkh(@0/**))",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141,wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141,wpkh(@0/**))",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0)",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**)",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(x905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c14),wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(x905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c14),wpkh(@0/**))",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))",
                                  out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141,905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))",
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141,905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))",
                                  out, sizeof(out)));
 
     // slip77() should not be used outside of ct() tag
     assert_true(0 > PARSE_POLICY("slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("slip77(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("slip77(wpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("slip77(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("slip77(wpkh(@0/**))", out, sizeof(out)));
 
     // Master blinding key in HEX format must be exactly 64 characters
-    assert_true(0 > PARSE_POLICY("ct(slip77(),wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(9),wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c14),wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141A),wpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(slip77(9O5cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(),wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(9),wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c14),wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(905cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141A),wpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(slip77(9O5cfe33a3dfb37db513d1078c16bcfdf906ecd944c5ddd37fdfbcc5e619c141),wpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_xpub(void **state) {
@@ -413,28 +460,28 @@ static void test_failures_blinded_xpub(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0))",
+    assert_true(0 <= PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**))",
                                   out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0)))",
+    assert_true(0 > PARSE_POLICY("sh(ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**)))",
                                  out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcELelpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL elpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct((xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL),elpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,(elpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcELelpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL elpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct((xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL),elpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,(elpkh(@0/**)))", out, sizeof(out)));
     assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,"\
-                                 "xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0))",
+                                 "xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**))",
                                  out, sizeof(out)));
 
     // Extended public key must have valid format
-    assert_true(0 > PARSE_POLICY("ct(XPUB6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcE,elpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpubERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEM,elpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(XPUB6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcE,elpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpubERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL,elpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEM,elpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_xprv(void **state) {
@@ -443,25 +490,25 @@ static void test_failures_blinded_xprv(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 <= PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**))", out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("sh(ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**)))", out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUbelwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct((xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb),elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,(elwpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUbelwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct((xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb),elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,(elwpkh(@0/**)))", out, sizeof(out)));
     assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,"\
-                                 "xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0))", out, sizeof(out)));
+                                 "xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**))", out, sizeof(out)));
 
     // Extended private key must have valid format
-    assert_true(0 > PARSE_POLICY("ct(XPRV9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UU,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprvs21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUB,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(XPRV9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UU,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprvs21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUb,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(xprv9s21ZrQH143K28NgQ7bHCF61hy9VzwquBZvpzTwXLsbmQLRJ6iV9k2hUBRt5qzmBaSpeMj5LdcsHaXJvM7iFEivPryRcL8irN7Na9p65UUB,elwpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_hex_pubkey(void **state) {
@@ -470,27 +517,27 @@ static void test_failures_blinded_hex_pubkey(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 <= PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("sh(ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**)))", out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623 elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct((02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623),elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,(elwpkh(@0)))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623 elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct((02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623),elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,(elwpkh(@0/**)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
 
     // Public key must have valid format and length
-    assert_true(0 > PARSE_POLICY("ct(02Dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02Lce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(00dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(04dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b62,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b62323,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02Dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02Lce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(00dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(04dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b623,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b62,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(02dce16018bbbb8e36de7b394df5b5166e9adb7498be7d881a85a09aeecf76b62323,elwpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_hex_privkey(void **state) {
@@ -499,27 +546,27 @@ static void test_failures_blinded_hex_privkey(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 <= PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**))", out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("sh(ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**)))", out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963 elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct((c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963),elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,(elwpkh(@0)))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963 elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct((c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963),elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,(elwpkh(@0/**)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**))", out, sizeof(out)));
 
     // Private key must have valid format and length
-    assert_true(0 > PARSE_POLICY("ct(C25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(C25DEB86FA11E49D651D7EAE27C220EF930FBD86EA023EEBFA73E54875647963,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25geb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e5487564796,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e548756479,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c2,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e5487564796363,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(C25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(C25DEB86FA11E49D651D7EAE27C220EF930FBD86EA023EEBFA73E54875647963,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25geb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e5487564796,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e548756479,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c2,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e5487564796363,elwpkh(@0/**))", out, sizeof(out)));
 }
 
 static void test_failures_blinded_elip151(void **state) {
@@ -528,26 +575,26 @@ static void test_failures_blinded_elip151(void **state) {
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
 
     // Correct descriptor
-    assert_true(0 == PARSE_POLICY("ct(elip151,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 <= PARSE_POLICY("ct(elip151,elwpkh(@0/**))", out, sizeof(out)));
 
     // ct() must be top-level
-    assert_true(0 > PARSE_POLICY("sh(ct(elip151,elwpkh(@0)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("sh(ct(elip151,elwpkh(@0/**)))", out, sizeof(out)));
 
     // Broken format
-    assert_true(0 > PARSE_POLICY("ct(elip151elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip151 elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct((elip151),elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip151,elwpkh(@0)", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip151,elwpkh(@0)))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip151,(elwpkh(@0)))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip151,elip151,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151 elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct((elip151),elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151,elwpkh(@0/**)", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151,elwpkh(@0/**)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151,(elwpkh(@0/**)))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip151,elip151,elwpkh(@0/**))", out, sizeof(out)));
 
     // ELIP 151 tag must be valid
-    assert_true(0 > PARSE_POLICY("ct(ELIP151,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(Elip151,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elipp151,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(eli151,elwpkh(@0))", out, sizeof(out)));
-    assert_true(0 > PARSE_POLICY("ct(elip15,elwpkh(@0))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(ELIP151,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(Elip151,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elipp151,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(eli151,elwpkh(@0/**))", out, sizeof(out)));
+    assert_true(0 > PARSE_POLICY("ct(elip15,elwpkh(@0/**))", out, sizeof(out)));
 }
 
 int main(void) {

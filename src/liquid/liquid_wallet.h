@@ -60,6 +60,22 @@ typedef struct {
 } policy_node_blinding_privkey_t;
 
 /**
+ * Parses blinding key script inside ct() descriptor.
+ *
+ * Parses a BLINDING_KEY expression as specified in ELIP: 150 from the in_buf
+ * buffer, allocating the node and variables in out_buf.The initial pointer in
+ * out_buf will contain the node of the BLINDING_KEY.
+ *
+ * @param[in,out] in_buf
+ *   Input buffer with a script expression to parse.
+ * @param[out] out_buf
+ *   Output buffer which receives a tree-like structure of nodes.
+ *
+ * @return 0 if successful, a negative number on error.
+ */
+int liquid_parse_blinding_key_script(buffer_t *in_buf, buffer_t *out_buf);
+
+/**
  * Checks if the policy specifies a multisignature wallet.
  *
  * @param[in] policy

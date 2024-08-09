@@ -29,7 +29,7 @@
 #include "lcx_ripemd160.h"
 #include "cx_ripemd160.h"
 #include "lib_standard_app/crypto_helpers.h"
-#endif
+#endif // SKIP_FOR_CMOCKA
 
 #include "common/base58.h"
 #include "common/bip32.h"
@@ -43,6 +43,8 @@
 #include "crypto.h"
 
 #include "util.h"
+
+#ifndef SKIP_FOR_CMOCKA
 
 /**
  * Generator for secp256k1, value 'g' defined in "Standards for Efficient Cryptography"
@@ -643,6 +645,8 @@ int crypto_tr_tweak_seckey(const uint8_t seckey[static 32],
     return ret;
 }
 
+#endif // SKIP_FOR_CMOCKA
+
 /*****************************************************************************
  * FUNTIONS COVERED BY CMOCKA UNIT TESTS
  *****************************************************************************/
@@ -672,33 +676,13 @@ int crypto_get_compressed_pubkey(const uint8_t uncompressed_key[static 65],
     return 0;
 }
 
-int validate_serialized_extended_pubkey(const char *pubkey,
-                                        const uint32_t bip32_path[],
-                                        int bip32_path_len,
-                                        uint32_t bip32_pubkey_version) {
-    if (!pubkey || bip32_path_len < -1 || bip32_path_len > MAX_BIP32_PATH_STEPS ||
+int validate_extended_pubkey(const serialized_extended_pubkey_t *ext_pubkey,
+                             const uint32_t bip32_path[],
+                             int bip32_path_len,
+                             uint32_t bip32_pubkey_version) {
+    if (!ext_pubkey || bip32_path_len < -1 || bip32_path_len > MAX_BIP32_PATH_STEPS ||
         (bip32_path_len > 0 && !bip32_path)) {
         return EXTENDED_PUBKEY_INVALID_ARGUMENT;
-    }
-
-    size_t pubkey_len = strnlen(pubkey, MAX_SERIALIZED_PUBKEY_LENGTH + 1);
-    if (!pubkey_len || pubkey_len > MAX_SERIALIZED_PUBKEY_LENGTH) {
-        return EXTENDED_PUBKEY_INVALID_ARGUMENT;
-    }
-
-    serialized_extended_pubkey_check_t ext_pubkey_check;  // extended pubkey and checksum
-    serialized_extended_pubkey_t *ext_pubkey = &ext_pubkey_check.serialized_extended_pubkey;
-
-    if (sizeof(ext_pubkey_check) !=
-        base58_decode(pubkey, pubkey_len, (uint8_t*)&ext_pubkey_check, sizeof(ext_pubkey_check))) {
-        return EXTENDED_PUBKEY_INVALID_BASE58_CODE;
-    }
-
-    uint8_t checksum[4];
-    crypto_get_checksum((uint8_t *)ext_pubkey, sizeof(serialized_extended_pubkey_t), checksum);
-
-    if (!memeq(checksum, ext_pubkey_check.checksum, sizeof(checksum))) {
-        return EXTENDED_PUBKEY_INVALID_CHECKSUM;
     }
 
     if (read_u32_be(ext_pubkey->version, 0) != bip32_pubkey_version) {
@@ -728,4 +712,37 @@ int validate_serialized_extended_pubkey(const char *pubkey,
     }
 
     return EXTENDED_PUBKEY_VALID;
+}
+
+// TODO: consider removing
+int validate_serialized_extended_pubkey(const char *pubkey,
+                                        const uint32_t bip32_path[],
+                                        int bip32_path_len,
+                                        uint32_t bip32_pubkey_version) {
+    if (!pubkey || bip32_path_len < -1 || bip32_path_len > MAX_BIP32_PATH_STEPS ||
+        (bip32_path_len > 0 && !bip32_path)) {
+        return EXTENDED_PUBKEY_INVALID_ARGUMENT;
+    }
+
+    size_t pubkey_len = strnlen(pubkey, MAX_SERIALIZED_PUBKEY_LENGTH + 1);
+    if (!pubkey_len || pubkey_len > MAX_SERIALIZED_PUBKEY_LENGTH) {
+        return EXTENDED_PUBKEY_INVALID_ARGUMENT;
+    }
+
+    serialized_extended_pubkey_check_t ext_pubkey_check;  // extended pubkey and checksum
+    serialized_extended_pubkey_t *ext_pubkey = &ext_pubkey_check.serialized_extended_pubkey;
+
+    if (sizeof(ext_pubkey_check) !=
+        base58_decode(pubkey, pubkey_len, (uint8_t*)&ext_pubkey_check, sizeof(ext_pubkey_check))) {
+        return EXTENDED_PUBKEY_INVALID_BASE58_CODE;
+    }
+
+    uint8_t checksum[4];
+    crypto_get_checksum((uint8_t *)ext_pubkey, sizeof(serialized_extended_pubkey_t), checksum);
+
+    if (!memeq(checksum, ext_pubkey_check.checksum, sizeof(checksum))) {
+        return EXTENDED_PUBKEY_INVALID_CHECKSUM;
+    }
+
+    return validate_extended_pubkey(ext_pubkey, bip32_path, bip32_path_len, bip32_pubkey_version);
 }

@@ -8,6 +8,21 @@
 
 #include <cmocka.h>
 
+#ifdef HAVE_LIQUID
+    // Version bytes of Liquid regtest xpub
+    #define LIQUID_REGTEST_XPUB 0x043587CF
+    // Version bytes of Liquid regtest xprv
+    #define LIQUID_REGTEST_XPRV 0x04358394
+
+    #if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
+        #error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
+    #endif
+
+    // Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
+    uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
+    uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
+#endif // HAVE_LIQUID
+
 // missing definitions to make it compile without the SDK
 unsigned int pic(unsigned int linked_address) {
     return linked_address;
