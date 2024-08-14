@@ -117,7 +117,7 @@ class LegacyClient(Client):
         )
         return xpub.to_string()
 
-    def register_wallet(self, wallet: WalletPolicy) -> Tuple[bytes, bytes]:
+    def register_wallet(self, wallet: WalletPolicy, sanity_check: bool = True) -> Tuple[bytes, bytes]:
         raise NotImplementedError  # legacy app does not have this functionality
 
     def get_wallet_address(
@@ -127,6 +127,7 @@ class LegacyClient(Client):
         change: int,
         address_index: int,
         display: bool,
+        sanity_check: bool = True
     ) -> str:
         # TODO: check keypath
 

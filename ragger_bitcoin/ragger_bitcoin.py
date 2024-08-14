@@ -142,7 +142,8 @@ class RaggerClient(NewClient):
         return response
 
     def register_wallet(self, wallet: WalletPolicy, navigator: Optional[Navigator] = None,
-                        testname: str = "", instructions: Instructions = None) -> Tuple[bytes, bytes]:
+                        testname: str = "", instructions: Instructions = None,
+                        sanity_check: bool = True) -> Tuple[bytes, bytes]:
 
         if navigator:
             self.navigate = True
@@ -150,7 +151,7 @@ class RaggerClient(NewClient):
             self.testname = testname
             self.instructions = instructions
 
-        wallet_id, wallet_hmac = NewClient.register_wallet(self, wallet)
+        wallet_id, wallet_hmac = NewClient.register_wallet(self, wallet, sanity_check=sanity_check)
 
         self.navigate = False
 
@@ -165,7 +166,8 @@ class RaggerClient(NewClient):
         display: bool,
         navigator: Optional[Navigator] = None,
         instructions: Instructions = None,
-        testname: str = ""
+        testname: str = "",
+        sanity_check: bool = True
     ) -> str:
 
         if navigator:
@@ -175,7 +177,7 @@ class RaggerClient(NewClient):
             self.instructions = instructions
 
         result = NewClient.get_wallet_address(
-            self, wallet, wallet_hmac, change, address_index, display)
+            self, wallet, wallet_hmac, change, address_index, display, sanity_check=sanity_check)
 
         self.navigate = False
 

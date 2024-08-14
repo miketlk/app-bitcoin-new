@@ -165,13 +165,15 @@ class Client:
 
         raise NotImplementedError
 
-    def register_wallet(self, wallet: WalletPolicy) -> Tuple[bytes, bytes]:
+    def register_wallet(self, wallet: WalletPolicy, sanity_check: bool = True) -> Tuple[bytes, bytes]:
         """Registers a wallet policy with the user. After approval returns the wallet id and hmac to be stored on the client.
 
         Parameters
         ----------
         wallet : WalletPolicy
             The Wallet policy to register on the device.
+        sanity_check: bool
+            Whether you want to do a sanity check generating reference address locally (enabled by default).
 
         Returns
         -------
@@ -189,6 +191,7 @@ class Client:
         change: int,
         address_index: int,
         display: bool,
+        sanity_check: bool = True
     ) -> str:
         """For a given wallet that was already registered on the device (or a standard wallet that does not need registration),
         returns the address for a certain `change`/`address_index` combination.
@@ -209,6 +212,9 @@ class Client:
 
         display: bool
             Whether you want to display address and ask confirmation on the device.
+
+        sanity_check: bool
+            Whether you want to do a sanity check generating reference address locally (enabled by default).
 
         Returns
         -------

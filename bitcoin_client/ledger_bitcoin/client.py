@@ -93,7 +93,7 @@ class NewClient(Client):
 
         return response.decode()
 
-    def register_wallet(self, wallet: WalletPolicy) -> Tuple[bytes, bytes]:
+    def register_wallet(self, wallet: WalletPolicy, sanity_check: bool = True) -> Tuple[bytes, bytes]:
         if wallet.version not in [WalletType.WALLET_POLICY_V1, WalletType.WALLET_POLICY_V2]:
             raise ValueError("invalid wallet policy version")
 
@@ -118,10 +118,11 @@ class NewClient(Client):
         wallet_hmac = response[32:64]
 
         # sanity check: for miniscripts, derive the first address independently with python-bip380
-        first_addr_device = self.get_wallet_address(wallet, wallet_hmac, 0, 0, False)
+        if sanity_check:
+            first_addr_device = self.get_wallet_address(wallet, wallet_hmac, 0, 0, False)
 
-        if first_addr_device != self._derive_address_for_policy(wallet, False, 0):
-            raise RuntimeError("Invalid address. Please update your Bitcoin app. If the problem persists, report a bug at https://github.com/LedgerHQ/app-bitcoin-new")
+            if first_addr_device != self._derive_address_for_policy(wallet, False, 0):
+                raise RuntimeError("Invalid address. Please update your Bitcoin app. If the problem persists, report a bug at https://github.com/LedgerHQ/app-bitcoin-new")
 
         return wallet_id, wallet_hmac
 
@@ -132,6 +133,7 @@ class NewClient(Client):
         change: int,
         address_index: int,
         display: bool,
+        sanity_check: bool = True
     ) -> str:
 
         if not isinstance(wallet, WalletPolicy) or wallet.version not in [WalletType.WALLET_POLICY_V1, WalletType.WALLET_POLICY_V2]:
@@ -160,9 +162,9 @@ class NewClient(Client):
         result = response.decode()
 
         # sanity check: for miniscripts, derive the address independently with python-bip380
-
-        if result != self._derive_address_for_policy(wallet, change, address_index):
-            raise RuntimeError("Invalid address. Please update your Bitcoin app. If the problem persists, report a bug at https://github.com/LedgerHQ/app-bitcoin-new")
+        if sanity_check:
+            if result != self._derive_address_for_policy(wallet, change, address_index):
+                raise RuntimeError("Invalid address. Please update your Bitcoin app. If the problem persists, report a bug at https://github.com/LedgerHQ/app-bitcoin-new")
 
         return result
 
