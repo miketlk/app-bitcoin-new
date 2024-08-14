@@ -106,3 +106,8 @@
 #define MAX_STANDARD_P2WSH_STACK_ITEMS 100U
 #define MAX_STANDARD_P2WSH_SCRIPT_SIZE 3600U
 #define MAX_OPS_PER_SCRIPT             201U
+
+/**
+ * Maximum length of script in bytes
+ */
+#define MAX_SCRIPT_LEN 34

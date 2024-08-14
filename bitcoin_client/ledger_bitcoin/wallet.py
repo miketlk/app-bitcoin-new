@@ -125,25 +125,25 @@ class MultisigWallet(WalletPolicy):
         self.threshold = threshold
 
 
-def wrap_ct(policy_map: str, blinding_key: str = ""):
+def wrap_ct(descriptor_template: str, blinding_key: str = ""):
     """Add top level ct() descriptor to wallet policy"""
 
     if not blinding_key:
         raise ValueError(f"Invalid blinding key descriptor: '{blinding_key}'")
 
-    return "".join([f"ct({blinding_key},", policy_map, ")"])
+    return "".join([f"ct({blinding_key},", descriptor_template, ")"])
 
 
 class BlindedWallet(WalletPolicy):
     """Blinded wallet for Liquid application"""
 
-    def __init__(self, name: str, blinding_key: str, policy_map: str, keys_info: List[str]):
-        super().__init__(name, wrap_ct(policy_map, blinding_key), keys_info)
+    def __init__(self, name: str, blinding_key: str, descriptor_template: str, keys_info: List[str]):
+        super().__init__(name, wrap_ct(descriptor_template, blinding_key), keys_info, version = WalletType.WALLET_POLICY_V2)
 
 
 class BlindedMultisigWallet(MultisigWallet):
     """Blinded multisig wallet for Liquid application"""
 
     def __init__(self, name: str, blinding_key: str, address_type: AddressType, threshold: int, keys_info: List[str], sorted: bool = True) -> None:
-        super().__init__(name, address_type, threshold, keys_info, sorted)
-        self.policy_map = wrap_ct(self.policy_map, blinding_key)
+        super().__init__(name, address_type, threshold, keys_info, sorted, version = WalletType.WALLET_POLICY_V2)
+        self.descriptor_template = wrap_ct(self.descriptor_template, blinding_key)

@@ -12,27 +12,10 @@
 #define MAX_POLICY_MAP_COSIGNERS 5
 #endif
 
-
 // TODO: replace with MAX_PUBKEYS_PER_MULTISIG
 /// Maximum supported number of keys for a policy map.
 #define MAX_POLICY_MAP_KEYS MAX_POLICY_MAP_COSIGNERS
 
-// TODO: consider removing
-/// Public key wildcards defining the rules for child key derivation.
-typedef enum {
-    /// No wildcard.
-    KEY_WILDCARD_NONE = 0,
-    /// Any derivation is allowed: `/**`.
-    KEY_WILDCARD_ANY = 1,
-    /// Internal or external chain with an arbitrary address index: `/<0;1>/*`.
-    KEY_WILDCARD_STANDARD_CHAINS,
-    /// External chain with an arbitrary address index: `/0/*`.
-    KEY_WILDCARD_EXTERNAL_CHAIN,
-    /// Internal chain (change) with an arbitrary address index: `/1/*`.
-    KEY_WILDCARD_INTERNAL_CHAIN,
-} policy_map_key_wildcard_id_t;
-
-// TODO: remove
 /// Policy node ct()
 typedef struct {
     /// Type of this policy node is TOKEN_MULTI or TOKEN_SORTEDMULTI

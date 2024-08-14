@@ -1013,7 +1013,7 @@ __attribute__((noinline)) int compute_taptree_hash(dispatcher_context_t *dc,
 int get_wallet_script(dispatcher_context_t *dispatcher_context,
                       const policy_node_t *policy,
                       const wallet_derivation_info_t *wdi,
-                      uint8_t out[static 34]) {
+                      uint8_t out[static MAX_SCRIPT_LEN]) {
     int script_type = -1;
 
     cx_sha256_t hash_context;

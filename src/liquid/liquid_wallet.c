@@ -85,14 +85,6 @@ typedef struct {
     char prefix[TOKEN_PREFIX_LEN + 1];
 } token_scan_result_t;
 
-/// Wildcard signature
-typedef struct {
-    /// Wildcard numeric identifier.
-    policy_map_key_wildcard_id_t id;
-    /// Wildcard represented as a text string.
-    const char *str;
-} wildcard_signature_t;
-
 // These functions are defined in the main `wallet.c`
 extern bool is_lowercase_hex(char c);
 extern uint8_t lowercase_hex_to_int(char c);

@@ -65,31 +65,21 @@ extern const liquid_network_config_t G_liquid_network_config;
 /**
  * Callback function obtaining `scriptPubKey` of the processed descriptor.
  *
- * If `p_key_wildcard_to_verify` is not NULL, the function assumes it points to a constant which
- * must be compared with each of the wallet's public key's wildcard identifier. This parameter is
- * optional. If wildcard verification is not required it should be set to NULL.
- *
  * @param[in,out] state
  *   Callback state, stores necessary properties of the processed descriptor.
- * @param[in] bip44_change
- *   Change element of the derivation path, defined according to BIP 44.
+ * @param[in] descriptor_idx
+ *   Descriptor index in the in the multipath scheme.
  * @param[in] bip44_address_index
  *   Address index element of the derivation path, defined according to BIP 44.
  * @param[out] out_buffer
  *   Buffer receiving `scriptPubKey`.
- * @param[in] p_key_wildcard_to_verify
- *   If not NULL, requests to verify all wallet's public key wildcard IDs to be equal to value, pointed
- *   by this parameter.
  *
  * @return true if successful, false if error.
  */
-typedef bool (*liquid_get_script_callback_t)(
-    void *state,
-    uint32_t bip44_change,
-    uint32_t bip44_address_index,
-    buffer_t *out_buffer,
-    const policy_map_key_wildcard_id_t *p_key_wildcard_to_verify
-);
+typedef bool (*liquid_get_script_callback_t)(void *state,
+                                             uint32_t descriptor_idx,
+                                             uint32_t bip44_address_index,
+                                             buffer_t *out_buffer);
 
 /**
  * Derives master blinding key from seed according to SLIP-0077.
@@ -199,9 +189,6 @@ static inline PolicyNodeType liquid_policy_type(const policy_node_t *policy) {
  *   Script used to derive the key.
  * @param[in] script_length
  *   Length of the script.
- * @param[in] pubkey_wildcard_id
- *   Identifier of public key wildcard, one of `policy_map_key_wildcard_id_t` values. Needed only
- *   for ELIP 151.
  * @param[in] get_script_callback
  *   Callback function obtaining `scriptPubKey` of the processed descriptor. Needed only for
  *   ELIP 151.
@@ -216,7 +203,6 @@ static inline PolicyNodeType liquid_policy_type(const policy_node_t *policy) {
 WARN_UNUSED_RESULT bool liquid_get_blinding_public_key(const policy_node_t *policy,
                                                        const uint8_t *script,
                                                        size_t script_length,
-                                                       policy_map_key_wildcard_id_t pubkey_wildcard_id,
                                                        liquid_get_script_callback_t get_script_callback,
                                                        void *get_script_callback_state,
                                                        uint8_t pubkey[static 33]);

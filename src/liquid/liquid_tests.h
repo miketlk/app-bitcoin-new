@@ -31,33 +31,25 @@ static void test_elip150_derive_public_key(test_ctx_t *test_ctx) {
 }
 
 typedef struct {
-    uint32_t change;
     uint32_t length;
     const uint8_t* data;
-    policy_map_key_wildcard_id_t wildcard;
 } script_record_t;
 
 static bool get_script_callback(void *state,
-                                uint32_t bip44_change,
+                                size_t descriptor_idx,
                                 uint32_t bip44_address_index,
-                                buffer_t *out_buffer,
-                                const policy_map_key_wildcard_id_t *p_key_wildcard_to_verify) {
+                                buffer_t *out_buffer) {
     if (LIQUID_ELIP151_RESERVED_INDEX != bip44_address_index) {
         return false;
     }
 
     const script_record_t *p_script = (const script_record_t *)PIC(state);
-    while (p_script->data != NULL) {
-        if (p_script->change == bip44_change) {
-            if (NULL != p_key_wildcard_to_verify &&
-                p_script->wildcard != *p_key_wildcard_to_verify) {
-                return false;
-            }
+    for (size_t i = 0; p_script->data != NULL; i++, p_script++) {
+        if (i == descriptor_idx) {
             return buffer_write_bytes(out_buffer,
                                       (const uint8_t *)PIC(p_script->data),
                                       p_script->length);
         }
-        p_script++;
     }
     return false;
 }
@@ -72,8 +64,8 @@ static void test_elip151_derive_private_key_standard_chains(test_ctx_t *test_ctx
         0xa2, 0xa4, 0x9e, 0xd5
     };
     static const script_record_t scripts[] = {
-        { .change = 0, .length = sizeof(script0), .data = script0, .wildcard = KEY_WILDCARD_STANDARD_CHAINS },
-        { .change = 1, .length = sizeof(script1), .data = script1, .wildcard = KEY_WILDCARD_STANDARD_CHAINS },
+        { .length = sizeof(script0), .data = script0 },
+        { .length = sizeof(script1), .data = script1 },
         { .data = NULL } // Terminating record
     };
     static const uint8_t ref_privkey[32] = {
@@ -82,10 +74,7 @@ static void test_elip151_derive_private_key_standard_chains(test_ctx_t *test_ctx
     };
 
     uint8_t out_privkey[32];
-    TEST_ASSERT(elip151_derive_private_key(KEY_WILDCARD_STANDARD_CHAINS,
-                                           get_script_callback,
-                                           (void*)scripts,
-                                           out_privkey));
+    TEST_ASSERT(elip151_derive_private_key(2, get_script_callback, (void*)scripts, out_privkey));
     TEST_ASSERT_EQUAL_MEMORY(out_privkey, ref_privkey, sizeof(ref_privkey));
 }
 
@@ -95,7 +84,7 @@ static void test_elip151_derive_private_key_external_chain(test_ctx_t *test_ctx)
         0xd6, 0x5c, 0xb3, 0xf2
     };
     static const script_record_t scripts[] = {
-        { .change = 0, .length = sizeof(script0), .data = script0, .wildcard = KEY_WILDCARD_EXTERNAL_CHAIN },
+        { .length = sizeof(script0), .data = script0 },
         { .data = NULL } // Terminating record
     };
     static const uint8_t ref_privkey[32] = {
@@ -104,28 +93,8 @@ static void test_elip151_derive_private_key_external_chain(test_ctx_t *test_ctx)
     };
 
     uint8_t out_privkey[32];
-    TEST_ASSERT(elip151_derive_private_key(KEY_WILDCARD_EXTERNAL_CHAIN,
-                                           get_script_callback,
-                                           (void*)scripts,
-                                           out_privkey));
+    TEST_ASSERT(elip151_derive_private_key(1, get_script_callback, (void*)scripts, out_privkey));
     TEST_ASSERT_EQUAL_MEMORY(out_privkey, ref_privkey, sizeof(ref_privkey));
-}
-
-static void test_elip151_derive_private_key_fail_wrong_wildcard(test_ctx_t *test_ctx) {
-    static const uint8_t script0[] = {
-        0x00, 0x14, 0xc7, 0x55, 0x88, 0x40, 0x33, 0x79, 0xa9, 0xcc, 0xd0, 0xed, 0x60, 0x82, 0x2b, 0x79, 0x30, 0xfb,
-        0xd6, 0x5c, 0xb3, 0xf2
-    };
-    static const script_record_t scripts[] = {
-        { .change = 0, .length = sizeof(script0), .data = script0, .wildcard = KEY_WILDCARD_STANDARD_CHAINS },
-        { .data = NULL } // Terminating record
-    };
-
-    uint8_t out_privkey[32];
-    TEST_ASSERT_FALSE(elip151_derive_private_key(KEY_WILDCARD_EXTERNAL_CHAIN,
-                                                 get_script_callback,
-                                                 (void*)scripts,
-                                                 out_privkey));
 }
 
 static void test_elip151_derive_private_key_multisig_standard_chains(test_ctx_t *test_ctx) {
@@ -138,8 +107,8 @@ static void test_elip151_derive_private_key_multisig_standard_chains(test_ctx_t 
         0x1e, 0x11, 0xc2, 0x28, 0xc5, 0x84, 0x27, 0x6b, 0x85, 0xd6, 0x4f, 0x7d, 0x59, 0x79, 0xb5, 0x6e
     };
     static const script_record_t scripts[] = {
-        { .change = 0, .length = sizeof(script0), .data = script0, .wildcard = KEY_WILDCARD_STANDARD_CHAINS },
-        { .change = 1, .length = sizeof(script1), .data = script1, .wildcard = KEY_WILDCARD_STANDARD_CHAINS },
+        { .length = sizeof(script0), .data = script0 },
+        { .length = sizeof(script1), .data = script1 },
         { .data = NULL } // Terminating record
     };
     static const uint8_t ref_privkey[32] = {
@@ -148,10 +117,7 @@ static void test_elip151_derive_private_key_multisig_standard_chains(test_ctx_t 
     };
 
     uint8_t out_privkey[32];
-    TEST_ASSERT(elip151_derive_private_key(KEY_WILDCARD_STANDARD_CHAINS,
-                                           get_script_callback,
-                                           (void*)scripts,
-                                           out_privkey));
+    TEST_ASSERT(elip151_derive_private_key(2, get_script_callback, (void*)scripts, out_privkey));
     TEST_ASSERT_EQUAL_MEMORY(out_privkey, ref_privkey, sizeof(ref_privkey));
 }
 
@@ -159,6 +125,5 @@ void test_suite_liquid(test_ctx_t *test_ctx) {
     RUN_TEST(test_elip150_derive_public_key);
     RUN_TEST(test_elip151_derive_private_key_standard_chains);
     RUN_TEST(test_elip151_derive_private_key_external_chain);
-    RUN_TEST(test_elip151_derive_private_key_fail_wrong_wildcard);
     RUN_TEST(test_elip151_derive_private_key_multisig_standard_chains);
 }
