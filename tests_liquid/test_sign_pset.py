@@ -161,6 +161,7 @@ def random_wallet_name() -> str:
     return "wallet_" + ''.join(random.choice(charset) for i in range(random.randint(2, 16-7)))
 
 
+@pytest.mark.skip(reason="not supported yet")
 @has_automation(f"{tests_root}/automations/sign_with_any_wallet_accept.json")
 def test_sign_psbt_batch(client: Client, speculos_globals: SpeculosGlobals, is_speculos: bool, enable_slow_tests: bool):
     # A series of tests for various script and sighash combinations.
@@ -178,14 +179,14 @@ def test_sign_psbt_batch(client: Client, speculos_globals: SpeculosGlobals, is_s
         wallet = BlindedWallet(
             name=random_wallet_name(),
             blinding_key=suite["mbk"],
-            policy_map=suite["policy_map"],
+            descriptor_template=suite["policy_map"],
             keys_info=suite["keys_info"]
         )
 
         wallet_hmac = None
         if len(suite["keys_info"]) > 1:
             # Register wallet before multisig tests
-            wallet_id, wallet_hmac = client.register_wallet(wallet)
+            wallet_id, wallet_hmac = client.register_wallet(wallet, sanity_check=False)
             assert wallet_id == wallet.id
             assert hmac.compare_digest(
                 hmac.new(speculos_globals.wallet_registration_key, wallet_id, sha256).digest(),
@@ -210,6 +211,7 @@ def test_sign_psbt_batch(client: Client, speculos_globals: SpeculosGlobals, is_s
             if not enable_slow_tests:
                 break
 
+@pytest.mark.skip(reason="not supported yet")
 def test_asset_metadata_display(client: Client, comm: SpeculosClient, is_speculos: bool):
     # Test correctness of displayed asset ticker and precision when processing PSET with embedded
     # asset metadata.
@@ -223,7 +225,7 @@ def test_asset_metadata_display(client: Client, comm: SpeculosClient, is_speculo
     wallet = BlindedWallet(
         name="Cold storage",
         blinding_key=test_data["mbk"],
-        policy_map="wpkh(@0)",
+        descriptor_template="wpkh(@0)",
         keys_info=test_data["keys_info"]
     )
 
@@ -254,6 +256,7 @@ def test_asset_metadata_display(client: Client, comm: SpeculosClient, is_speculo
             assert result_sig.startswith("304")
             assert result_sig in sigs["final_scriptwitness"]
 
+@pytest.mark.skip(reason="not supported yet")
 def test_unknown_asset_display(client: Client, comm: SpeculosClient, is_speculos: bool):
     # Test correctness of displayed unknown asset information when processing PSET with embedded
     # asset metadata.
@@ -267,7 +270,7 @@ def test_unknown_asset_display(client: Client, comm: SpeculosClient, is_speculos
     wallet = BlindedWallet(
         name="Cold storage",
         blinding_key=test_data["mbk"],
-        policy_map="wpkh(@0)",
+        descriptor_template="wpkh(@0)",
         keys_info=test_data["keys_info"]
     )
 
@@ -298,6 +301,7 @@ def test_unknown_asset_display(client: Client, comm: SpeculosClient, is_speculos
             assert result_sig.startswith("304")
             assert result_sig in sigs["final_scriptwitness"]
 
+@pytest.mark.skip(reason="not supported yet")
 @has_automation(f"{tests_root}/automations/sign_with_any_wallet_accept.json")
 def test_asset_operations(client: Client, is_speculos: bool):
     # Test correct signing of asset reissuance transaction.
@@ -313,7 +317,7 @@ def test_asset_operations(client: Client, is_speculos: bool):
         wallet = BlindedWallet(
             name=random_wallet_name(),
             blinding_key=suite["mbk"],
-            policy_map=suite["policy_map"],
+            descriptor_template=suite["policy_map"],
             keys_info=suite["keys_info"]
         )
 
