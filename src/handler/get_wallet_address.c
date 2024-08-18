@@ -296,6 +296,7 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
                                                &callback_state,
                                                blinding_pubkey)) {
                 explicit_bzero(blinding_pubkey, sizeof(blinding_pubkey));
+                PRINTF("Error getting blinding public key\n");
                 SEND_SW(dc, SW_BAD_STATE);  // unexpected
                 return;
             }

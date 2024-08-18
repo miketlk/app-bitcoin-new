@@ -1,5 +1,6 @@
 from ledger_bitcoin import Client, AddressType, MultisigWallet, WalletPolicy, BlindedWallet, BlindedMultisigWallet
 from ledger_bitcoin.exception.errors import IncorrectDataError
+from ledger_bitcoin.exception.device_exception import DeviceException
 from ragger.error import ExceptionRAPDU
 from ragger_bitcoin import RaggerClient
 
@@ -79,7 +80,7 @@ def test_get_wallet_address_elip151_singlesig_elwpkh_external_chain(client: Ragg
     wallet = BlindedWallet(
         name="",
         blinding_key="elip151",
-        descriptor_template="elwpkh(@0/<0>/*)",
+        descriptor_template="elwpkh(@0/0/*)",
         keys_info=[
             "xpub661MyMwAqRbcFkPHucMnrGNzDwb6teAX1RbKQmqtEF8kK3Z7LZ59qafCjB9eCRLiTVG3uxBxgKvRgbubRhqSKXnGGb1aoaqLrpMBDrVxga8",
         ],
@@ -96,8 +97,8 @@ def test_get_wallet_address_elip151_multisig_elwpkh_standard_chains(client: Ragg
         name="",
         descriptor_template="ct(elip151,elwsh(multi(2,@0/<0;1>/*,@1/<0;1>/*)))",
         keys_info=[
-            "xpub661MyMwAqRbcFkPHucMnrGNzDwb6teAX1RbKQmqtEF8kK3Z7LZ59qafCjB9eCRLiTVG3uxBxgKvRgbubRhqSKXnGGb1aoaqLrpMBDrVxga8/<0;1>/*",
-            "xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH/<0;1>/*"
+            "xpub661MyMwAqRbcFkPHucMnrGNzDwb6teAX1RbKQmqtEF8kK3Z7LZ59qafCjB9eCRLiTVG3uxBxgKvRgbubRhqSKXnGGb1aoaqLrpMBDrVxga8",
+            "xpub69H7F5d8KSRgmmdJg2KhpAK8SR3DjMwAdkxj3ZuxV27CprR9LgpeyGmXUbC6wb7ERfvrnKZjXoUmmDznezpbZb7ap6r1D3tgFxHmwMkQTPH"
         ],
     )
 

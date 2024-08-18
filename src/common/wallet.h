@@ -529,5 +529,29 @@ void get_policy_wallet_id(policy_map_wallet_header_t *wallet_header, uint8_t out
 #endif
 
 #ifdef HAVE_LIQUID
+
+/**
+ * Checks if key placeholder is empty (the key is not intended for derivation).
+ *
+ * @param[in] placeholder
+ *   Pointer to key placeholder structure to check.
+ * @return true if the given key placeholder is empty, false otherwise.
+ */
+static inline bool policy_is_key_placeholder_empty(
+    const policy_node_key_placeholder_t *placeholder) {
+    return placeholder->num_first == UINT32_MAX && placeholder->num_second == UINT32_MAX;
+}
+
+/**
+ * Initializes a key placeholder as empty (the key is not intended for derivation).
+ *
+ * @param[out] placeholder
+ *   Pointer to key placeholder structure to initialize.
+ */
+static inline void policy_set_key_placeholder_empty(policy_node_key_placeholder_t *placeholder) {
+    placeholder->num_first = UINT32_MAX;
+    placeholder->num_second = UINT32_MAX;
+}
+
 #include "../liquid/liquid_wallet.h"
-#endif
+#endif // HAVE_LIQUID

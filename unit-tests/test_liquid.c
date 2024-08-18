@@ -370,13 +370,46 @@ static void test_parse_policy_map_blinded_hex_privkey(void **state) {
     assert_int_equal(key_placeholder->num_second, 1);
 }
 
+static void test_parse_policy_map_empty_key_placeholder(void **state) {
+    (void) state;
+
+    uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
+    assert_true(0 <= PARSE_POLICY(
+        "ct(c25deb86fa11e49d651d7eae27c220ef930fbd86ea023eebfa73e54875647963,elwpkh(@0))",
+        out,
+        sizeof(out)
+    ));
+    assert_int_equal(((const policy_node_t *) out)->type, TOKEN_CT);
+
+    const policy_node_blinding_privkey_t *mbk =
+        (policy_node_blinding_privkey_t *) r_policy_node(&((const policy_node_ct_t *) out)->mbk_script);
+    assert_non_null(mbk);
+    assert_int_equal(mbk->base.type, TOKEN_HEX_PRV);
+    static const uint8_t ref_privkey[32] = {
+        0xc2, 0x5d, 0xeb, 0x86, 0xfa, 0x11, 0xe4, 0x9d, 0x65, 0x1d, 0x7e, 0xae, 0x27, 0xc2, 0x20, 0xef,
+        0x93, 0x0f, 0xbd, 0x86, 0xea, 0x02, 0x3e, 0xeb, 0xfa, 0x73, 0xe5, 0x48, 0x75, 0x64, 0x79, 0x63
+    };
+    assert_memory_equal(mbk->privkey, ref_privkey, sizeof(ref_privkey));
+
+    const policy_node_with_key_t *inner =
+        (policy_node_with_key_t *) r_policy_node(&((const policy_node_ct_t *) out)->script);
+    assert_non_null(inner);
+    assert_int_equal(inner->base.type, TOKEN_WPKH);
+
+    const policy_node_key_placeholder_t *key_placeholder =
+        r_policy_node_key_placeholder(&inner->key_placeholder);
+    assert_non_null(key_placeholder);
+    assert_int_equal(key_placeholder->key_index, 0);
+    assert_true(policy_is_key_placeholder_empty(key_placeholder));
+}
+
 // ELIP 151: Test vector 1
 static void test_parse_policy_map_blinded_elip151(void **state) {
     (void) state;
 
     uint8_t out[MAX_POLICY_MAP_MEMORY_SIZE];
     assert_true(0 <= PARSE_POLICY(
-        "ct(elip151,elwpkh(@0/**))",
+        "ct(elip151,elwpkh(@0/<0;1>/*))",
         out,
         sizeof(out)
     ));
@@ -609,6 +642,7 @@ int main(void) {
         cmocka_unit_test(test_parse_policy_map_blinded_hex_pubkey),
         cmocka_unit_test(test_parse_policy_map_blinded_xprv),
         cmocka_unit_test(test_parse_policy_map_blinded_hex_privkey),
+        cmocka_unit_test(test_parse_policy_map_empty_key_placeholder),
         cmocka_unit_test(test_parse_policy_map_blinded_elip151),
         cmocka_unit_test(test_failures_blinded),
         cmocka_unit_test(test_failures_blinded_slip77),

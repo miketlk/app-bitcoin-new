@@ -6,7 +6,7 @@
 #include "liquid.h"
 #include "liquid_addr.h"
 #include "../common/script.h"
-#include "policy.h"
+#include "../handler/lib/policy.h"
 #include "tests.h"
 
 #ifdef SKIP_FOR_CMOCKA
@@ -399,32 +399,36 @@ static bool get_blinding_public_key_elip151(const uint8_t *script,
  *
  * @param[in] policy
  *   Pointer to the root node of the policy
- * @param[out] p_n_descriptors
- *   Pointer to variable receiving the number of possible descriptors.
  *
- * @return true - OK, false - error.
+ * @return the number of possible descriptors or -1 in case of error.
  */
-static int get_descriptor_number(const policy_node_t *policy, uint32_t *p_n_descriptors) {
-    *p_n_descriptors = 0;
+static int get_descriptor_number(const policy_node_t *policy) {
+    if (!policy) {
+        return -1;
+    }
+
     int n_descriptors = -1;
     int n_placeholders, i = 0;
-
-    if (!policy || !p_n_descriptors) {
-        return false;
-    }
 
     do {
         policy_node_key_placeholder_t placeholder;
         n_placeholders = get_key_placeholder_by_index(policy, i, NULL, &placeholder);
         if (n_placeholders < 1) {
             // No public keys in policy
-            return false;
+            return -1;
+        }
+
+        if (policy_is_key_placeholder_empty(&placeholder) ||
+            placeholder.num_first >= BIP32_FIRST_HARDENED_CHILD ||
+            placeholder.num_second >= BIP32_FIRST_HARDENED_CHILD) {
+            // Expected <M;N> key placeholder with unhardened M and N
+            return -1;
         }
 
         int n_curr = placeholder.num_first == placeholder.num_second ? 1 : 2;
         if (n_descriptors != -1 && n_curr != n_descriptors) {
             // Mismatch in descriptor number among different public keys
-            return false;
+            return -1;
         }
         n_descriptors = n_curr;
     } while(++i < n_placeholders);
@@ -449,9 +453,9 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
     }
 
     if (TOKEN_ELIP151 == mbk_script->type) {
-        uint32_t n_descriptors;
-        if(!get_descriptor_number(r_policy_node(&((const policy_node_ct_t *) policy)->script),
-                                  &n_descriptors)) {
+        int n_descriptors =
+            get_descriptor_number(r_policy_node(&((const policy_node_ct_t *) policy)->script));
+        if(n_descriptors < 1) {
             return false;
         }
         return get_blinding_public_key_elip151(script,

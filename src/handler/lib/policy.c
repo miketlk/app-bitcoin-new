@@ -467,6 +467,14 @@ __attribute__((warn_unused_result)) static int get_derived_pubkey(
         return -1;
     }
 
+#ifdef HAVE_LIQUID
+    if (policy_is_key_placeholder_empty(key_placeholder)) {
+        // Empty placeholder: return public key "as is" without any derivation
+        memcpy(out, ext_pubkey.compressed_pubkey, 33);
+        return 0;
+    }
+#endif
+
     // we derive the /<change>/<address_index> child of this pubkey
     // we reuse the same memory of ext_pubkey
     ret = bip32_CKDpub(&ext_pubkey,

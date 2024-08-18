@@ -527,6 +527,13 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
     } else if (version == WALLET_POLICY_VERSION_V2) {
         // the key expression must be followed by / and **, or /<0;1>/*
         uint8_t next_character;
+#ifdef HAVE_LIQUID
+        if (buffer_peek(in_buf, &next_character) && next_character == ')') {
+            // Empty key placeholder
+            policy_set_key_placeholder_empty(out);
+            return 0;
+        }
+#endif
         if (!consume_character(in_buf, '/')           // the next character is "/"
             || !buffer_peek(in_buf, &next_character)  // we must be able to read the next character
             || !(next_character == '*' || next_character == '<' // and it must be '*' or '<'
