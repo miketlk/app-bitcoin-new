@@ -78,6 +78,13 @@ const command_descriptor_t COMMAND_DESCRIPTORS[] = {
         .ins = REGISTER_WALLET,
         .handler = (command_handler_t)handler_register_wallet
     },
+#if !defined(HAVE_LIQUID) // TODO: remove
+    {
+        .cla = CLA_APP,
+        .ins = SIGN_PSBT,
+        .handler = (command_handler_t)handler_sign_psbt
+    },
+#endif
 #if 0 // TODO: re-enable when PSET handler is ready (HAVE_LIQUID_WIP)
     {
         .cla = CLA_APP,
