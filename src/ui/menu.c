@@ -15,8 +15,6 @@
  *  limitations under the License.
  *****************************************************************************/
 
-#if !defined(HAVE_LIQUID_WIP)
-
 #include "os.h"
 #include "ux.h"
 
@@ -33,5 +31,3 @@ void ui_menu_main() {
         ui_menu_main_flow_bitcoin_testnet();
     }
 }
-
-#endif // !defined(HAVE_LIQUID)
