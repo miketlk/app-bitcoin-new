@@ -22,7 +22,13 @@
 #include "menu.h"
 
 static const char* const infoTypes[] = {"Version", "Developer", "Copyright"};
-static const char* const infoContents[] = {APPVERSION, "Ledger", "(c) 2024 Ledger"};
+static const char* const infoContents[] = {APPVERSION,
+#ifdef HAVE_LIQUID
+    "Blockstream", "(c) 2024 Blockstream"
+#else
+    "Ledger", "(c) 2024 Ledger"
+#endif
+};
 
 static bool navigation_cb(uint8_t page, nbgl_pageContent_t* content) {
     UNUSED(page);
