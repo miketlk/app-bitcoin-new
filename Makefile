@@ -95,6 +95,7 @@ DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tb\"
 DEFINES   += COIN_COINID_SHORT=\"TEST\"
 
 APPNAME = "Bitcoin Test"
+DISPLAYED_APPNAME = "Bitcoin Testnet"
 
 else ifeq ($(COIN),bitcoin)
 
@@ -186,6 +187,12 @@ else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
 $(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_regtest_headless, liquid, liquid_headless)
 endif
+endif
+
+ifdef DISPLAYED_APPNAME
+CFLAGS += -DDISPLAYED_APPNAME=\"$(DISPLAYED_APPNAME)\"
+else
+CFLAGS += -DDISPLAYED_APPNAME=\"$(APPNAME)\"
 endif
 
 # Application icons following guidelines:

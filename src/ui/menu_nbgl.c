@@ -38,21 +38,25 @@ static void exit(void) {
 }
 
 void ui_menu_about(void) {
-    nbgl_useCaseSettings("Bitcoin", 0, 1, false, ui_menu_main, navigation_cb, NULL);
+    nbgl_useCaseSettings(DISPLAYED_APPNAME, 0, 1, false, ui_menu_main, navigation_cb, NULL);
 }
 
 void ui_menu_about_testnet(void) {
-    nbgl_useCaseSettings("Bitcoin Testnet", 0, 1, false, ui_menu_main, navigation_cb, NULL);
+    nbgl_useCaseSettings(DISPLAYED_APPNAME, 0, 1, false, ui_menu_main, navigation_cb, NULL);
 }
 
 void ui_menu_main_flow_bitcoin(void) {
-    nbgl_useCaseHome("Bitcoin", &C_Bitcoin_64px, NULL, false, ui_menu_about, exit);
+    nbgl_useCaseHome(DISPLAYED_APPNAME, &APP_MAIN_ICON_64PX, NULL, false, ui_menu_about, exit);
 }
 
 void ui_menu_main_flow_bitcoin_testnet(void) {
-    nbgl_useCaseHome("Bitcoin Testnet",
-                     &C_Bitcoin_64px,
+    nbgl_useCaseHome(DISPLAYED_APPNAME,
+                     &APP_MAIN_ICON_64PX,
+#ifdef HAVE_LIQUID
+                    "This app enables signing\ntransactions on the Liquid\ntest networks.",
+#else
                      "This app enables signing\ntransactions on all the Bitcoin\ntest networks.",
+#endif
                      false,
                      ui_menu_about_testnet,
                      exit);

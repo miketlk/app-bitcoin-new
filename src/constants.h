@@ -111,3 +111,21 @@
  * Maximum length of script in bytes
  */
 #define MAX_SCRIPT_LEN 34
+
+/**
+ * Main app icon
+ */
+#ifdef HAVE_LIQUID
+    #define APP_MAIN_ICON C_liquid_logo
+#else
+    #define APP_MAIN_ICON C_bitcoin_logo
+#endif
+
+/**
+ * Main app icon in high resolution
+ */
+#ifdef HAVE_LIQUID
+    #define APP_MAIN_ICON_64 C_Liquid_64px
+#else
+    #define APP_MAIN_ICON_64 C_Bitcoin_64px
+#endif

@@ -148,8 +148,10 @@ void apdu_dispatcher(command_descriptor_t const cmd_descriptors[],
 
         if (!cla_found) {
             io_send_sw(SW_CLA_NOT_SUPPORTED);
+            PRINTF("Instrunction class not supported CLA=0x%02X INS=0x%02X\n", cmd->cla, cmd->ins);
             return;
         } else if (!ins_found) {
+            PRINTF("Instrunction not supported CLA=0x%02X INS=0x%02X\n", cmd->cla, cmd->ins);
             io_send_sw(SW_INS_NOT_SUPPORTED);
             return;
         }

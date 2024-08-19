@@ -24,10 +24,10 @@
 
 // We have a screen with the icon and "Bitcoin is ready" for Bitcoin,
 // "Bitcoin Testnet is ready" for Bitcoin Testnet.
-UX_STEP_NOCB(ux_menu_ready_step_bitcoin, pnn, {&C_bitcoin_logo, "Bitcoin", "is ready"});
+UX_STEP_NOCB(ux_menu_ready_step_bitcoin, pnn, {&APP_MAIN_ICON, DISPLAYED_APPNAME, "is ready"});
 UX_STEP_NOCB(ux_menu_ready_step_bitcoin_testnet,
              pnn,
-             {&C_bitcoin_logo, "Bitcoin Testnet", "is ready"});
+             {&APP_MAIN_ICON, DISPLAYED_APPNAME, "is ready"});
 
 UX_STEP_NOCB(ux_menu_version_step, bn, {"Version", APPVERSION});
 UX_STEP_CB(ux_menu_about_step, pb, ui_menu_about(), {&C_icon_certificate, "About"});
@@ -57,7 +57,14 @@ UX_FLOW(ux_menu_main_flow_bitcoin_testnet,
         &ux_menu_exit_step,
         FLOW_LOOP);
 
-UX_STEP_NOCB(ux_menu_info_step, bn, {"Bitcoin App", "(c) 2024 Ledger"});
+
+UX_STEP_NOCB(ux_menu_info_step, bn, {
+#ifdef HAVE_LIQUID
+    "Liquid App", "(c) 2024 Blockstream"
+#else
+    "Bitcoin App", "(c) 2024 Ledger"
+#endif
+});
 UX_STEP_CB(ux_menu_back_step, pb, ui_menu_main(), {&C_icon_back, "Back"});
 
 // FLOW for the about submenu:
