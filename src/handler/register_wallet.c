@@ -62,7 +62,7 @@ static const uint8_t BIP0341_NUMS_PUBKEY[] = {0x02, 0x50, 0x92, 0x9b, 0x74, 0xc1
 void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version) {
     (void) protocol_version;
 
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+    LOG_PROCESSOR();
 
     policy_map_wallet_header_t wallet_header;
 

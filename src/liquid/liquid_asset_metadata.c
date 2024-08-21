@@ -275,7 +275,7 @@ asset_metadata_status_t liquid_get_asset_metadata(
     bool search_reissuance_token,
     asset_info_t *asset_info,
     asset_info_ext_t *ext_asset_info) {
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+    LOG_PROCESSOR();
 
     // Initialize context
     asset_metadata_parser_context_t context;
@@ -369,7 +369,7 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
     uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
     asset_info_t *asset_info,
     asset_info_ext_t *ext_asset_info) {
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+    LOG_PROCESSOR();
 
     // Initialize context
     asset_metadata_parser_context_t context;

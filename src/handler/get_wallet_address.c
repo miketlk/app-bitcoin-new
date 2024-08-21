@@ -103,7 +103,7 @@ static bool get_script_callback(void *state_in,
 void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_version) {
     (void) protocol_version;
 
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+    LOG_PROCESSOR();
 
     uint8_t display_address;
 
