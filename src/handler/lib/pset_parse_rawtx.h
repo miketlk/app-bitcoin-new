@@ -61,8 +61,9 @@ typedef struct {
     uint8_t txid[32];
 } txid_parser_outputs_t;
 
+
 /**
- * Parses a serialized Elements transaction
+ * Parses a serialized Elements transaction while computing issuance hash
  *
  * Given a commitment to a merkleized map and a key, this flow parses it as a serialized Elements
  * transaction, computes the transaction ID and optionally saves parameters of one of its outputs.
@@ -84,13 +85,50 @@ typedef struct {
  *
  * @return 0 if success, a negative number on failure.
  */
-int call_pset_parse_rawtx(dispatcher_context_t *dispatcher_context,
-                          const merkleized_map_commitment_t *map,
-                          const uint8_t *key,
-                          int key_len,
-                          int output_index,
-                          txid_parser_outputs_t *outputs,
-                          cx_sha256_t *issuance_hash_context);
+int call_psbt_parse_rawtx_ex(dispatcher_context_t *dispatcher_context,
+                             const merkleized_map_commitment_t *map,
+                             const uint8_t *key,
+                             int key_len,
+                             int output_index,
+                             txid_parser_outputs_t *outputs,
+                             cx_sha256_t *issuance_hash_context);
+
+/**
+ * Parses a serialized Elements transaction
+ *
+ * Given a commitment to a merkleized map and a key, this flow parses it as a serialized Elements
+ * transaction, computes the transaction ID and optionally saves parameters of one of its outputs.
+ *
+ * @param[in,out] dispatcher_context
+ *   Dispatcher context used for I/O operations with host.
+ * @param[in] map
+ *   Commitment to merkleized key-value map of PSET input.
+ * @param[in] key
+ *   Key of PSET field containing a transaction to parse.
+ * @param[in] key_len
+ *   Length of the key in bytes.
+ * @param[in] output_index
+ *   Index of an output to retrieve, or -1 if not needed.
+ * @param[out] outputs
+ *   Pointer to structure instance receiving parser outputs.
+ *
+ * @return 0 if success, a negative number on failure.
+ */
+static inline int __attribute__((always_inline))
+call_psbt_parse_rawtx(dispatcher_context_t *dispatcher_context,
+                      const merkleized_map_commitment_t *map,
+                      const uint8_t *key,
+                      int key_len,
+                      int output_index,
+                      txid_parser_outputs_t *outputs) {
+    return call_psbt_parse_rawtx_ex(dispatcher_context,
+                                    map,
+                                    key,
+                                    key_len,
+                                    output_index,
+                                    outputs,
+                                    NULL);
+}
 
 /**
  * Parses a single output of a serialized Elements transaction
@@ -114,7 +152,7 @@ int call_pset_parse_rawtx(dispatcher_context_t *dispatcher_context,
  *
  * @return 0 if success, a negative number on failure.
  */
-int call_pset_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context,
+int call_psbt_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context,
                                         const merkleized_map_commitment_t *map,
                                         const uint8_t *key,
                                         int key_len,

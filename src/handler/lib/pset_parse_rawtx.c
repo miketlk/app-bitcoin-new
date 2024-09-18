@@ -1448,14 +1448,14 @@ static void cb_process_data(buffer_t *data, void *cb_state) {
     }
 }
 
-int call_pset_parse_rawtx(dispatcher_context_t *dispatcher_context,
-                          const merkleized_map_commitment_t *map,
-                          const uint8_t *key,
-                          int key_len,
-                          int output_index,
-                          txid_parser_outputs_t *outputs,
-                          cx_sha256_t *issuance_hash_context) {
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+int call_psbt_parse_rawtx_ex(dispatcher_context_t *dispatcher_context,
+                             const merkleized_map_commitment_t *map,
+                             const uint8_t *key,
+                             int key_len,
+                             int output_index,
+                             txid_parser_outputs_t *outputs,
+                             cx_sha256_t *issuance_hash_context) {
+    LOG_PROCESSOR();
 
     cx_sha256_t hash_context;
     cx_sha256_init(&hash_context);
@@ -1525,13 +1525,13 @@ static void cb_process_single_output_data(buffer_t *data, void *cb_state) {
     }
 }
 
-int call_pset_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context,
+int call_psbt_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context,
                                         const merkleized_map_commitment_t *map,
                                         const uint8_t *key,
                                         int key_len,
                                         txid_parser_vout_t *output,
                                         cx_sha256_t *hash_context) {
-    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
+    LOG_PROCESSOR();
 
     pset_parse_rawtx_state_t flow_state;
 
