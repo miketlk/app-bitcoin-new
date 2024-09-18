@@ -256,6 +256,7 @@ CFLAGS    += -include debug-helpers/debug.h
 # DEFINES += HAVE_PRINT_STACK_POINTER
 # DEFINES += HAVE_LOG_PROCESSOR
 # DEFINES += HAVE_APDU_LOG
+DEFINES += DEBUG_LOG_LEVEL=$(DEBUG_LOG_LEVEL)
 
 ifeq ($(TEST),1)
     $(warning On-device tests should only be run with Speculos!)
