@@ -151,6 +151,16 @@ UX_STEP_NOCB(ux_review_step,
                  g_ui_state.validate_output.index,
              });
 
+#ifdef HAVE_LIQUID
+// Step with "Amount" and an output amount
+UX_STEP_NOCB(ux_display_reissuance_token_step,
+             bnnn_paging,
+             {
+                 .title = "Reissuance token",
+                 .text = g_ui_state.validate_output.token_ticker,
+             });
+#endif // HAVE_LIQUID
+
 // Step with "Amount" and an output amount
 UX_STEP_NOCB(ux_validate_amount_step,
              bnnn_paging,
@@ -268,6 +278,61 @@ UX_STEP_CB(ux_message_content_step,
                .title = "Message content",
                .text = g_ui_state.path_and_message.message,
            });
+
+#ifdef HAVE_LIQUID
+// Step with warning icon and text explaining that asset is unknown
+UX_STEP_NOCB(ux_display_warning_unknown_asset_step,
+             pnn,
+             {
+                 &C_icon_warning,
+                 "The asset",
+                 "is unknown",
+             });
+
+UX_STEP_NOCB(ux_asset_tag_step,
+             bnnn_paging,
+             {
+                 .title = "Asset tag",
+                 .text = g_ui_state.asset.tag_hex,
+             });
+
+UX_STEP_NOCB(ux_output_asset_tag_step,
+             bnnn_paging,
+             {
+                 .title = "Asset tag",
+                 .text = g_ui_state.validate_output.tag_hex,
+             });
+
+// Step with icon and text with name of a wallet being registered
+UX_STEP_NOCB(ux_va_confirm_asset_step,
+             pnn,
+             {
+                 &C_icon_eye,
+                 "Confirm asset",
+                 g_ui_state.validate_asset.ticker,
+             });
+
+UX_STEP_NOCB(ux_va_review_asset_tag_step,
+             bnnn_paging,
+             {
+                 .title = "Asset tag",
+                 .text = g_ui_state.validate_asset.tag_hex,
+             });
+
+UX_STEP_NOCB(ux_va_review_asset_name_step,
+             bnnn_paging,
+             {
+                 .title = "Asset name",
+                 .text = g_ui_state.validate_asset.name,
+             });
+
+UX_STEP_NOCB(ux_va_review_asset_domain_step,
+             bnnn_paging,
+             {
+                 .title = "Asset domain",
+                 .text = g_ui_state.validate_asset.domain,
+             });
+#endif // HAVE_LIQUID
 
 // FLOW to display BIP32 path to sign a message:
 // #1 screen: certificate icon + "Sign message"
@@ -463,6 +528,81 @@ UX_FLOW(ux_accept_selftransfer_flow,
         &ux_sign_transaction_step,
         &ux_display_reject_step);
 
+#ifdef HAVE_LIQUID
+// FLOW to validate a single output
+// #1 screen: eye icon + "Review" + index of output to validate
+// #2 screen: reissuance token notice and asset ticker
+// #3 screen: output amount
+// #4 screen: output address (paginated)
+// #5 screen: approve button
+// #6 screen: reject button
+UX_FLOW(ux_display_output_address_token_amount_flow,
+        &ux_review_step,
+        &ux_display_reissuance_token_step,
+        &ux_validate_amount_step,
+        &ux_validate_address_step,
+        &ux_display_approve_step,
+        &ux_display_reject_step);
+
+// FLOW to warn about unknown asset
+// #1 screen: warning icon + "The asset is unknown"
+// #2 screen: asset tag
+// #3 screen: crossmark icon + "Reject if not sure" (user can reject here)
+// #4 screen: "continue" button
+UX_FLOW(ux_display_warning_unknown_asset_flow,
+        &ux_display_warning_unknown_asset_step,
+        &ux_asset_tag_step,
+        &ux_display_reject_if_not_sure_step,
+        &ux_display_continue_step);
+
+// FLOW to validate a single output
+// #1 screen: eye icon + "Review" + index of output to validate
+// #2 screen: output amount
+// #3 screen: asset tag
+// #4 screen: output address (paginated)
+// #5 screen: approve button
+// #6 screen: reject button
+UX_FLOW(ux_display_output_address_amount_asset_flow,
+        &ux_review_step,
+        &ux_validate_amount_step,
+        &ux_output_asset_tag_step,
+        &ux_validate_address_step,
+        &ux_display_approve_step,
+        &ux_display_reject_step);
+
+// FLOW to validate a single output
+// #1 screen: eye icon + "Review" + index of output to validate
+// #2 screen: reissuance token notice and asset ticker
+// #3 screen: output amount
+// #4 screen: asset tag
+// #5 screen: output address (paginated)
+// #6 screen: approve button
+// #7 screen: reject button
+UX_FLOW(ux_display_output_address_token_amount_asset_flow,
+        &ux_review_step,
+        &ux_display_reissuance_token_step,
+        &ux_validate_amount_step,
+        &ux_output_asset_tag_step,
+        &ux_validate_address_step,
+        &ux_display_approve_step,
+        &ux_display_reject_step);
+
+// FLOW to validate an asset
+// #1 screen: eye icon + "Confirm asset" + asset ticker
+// #2 screen: asset tag (paginated)
+// #3 screen: asset name (paginated)
+// #4 screen: asset domain (paginated)
+// #5 screen: approve button
+// #6 screen: reject button
+UX_FLOW(ux_validate_asset_flow,
+        &ux_va_confirm_asset_step,
+        &ux_va_review_asset_tag_step,
+        &ux_va_review_asset_name_step,
+        &ux_va_review_asset_domain_step,
+        &ux_display_approve_step,
+        &ux_display_reject_step);
+#endif
+
 void ui_display_pubkey_flow(void) {
     ux_flow_init(0, ux_display_pubkey_flow, NULL);
 }
@@ -544,4 +684,38 @@ void ui_accept_transaction_flow(bool is_self_transfer) {
                  NULL);
 }
 
+#ifdef HAVE_LIQUID
+
+void ui_display_output_address_amount_flow_ext(int index,
+                                               bool display_asset_tag,
+                                               bool asset_is_reissuance_token) {
+    snprintf(g_ui_state.validate_output.index,
+             sizeof(g_ui_state.validate_output.index),
+             "output #%d",
+             index);
+
+    if (display_asset_tag) {
+        ux_flow_init(0, asset_is_reissuance_token ?
+                        ux_display_output_address_token_amount_asset_flow :
+                        ux_display_output_address_amount_asset_flow,
+                    NULL);
+    } else {
+        ux_flow_init(0, asset_is_reissuance_token ?
+                        ux_display_output_address_token_amount_flow :
+                        ux_display_output_address_amount_flow,
+                    NULL);
+    }
+}
+
+void ui_warn_unknown_asset_flow(void) {
+    ux_flow_init(0, ux_display_warning_unknown_asset_flow, NULL);
+}
+
+void ui_display_validate_asset_flow(void) {
+    ux_flow_init(0, ux_validate_asset_flow, NULL);
+}
+
+#endif // HAVE_LIQUID
+
 #endif  // HAVE_BAGL
+

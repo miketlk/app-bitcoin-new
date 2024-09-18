@@ -326,6 +326,9 @@ static void display_output(void) {
 }
 
 void ui_display_output_address_amount_flow(int index) {
+#ifdef HAVE_LIQUID
+#error Not implemented
+#endif
     snprintf(g_ui_state.validate_output.index,
              sizeof(g_ui_state.validate_output.index),
              "#%d",
@@ -348,6 +351,9 @@ void ui_display_output_address_amount_flow(int index) {
 }
 
 void ui_display_output_address_amount_no_index_flow(int index) {
+#ifdef HAVE_LIQUID
+#error Not implemented
+#endif
     (void) index;
     transactionContext.currentOutput++;
 
@@ -677,5 +683,23 @@ void ui_display_post_processing_confirm_wallet_spend(bool success) {
         nbgl_useCaseStatus("Wallet name rejected", false, ux_flow_response_false);
     }
 }
+
+#ifdef HAVE_LIQUID
+
+void ui_display_output_address_amount_flow_ext(int index,
+                                               bool display_asset_tag,
+                                               bool asset_is_reissuance_token) {
+#error Not implemented
+}
+
+void ui_warn_unknown_asset_flow(void) {
+#error Not implemented
+}
+
+void ui_display_validate_asset_flow(void) {
+#error Not implemented
+}
+
+#endif // HAVE_LIQUID
 
 #endif  // HAVE_NBGL

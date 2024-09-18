@@ -231,12 +231,32 @@ bool ui_validate_output(dispatcher_context_t *context,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
+#ifdef HAVE_LIQUID
+                        uint8_t decimals,
+                        const uint8_t asset_tag[static 32],
+                        bool display_asset_tag,
+                        bool asset_is_reissuance_token,
+#endif
                         uint64_t amount) {
     ui_validate_output_state_t *state = (ui_validate_output_state_t *) &g_ui_state;
 
     strncpy(state->address_or_description,
             address_or_description,
             sizeof(state->address_or_description));
+
+#ifdef HAVE_LIQUID
+    UNUSED(total_count);
+    
+    if (asset_is_reissuance_token) {
+        format_amount("token", amount, decimals, state->amount);
+        snprintf(state->token_ticker, sizeof(state->token_ticker), "of asset %s", coin_name);
+    } else {
+        format_amount(coin_name, amount, decimals, state->amount);
+    }
+
+    liquid_format_asset_tag(asset_tag, state->tag_hex);
+    ui_display_output_address_amount_flow_ext(index, display_asset_tag, asset_is_reissuance_token);
+#else
     format_sats_amount(coin_name, amount, state->amount);
 
     if (total_count == 1) {
@@ -244,8 +264,10 @@ bool ui_validate_output(dispatcher_context_t *context,
     } else {
         ui_display_output_address_amount_flow(index);
     }
+#endif
 
     return io_ui_process(context, true);
+
 }
 
 bool ui_warn_high_fee(dispatcher_context_t *context) {
@@ -266,6 +288,34 @@ bool ui_validate_transaction(dispatcher_context_t *context,
 
     return io_ui_process(context, true);
 }
+
+#ifdef HAVE_LIQUID
+
+bool ui_warn_unknown_asset(dispatcher_context_t *context,
+                           const uint8_t asset_tag[static 32]) {
+    ui_asset_state_t *state = (ui_asset_state_t *) &g_ui_state;
+
+    liquid_format_asset_tag(asset_tag, state->tag_hex);
+    ui_warn_unknown_asset_flow();
+
+    return io_ui_process(context, true);
+}
+
+bool ui_validate_asset(dispatcher_context_t *context,
+                       const uint8_t asset_tag[static 32],
+                       const asset_info_ext_t *asset_info) {
+    ui_validate_asset_state_t *state = (ui_validate_asset_state_t *) &g_ui_state;
+
+    liquid_format_asset_tag(asset_tag, state->tag_hex);
+    strlcpy(state->ticker, asset_info->info.ticker, sizeof(state->ticker));
+    strlcpy(state->name, asset_info->name, sizeof(state->name));
+    strlcpy(state->domain, asset_info->domain, sizeof(state->domain));
+    ui_display_validate_asset_flow();
+
+    return io_ui_process(context, true);
+}
+
+#endif // HAVE_LIQUID
 
 #ifdef HAVE_BAGL
 bool ui_post_processing_confirm_wallet_registration(dispatcher_context_t *context, bool success) {

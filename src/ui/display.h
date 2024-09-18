@@ -15,6 +15,10 @@
 #include "../common/script.h"
 #include "../constants.h"
 
+#ifdef HAVE_LIQUID
+#include "../liquid/liquid_assets.h"
+#endif
+
 #define MESSAGE_CHUNK_SIZE        64  // Protocol specific
 #define MESSAGE_CHUNK_PER_DISPLAY 2   // This could be changed depending on screen sizes
 #define MESSAGE_MAX_DISPLAY_SIZE \
@@ -61,11 +65,30 @@ typedef struct {
     char index[sizeof("output #999")];
     char address_or_description[MAX(MAX_ADDRESS_LENGTH_STR + 1, MAX_OPRETURN_OUTPUT_DESC_SIZE)];
     char amount[MAX_AMOUNT_LENGTH + 1];
+#ifdef HAVE_LIQUID
+    char tag_hex[LIQUID_ASSET_TAG_HEX_LEN + 1];
+    char token_ticker[sizeof("Of asset ") + MAX_ASSET_TICKER_LENGTH];
+#endif
 } ui_validate_output_state_t;
 
 typedef struct {
     char fee[MAX_AMOUNT_LENGTH + 1];
 } ui_validate_transaction_state_t;
+
+#ifdef HAVE_LIQUID
+
+typedef struct {
+    char tag_hex[LIQUID_ASSET_TAG_HEX_LEN + 1];
+} ui_asset_state_t;
+
+typedef struct {
+    char tag_hex[LIQUID_ASSET_TAG_HEX_LEN + 1];
+    char ticker[MAX_ASSET_TICKER_LENGTH + 1];
+    char name[MAX_ASSET_NAME_LENGTH + 1];
+    char domain[MAX_ASSET_DOMAIN_LENGTH + 1];
+} ui_validate_asset_state_t;
+
+#endif // HAVE_LIQUID
 
 /**
  * Union of all the states for each of the UI screens, in order to save memory.
@@ -78,6 +101,10 @@ typedef union {
     ui_cosigner_pubkey_and_index_state_t cosigner_pubkey_and_index;
     ui_validate_output_state_t validate_output;
     ui_validate_transaction_state_t validate_transaction;
+#ifdef HAVE_LIQUID
+    ui_validate_asset_state_t validate_asset;
+    ui_asset_state_t asset;
+#endif
 } ui_state_t;
 extern ui_state_t g_ui_state;
 
@@ -147,6 +174,12 @@ bool ui_validate_output(dispatcher_context_t *context,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
+#ifdef HAVE_LIQUID
+                        uint8_t decimals,
+                        const uint8_t asset_tag[static 32],
+                        bool display_asset_tag,
+                        bool asset_is_reissuance_token,
+#endif
                         uint64_t amount);
 
 bool ui_warn_high_fee(dispatcher_context_t *context);
@@ -155,6 +188,15 @@ bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
                              bool is_self_transfer);
+
+#ifdef HAVE_LIQUID
+bool ui_warn_unknown_asset(dispatcher_context_t *context,
+                           const uint8_t asset_tag[static 32]);
+
+bool ui_validate_asset(dispatcher_context_t *context,
+                       const uint8_t asset_tag[static 32],
+                       const asset_info_ext_t *asset_info);
+#endif
 
 void set_ux_flow_response(bool approved);
 
@@ -177,6 +219,16 @@ void ui_display_receive_in_wallet_flow(void);
 void ui_display_default_wallet_address_flow(void);
 
 void ui_display_spend_from_wallet_flow(void);
+
+#ifdef HAVE_LIQUID
+void ui_display_output_address_amount_flow_ext(int index,
+                                               bool display_asset_tag,
+                                               bool asset_is_reissuance_token);
+
+void ui_warn_unknown_asset_flow(void);
+
+void ui_display_validate_asset_flow(void);
+#endif
 
 void ui_display_warning_external_inputs_flow(void);
 
