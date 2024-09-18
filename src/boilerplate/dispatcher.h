@@ -74,15 +74,15 @@ void apdu_dispatcher(command_descriptor_t const cmd_descriptors[],
 
 // Debug utilities
 
-#if (!defined(DEBUG) || DEBUG == 0) && (!defined(DEBUG_LOG_LEVEL) || DEBUG_LOG_LEVEL == 0)
-#define LOG_PROCESSOR()
-#elif defined(HAVE_CCMD_PRINTF) && defined(HAVE_LOG_PROCESSOR)
+#if defined(HAVE_CCMD_PRINTF) && defined(HAVE_LOG_PROCESSOR)
 #define LOG_PROCESSOR(dc) ccmd_printf(dc, "->%s", __func__)
 #elif defined(HAVE_LOG_PROCESSOR)
 
 void print_dispatcher_info(const char *file, int line, const char *func);
 
 #define LOG_PROCESSOR() print_dispatcher_info(__FILE__, __LINE__, __func__)
+#else
+#define LOG_PROCESSOR()
 #endif
 
 #ifdef HAVE_CCMD_PRINTF
