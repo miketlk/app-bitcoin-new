@@ -3,6 +3,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
+#include "../util.h"
 #include "liquid.h"
 #include "liquid_hash_wrappers.h"
 #include "liquid_assets.h"
@@ -226,6 +227,52 @@ void liquid_format_asset_tag(const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN
     for (int i = 0; i < LIQUID_ASSET_TAG_LEN; ++i) {
         snprintf(out + 2 * i, 3, "%02X", asset_tag[i]);
     }
+}
+
+void asset_cache_put(asset_cache_t *cache,
+                     const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]) {
+    if (!cache || !asset_tag || !cache->buffer || !cache->capacity) {
+        return;
+    }
+
+    if (NULL != liquid_get_asset_info(asset_tag)) {
+        // We don't put built-in assets in cache
+        return;
+    }
+
+    if (!asset_cache_find(cache, asset_tag)) {
+        memcpy(cache->buffer + (size_t)cache->write_idx * LIQUID_ASSET_TAG_LEN,
+               asset_tag,
+               LIQUID_ASSET_TAG_LEN);
+
+        if (++cache->write_idx >= cache->capacity) {
+            cache->write_idx = 0;
+        }
+        if (++cache->asset_n > cache->capacity) {
+            cache->asset_n = cache->capacity;
+        }
+    }
+}
+
+bool asset_cache_find(const asset_cache_t *cache,
+                      const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]) {
+    if (!cache || !asset_tag || !cache->buffer || !cache->capacity) {
+        return false;
+    }
+
+    if (NULL != liquid_get_asset_info(asset_tag)) {
+        // Assume built-in assets are always in cache
+        return true;
+    }
+
+    for ( size_t offset = 0;
+          offset < (size_t)cache->asset_n * LIQUID_ASSET_TAG_LEN;
+          offset += LIQUID_ASSET_TAG_LEN ) {
+        if (memeq(cache->buffer + offset, asset_tag, LIQUID_ASSET_TAG_LEN)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #ifdef IMPLEMENT_ON_DEVICE_TESTS

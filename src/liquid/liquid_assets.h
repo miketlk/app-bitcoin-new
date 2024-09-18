@@ -6,6 +6,7 @@
 #include <string.h>
 #include "decorators.h"
 #include "../constants.h"
+#include "ledger_assert.h"
 
 /// Ticker for unknown asset
 #define UNKNOWN_ASSET_TICKER "???"
@@ -59,6 +60,18 @@ typedef struct {
     /// Information about an asset
     asset_info_t info;
 } asset_definition_t;
+
+/// Asset cache, holding tags of confirmed assets
+typedef struct {
+    /// Pointer to cache buffer containing asset tags
+    uint8_t *buffer;
+    /// Cache capacity: number of tags it's capable to store
+    uint8_t capacity;
+    /// Number of assets in cache
+    uint8_t asset_n;
+    /// Write index in cache
+    uint8_t write_idx;
+} asset_cache_t;
 
 /// Asset tag of L-BTC or TL-BTC depending on build
 extern const uint8_t liquid_bitcoin_tag[LIQUID_ASSET_TAG_LEN];
@@ -118,5 +131,58 @@ WARN_UNUSED_RESULT bool liquid_compute_asset_tag(const uint8_t contract_hash[sta
  */
 void liquid_format_asset_tag(const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
                              char out[static LIQUID_ASSET_TAG_HEX_LEN + 1]);
+
+/**
+ * Creates an asset cache using pre-allocated storage buffer.
+ *
+ * @param[in,out]  ptr
+ *   Pointer to the buffer's data.
+ * @param[in]  size
+ *   Size of the buffer in bytes.
+ *
+ * @return descriptor structure of the newly created cache.
+ */
+static inline asset_cache_t asset_cache_create(void *ptr, size_t size) {
+    _Static_assert(LIQUID_ASSET_TAG_LEN == (1 << 5), "Unsupported asset tag size");
+    LEDGER_ASSERT((size >> 5) > 0 && (size >> 5) <= UINT8_MAX, "Invalid size of asset cache");
+
+    return (asset_cache_t) {
+        .buffer = (uint8_t *)ptr,
+        .capacity = (size >> 5),
+        .asset_n = 0,
+        .write_idx = 0
+    };
+}
+
+/**
+ * Puts asset in cache.
+ *
+ * This function does nothing if the parameter `cache` is NULL. Built-in assets
+ * are ignored.
+ *
+ * @param[in] cache
+ *   Instance of the cache structure, allowed to be NULL.
+ * @param[in] asset_tag
+ *   Asset tag to put intop cache.
+ */
+void asset_cache_put(asset_cache_t *cache,
+                     const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]);
+
+/**
+ * Searches through cached assets for a given asset tag.
+ *
+ * This function always return false if the parameter `cache` is NULL. Built-in
+ * assets are assumed "always in cache" and the function returns true if a
+ * tag of built-in asset is passed.
+ *
+ * @param[in] cache
+ *   Instance of the cache structure, allowed to be NULL.
+ * @param[in] asset_tag
+ *   Asset tag to search for.
+ *
+ * @return true if asset is found or built-in asset, false otherwise.
+ */
+bool asset_cache_find(const asset_cache_t *cache,
+                      const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]);
 
 #endif // HAVE_LIQUID
