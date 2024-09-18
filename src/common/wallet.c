@@ -2083,6 +2083,8 @@ int parse_descriptor_template(buffer_t *in_buf, void *out, size_t out_len, int v
 }
 
 int get_policy_segwit_version(const policy_node_t *policy) {
+    policy = policy_unwrap(policy);
+
     if (policy->type == TOKEN_TR) {
         return 1;
     } else if (policy->type == TOKEN_SH) {
@@ -2224,6 +2226,8 @@ static int compute_thresh_stacksize(const policy_node_thresh_t *node,
 int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
                                        policy_node_ext_info_t *out,
                                        MiniscriptContext ctx) {
+    policy_node = policy_unwrap(policy_node);
+
     if (!policy_node->flags.is_miniscript) {
         return WITH_ERROR(-1, "Not miniscript");
     }

@@ -555,3 +555,20 @@ static inline void policy_set_key_placeholder_empty(policy_node_key_placeholder_
 
 #include "../liquid/liquid_wallet.h"
 #endif // HAVE_LIQUID
+
+/**
+ * Unwraps wallet policy from outer tags that are not used for script generation.
+ *
+ * @param[in] policy
+ *   Pointer to root policy node.
+ *
+ * @return pointer to the inner policy node, or to the root node if the policy is not wrapped.
+ */
+static inline const policy_node_t* policy_unwrap(const policy_node_t *policy) {
+#ifdef HAVE_LIQUID
+    if (policy && TOKEN_CT == policy->type) {
+        return r_policy_node(&((const policy_node_ct_t *) policy)->script);
+    }
+#endif
+    return policy;
+}

@@ -1022,6 +1022,7 @@ int get_wallet_script(dispatcher_context_t *dispatcher_context,
                       const policy_node_t *policy,
                       const wallet_derivation_info_t *wdi,
                       uint8_t out[static MAX_SCRIPT_LEN]) {
+    policy = policy_unwrap(policy);
     int script_type = -1;
 
     cx_sha256_t hash_context;
@@ -1170,17 +1171,7 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
     const wallet_derivation_info_t *wdi,
     internal_script_type_e script_type,
     cx_hash_t *hash_context) {
-
-#ifdef HAVE_LIQUID
-    if (TOKEN_CT == policy->type) {
-        return get_wallet_internal_script_hash(
-            dispatcher_context,
-            r_policy_node(&((const policy_node_ct_t *) policy)->script),
-            wdi,
-            script_type,
-            hash_context);
-        }
-#endif
+    policy = policy_unwrap(policy);
 
     const uint8_t *whitelist;
     size_t whitelist_len;
@@ -1381,6 +1372,8 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
 // For a standard descriptor template, return the corresponding BIP44 purpose
 // Otherwise, returns -1.
 static int get_bip44_purpose(const policy_node_t *descriptor_template) {
+    descriptor_template = policy_unwrap(descriptor_template);
+
     const policy_node_key_placeholder_t *kp = NULL;
     int purpose = -1;
     switch (descriptor_template->type) {
@@ -1431,6 +1424,7 @@ static int get_bip44_purpose(const policy_node_t *descriptor_template) {
 bool is_wallet_policy_standard(dispatcher_context_t *dispatcher_context,
                                const policy_map_wallet_header_t *wallet_policy_header,
                                const policy_node_t *descriptor_template) {
+    descriptor_template = policy_unwrap(descriptor_template);
     // Based on the address type, we set the expected bip44 purpose
     int bip44_purpose = get_bip44_purpose(descriptor_template);
     if (bip44_purpose < 0) {
@@ -1584,6 +1578,7 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
                                  unsigned int i,
                                  const policy_node_t **out_tapleaf_ptr,
                                  policy_node_key_placeholder_t *out_placeholder) {
+    policy = policy_unwrap(policy);
     // make sure that out_placeholder is a valid pointer, if the output is not needed
     policy_node_key_placeholder_t tmp;
     if (out_placeholder == NULL) {
@@ -1591,16 +1586,6 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
     }
 
     switch (policy->type) {
-#ifdef HAVE_LIQUID
-        case TOKEN_CT: {
-            return get_key_placeholder_by_index(
-                r_policy_node(&((const policy_node_ct_t *) policy)->script),
-                i,
-                out_tapleaf_ptr,
-                out_placeholder);
-        }
-#endif
-
         // terminal nodes with absolutely no keys
         case TOKEN_0:
         case TOKEN_1:
@@ -1759,6 +1744,7 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
         }
 
 #ifdef HAVE_LIQUID
+        case TOKEN_CT:
         case TOKEN_SLIP77:
         case TOKEN_HEX_PUB:
         case TOKEN_HEX_PRV:
@@ -1780,6 +1766,7 @@ int get_key_placeholder_by_index(const policy_node_t *policy,
 }
 
 int count_distinct_keys_info(const policy_node_t *policy) {
+    policy = policy_unwrap(policy);
     int ret = -1;
 
     int n_placeholders = get_key_placeholder_by_index(policy, 0, NULL, NULL);
@@ -1914,6 +1901,7 @@ int is_policy_sane(dispatcher_context_t *dispatcher_context,
                    int wallet_version,
                    const uint8_t keys_merkle_root[static 32],
                    uint32_t n_keys) {
+    policy = policy_unwrap(policy);
     if (policy->type == TOKEN_WSH) {
         const policy_node_t *inner =
             r_policy_node(&((const policy_node_with_script_t *) policy)->script);

@@ -87,7 +87,7 @@ static bool get_script_callback(void *state_in,
 
     int script_len = get_wallet_script(
         state->dc,
-        liquid_policy_unwrap_ct(state->policy),
+        state->policy,
         &(wallet_derivation_info_t){.wallet_version = state->wallet_header->version,
                                     .keys_merkle_root = state->wallet_header->keys_info_merkle_root,
                                     .n_keys = state->wallet_header->n_keys,
@@ -194,12 +194,7 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
 
         if (!is_wallet_policy_standard(dc,
                                        &wallet_header,
-#ifdef HAVE_LIQUID
-                                       liquid_policy_unwrap_ct(&wallet_policy_map.parsed)
-#else
-                                       &wallet_policy_map.parsed
-#endif
-                                       )) {
+                                       &wallet_policy_map.parsed)) {
             SEND_SW(dc, SW_INCORRECT_DATA);
             return;
         }
@@ -260,11 +255,7 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
 
         int script_len = get_wallet_script(
             dc,
-#ifdef HAVE_LIQUID
-            liquid_policy_unwrap_ct(&wallet_policy_map.parsed),
-#else
             &wallet_policy_map.parsed,
-#endif
             &(wallet_derivation_info_t){.wallet_version = wallet_header.version,
                                         .keys_merkle_root = wallet_header.keys_info_merkle_root,
                                         .n_keys = wallet_header.n_keys,

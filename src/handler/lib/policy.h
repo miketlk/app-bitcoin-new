@@ -116,18 +116,6 @@ __attribute__((warn_unused_result)) int get_wallet_internal_script_hash(
     internal_script_type_e script_type,
     cx_hash_t *hash_context);
 
-// TODO: consuder removing
-/**
- * Returns the address type constant corresponding to a standard policy type.
- *
- * @param[in] policy
- *   Pointer to the root node of the policy
- *
- * @return One of, ADDRESS_TYPE_LEGACY, ADDRESS_TYPE_WIT, ADDRESS_TYPE_SH_WIT, ADDRESS_TYPE_TR if
- * the policy pattern is one of the expected types; -1 otherwise.
- */
-int get_policy_address_type(const policy_node_t *policy);
-
 /**
  * Returns true if the descriptor template is a standard one.
  * Standard wallet policies are single-signature policies as per the following standards:

@@ -7,6 +7,7 @@
 #include "../lib/policy.h"
 
 #include "../../common/read.h"
+#include "../../liquid/liquid.h"
 
 int compare_wallet_script_at_path(dispatcher_context_t *dispatcher_context,
                                   uint32_t change,
@@ -17,6 +18,7 @@ int compare_wallet_script_at_path(dispatcher_context_t *dispatcher_context,
                                   uint32_t n_keys,
                                   const uint8_t expected_script[],
                                   size_t expected_script_len) {
+    policy = policy_unwrap(policy);
     LOG_PROCESSOR();
 
     // derive wallet's scriptPubKey, check if it matches the expected one
