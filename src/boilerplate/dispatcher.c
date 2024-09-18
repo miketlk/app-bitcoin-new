@@ -193,6 +193,16 @@ void print_dispatcher_info(const char *file,
     debug_write_dec(line);
     debug_write(": ");
     debug_write(func);
+#ifdef HAVE_BOLOS_APP_STACK_CANARY
+    if (app_stack_canary != STACK_CANARY_CONSTANT) {
+        debug_write(" STACK CORRUPTED!");
+    } else {
+        debug_write(" stack avl ");
+        debug_write_dec(stack_available_bytes());
+        debug_write(" min ");
+        debug_write_dec(stack_unused_bytes());
+    }
+#endif
     debug_write("\n");
 }
 #endif

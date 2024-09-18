@@ -51,9 +51,6 @@
 
 #include "tests.h"
 
-#ifdef HAVE_BOLOS_APP_STACK_CANARY
-extern unsigned int app_stack_canary;
-#endif
 
 uint8_t G_io_seproxyhal_spi_buffer[IO_SEPROXYHAL_BUFFER_SIZE_B];
 ux_state_t G_ux;
@@ -78,24 +75,11 @@ const command_descriptor_t COMMAND_DESCRIPTORS[] = {
         .ins = REGISTER_WALLET,
         .handler = (command_handler_t)handler_register_wallet
     },
-#if !defined(HAVE_LIQUID) // TODO: remove
     {
         .cla = CLA_APP,
         .ins = SIGN_PSBT,
         .handler = (command_handler_t)handler_sign_psbt
     },
-#endif
-#if 0 // TODO: re-enable when PSET handler is ready (HAVE_LIQUID_WIP)
-    {
-        .cla = CLA_APP,
-        .ins = SIGN_PSBT,
-#ifdef HAVE_LIQUID
-        .handler = (command_handler_t)handler_liquid_sign_pset
-#else
-        .handler = (command_handler_t)handler_sign_psbt
-#endif
-    },
-#endif
     {
         .cla = CLA_APP,
         .ins = GET_MASTER_FINGERPRINT,
@@ -208,10 +192,7 @@ static void initialize_app_globals() {
  * Handle APDU command received and send back APDU response using handlers.
  */
 void coin_main() {
-#ifdef HAVE_BOLOS_APP_STACK_CANARY
-    // Sometimes this initialization is skipped in SDK
-    app_stack_canary = 0xDEAD0031;
-#endif
+    STACK_FILL_CANARY();
     PRINT_STACK_POINTER();
 
     initialize_app_globals();

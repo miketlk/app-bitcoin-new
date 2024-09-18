@@ -54,6 +54,14 @@ void print_strn(const char *msg, const char *str, int len);
 #define PRINT_STRN(msg, str, len)
 #endif // HAVE_PRINTF
 
+#ifdef HAVE_BOLOS_APP_STACK_CANARY
+void stack_fill_canary(void);
+unsigned int stack_unused_bytes(void);
+unsigned int stack_available_bytes(void);
+#define STACK_FILL_CANARY() stack_fill_canary()
+#else
+#define STACK_FILL_CANARY()
+#endif
 
 static inline int print_error_info(const char *error_msg,
                                    const char *filename,

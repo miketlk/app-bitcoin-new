@@ -3,6 +3,7 @@
 #include "printf.h"
 #include "cx.h"
 #include "crypto.h"
+#include "globals.h"
 
 #pragma GCC diagnostic ignored "-Wunused-function"
 
@@ -81,8 +82,36 @@ static unsigned int __attribute__((noinline)) get_stack_pointer() {
 }
 
 #ifdef HAVE_BOLOS_APP_STACK_CANARY
-extern unsigned int app_stack_canary;
-#endif
+
+void stack_fill_canary(void) {
+    unsigned int *ptr = (unsigned int *)(get_stack_pointer() - 4 * sizeof(void*));
+    // Handle canary variable separately because it can be located at NULL address
+    app_stack_canary = STACK_CANARY_CONSTANT;
+    while(ptr > &app_stack_canary) {
+        *ptr-- = STACK_CANARY_CONSTANT;
+    }
+}
+
+unsigned int stack_unused_bytes(void) {
+    unsigned int *ptr = &app_stack_canary;
+    unsigned int *ptr_end = (unsigned int *)(get_stack_pointer());
+    unsigned int n_words = 0;
+
+    while(ptr < ptr_end) {
+        if (*ptr++ != STACK_CANARY_CONSTANT) {
+            break;
+        }
+        ++n_words;
+    }
+    return n_words * sizeof(unsigned int);
+}
+
+unsigned int stack_available_bytes(void) {
+    unsigned int t = get_stack_pointer();
+    return t >= ((unsigned int)&app_stack_canary) ? t - ((unsigned int)&app_stack_canary) : 0;
+}
+
+#endif // HAVE_BOLOS_APP_STACK_CANARY
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -101,8 +130,13 @@ void print_stack_pointer(const char *file, int line, const char *func_name) {
     debug_write(": ");
     debug_write_hex(get_stack_pointer(), 4);
 #ifdef HAVE_BOLOS_APP_STACK_CANARY
-    if (app_stack_canary != 0xDEAD0031) {
+    if (app_stack_canary != STACK_CANARY_CONSTANT) {
         debug_write(" CORRUPTED!");
+    } else {
+        debug_write(" avl ");
+        debug_write_dec(stack_available_bytes());
+        debug_write(" min ");
+        debug_write_dec(stack_unused_bytes());
     }
 #endif
     debug_write("\n");
