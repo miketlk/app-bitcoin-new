@@ -3187,7 +3187,7 @@ static void hashing_input_keys_callback(dispatcher_context_t *dc,
     UNUSED(dc);
     UNUSED(map_commitment);
     UNUSED(i);
-    pset_detect_output_key(data, p_key_presence);
+    pset_detect_input_key(data, p_key_presence);
 }
 #endif
 
