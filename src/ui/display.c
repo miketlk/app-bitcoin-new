@@ -279,12 +279,26 @@ bool ui_warn_high_fee(dispatcher_context_t *context) {
 bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
-                             bool is_self_transfer) {
+                             bool is_self_transfer
+#ifdef HAVE_LIQUID
+                             , uint8_t decimals,
+                             const char *asset_op_type
+#endif
+                             ) {
     ui_validate_transaction_state_t *state = (ui_validate_transaction_state_t *) &g_ui_state;
 
+#ifdef HAVE_LIQUID
+    format_amount(coin_name, fee, decimals, state->fee);
+    if (asset_op_type != NULL) {
+        strlcpy(state->asset_op_type, asset_op_type, sizeof(state->asset_op_type));
+        ui_accept_asset_op_transaction_flow();
+    } else {
+        ui_accept_transaction_flow(is_self_transfer);
+    }
+#else
     format_sats_amount(coin_name, fee, state->fee);
-
     ui_accept_transaction_flow(is_self_transfer);
+#endif
 
     return io_ui_process(context, true);
 }

@@ -7,8 +7,6 @@
 /// Maximum amount length
 // up to 5 chars for ticker, 1 space, up to 20 digits (20 = digits of 2^64), + 1 decimal separator
 #define MAX_AMOUNT_LENGTH (MAX_ASSET_TICKER_LENGTH + 1 + 20 + 1)
-/// Number of decimal digits in fractional part of BTC or L-BTC
-#define BITCOIN_DECIMALS 8
 
 /**
  * Converts a 64-bits unsigned integer into a decimal representation. Trailing decimal zeros are not

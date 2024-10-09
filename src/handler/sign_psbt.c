@@ -1742,9 +1742,18 @@ preprocess_inputs(dispatcher_context_t *dc,
         } else if ((segwit_version >= 0) &&
                    ((input.sighash_type == SIGHASH_NONE) ||
                     (input.sighash_type == SIGHASH_SINGLE) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_ALL)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_NONE)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_SINGLE)))) {
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_ALL)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_NONE)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_SINGLE))
+#ifdef HAVE_LIQUID
+                    || (input.sighash_type == (SIGHASH_ALL|SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_NONE|SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_SINGLE|SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_ALL|SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_NONE|SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_SINGLE|SIGHASH_RANGEPROOF))
+#endif
+                   )) {
             PRINTF("Sighash type is non-default, will show a warning.\n");
             st->show_nondefault_sighash_warning = true;
         } else {
@@ -1800,12 +1809,14 @@ show_alerts(dispatcher_context_t *dc,
         }
     }
 
+#if !defined(HAVE_LIQUID)
     // If any segwitv0 input is missing the non-witness-utxo, we warn the user and ask for
     // confirmation
     if (st->show_missing_nonwitnessutxo_warning && !ui_warn_unverified_segwit_inputs(dc)) {
         SEND_SW(dc, SW_DENY);
         return false;
     }
+#endif // !defined(HAVE_LIQUID)
 
     // If any input has non-default sighash, we warn the user
     if (st->show_nondefault_sighash_warning && !ui_warn_nondefault_sighash(dc)) {
@@ -1870,7 +1881,15 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
                                          sizeof(output_address));
     if (address_len < 0) {
         // script does not have an address; check if OP_RETURN
-        if (is_opreturn(output->in_out.scriptPubKey, output->in_out.scriptPubKey_len)) {
+#ifdef HAVE_LIQUID
+        if (cur_output_index >= 0 && (uint32_t)cur_output_index < st->fee_output_index &&
+            is_opreturn_burn(output->in_out.scriptPubKey, output->in_out.scriptPubKey_len)) {
+            strlcpy(output_address, "BURN", sizeof(output_address));
+            st->tx_type_flags |= TX_TYPE_BURN;
+#else
+        if (0) {
+#endif
+        } else if (is_opreturn(output->in_out.scriptPubKey, output->in_out.scriptPubKey_len)) {
             int res = format_opscript_script(output->in_out.scriptPubKey,
                                              output->in_out.scriptPubKey_len,
                                              output_address);
@@ -2384,8 +2403,16 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
 #endif // !defined(HAVE_LIQUID)
 
         // Show final user validation UI
+#ifdef HAVE_LIQUID
+        const char *asset_op_type = pset_get_tx_type_by_flags(st->tx_type_flags);
+#endif
         bool is_self_transfer = st->outputs.n_external == 0;
-        if (!ui_validate_transaction(dc, COIN_COINID_SHORT, fee, is_self_transfer)) {
+        if (!ui_validate_transaction(dc,
+                                     COIN_COINID_SHORT,
+                                     fee,
+                                     is_self_transfer
+                                     LIQUID_PARAM(BITCOIN_DECIMALS)
+                                     LIQUID_PARAM(asset_op_type))) {
             SEND_SW(dc, SW_DENY);
             ui_post_processing_confirm_transaction(dc, false);
             return false;

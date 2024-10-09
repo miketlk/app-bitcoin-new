@@ -34,6 +34,21 @@
 #endif
 
 /**
+ * Returns maximum of the 3 numbers.
+ */
+#define MAX3(a, b, c) MAX(a, MAX(b, c))
+
+/**
+ * Returns maximum size of the 2 objects.
+ */
+#define MAX_SIZEOF(a, b) MAX(sizeof(a), sizeof(b))
+
+/**
+ * Returns maximum size of the 3 objects.
+ */
+#define MAX3_SIZEOF(a, b, c) MAX3(sizeof(a), sizeof(b), sizeof(c))
+
+/**
  * Reverses data in-place.
  *
  * @param[in,out] buf

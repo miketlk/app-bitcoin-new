@@ -123,7 +123,7 @@ static void test_policy_unwrap_ct(void **state) {
         sizeof(policy_bytes)
     ));
 
-    const policy_node_t *policy = liquid_policy_unwrap_ct((const policy_node_t *)policy_bytes);
+    const policy_node_t *policy = policy_unwrap((const policy_node_t *)policy_bytes);
 
     assert_non_null(policy);
     assert_true(policy != (policy_node_t *)policy_bytes);
@@ -136,7 +136,7 @@ static void test_policy_unwrap_blinded_ct(void **state) {
     uint8_t policy_bytes[MAX_POLICY_MAP_MEMORY_SIZE];
     assert_true(0 <= PARSE_POLICY("wpkh(@0/**)", policy_bytes, sizeof(policy_bytes)));
 
-    const policy_node_t *policy = liquid_policy_unwrap_ct((const policy_node_t *)policy_bytes);
+    const policy_node_t *policy = policy_unwrap((const policy_node_t *)policy_bytes);
 
     assert_non_null(policy);
     assert_true(policy == (policy_node_t *)policy_bytes); // unchanged

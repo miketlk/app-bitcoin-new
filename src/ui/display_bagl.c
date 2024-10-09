@@ -332,6 +332,14 @@ UX_STEP_NOCB(ux_va_review_asset_domain_step,
                  .title = "Asset domain",
                  .text = g_ui_state.validate_asset.domain,
              });
+
+UX_STEP_NOCB(ux_confirm_asset_op_step,
+             pbb,
+             {
+                &C_icon_warning,
+                "Confirm",
+                g_ui_state.validate_transaction.asset_op_type,
+             });
 #endif // HAVE_LIQUID
 
 // FLOW to display BIP32 path to sign a message:
@@ -529,19 +537,31 @@ UX_FLOW(ux_accept_selftransfer_flow,
         &ux_display_reject_step);
 
 #ifdef HAVE_LIQUID
+// Show transaction fees and finally accept signing, in case of asset operations including:
+// 'issuance', 'reissuance', 'burn'.
+// #1 screen: eye icon + "Confirm asset | <operation_type>"
+// #2 screen: fee amount
+// #3 screen: "Sign transaction", with approve button
+// #4 screen: reject button
+UX_FLOW(ux_accept_asset_op_transaction_flow,
+        &ux_confirm_asset_op_step,
+        &ux_confirm_transaction_fees_step,
+        &ux_sign_transaction_step,
+        &ux_display_reject_step);
+
 // FLOW to validate a single output
 // #1 screen: eye icon + "Review" + index of output to validate
 // #2 screen: reissuance token notice and asset ticker
 // #3 screen: output amount
 // #4 screen: output address (paginated)
-// #5 screen: approve button
+// #5 screen: "Continue" button
 // #6 screen: reject button
 UX_FLOW(ux_display_output_address_token_amount_flow,
         &ux_review_step,
         &ux_display_reissuance_token_step,
         &ux_validate_amount_step,
         &ux_validate_address_step,
-        &ux_display_approve_step,
+        &ux_display_continue_step,
         &ux_display_reject_step);
 
 // FLOW to warn about unknown asset
@@ -560,14 +580,14 @@ UX_FLOW(ux_display_warning_unknown_asset_flow,
 // #2 screen: output amount
 // #3 screen: asset tag
 // #4 screen: output address (paginated)
-// #5 screen: approve button
+// #5 screen: "Continue" button
 // #6 screen: reject button
 UX_FLOW(ux_display_output_address_amount_asset_flow,
         &ux_review_step,
         &ux_validate_amount_step,
         &ux_output_asset_tag_step,
         &ux_validate_address_step,
-        &ux_display_approve_step,
+        &ux_display_continue_step,
         &ux_display_reject_step);
 
 // FLOW to validate a single output
@@ -576,7 +596,7 @@ UX_FLOW(ux_display_output_address_amount_asset_flow,
 // #3 screen: output amount
 // #4 screen: asset tag
 // #5 screen: output address (paginated)
-// #6 screen: approve button
+// #6 screen: "Continue" button
 // #7 screen: reject button
 UX_FLOW(ux_display_output_address_token_amount_asset_flow,
         &ux_review_step,
@@ -584,7 +604,7 @@ UX_FLOW(ux_display_output_address_token_amount_asset_flow,
         &ux_validate_amount_step,
         &ux_output_asset_tag_step,
         &ux_validate_address_step,
-        &ux_display_approve_step,
+        &ux_display_continue_step,
         &ux_display_reject_step);
 
 // FLOW to validate an asset
@@ -685,6 +705,10 @@ void ui_accept_transaction_flow(bool is_self_transfer) {
 }
 
 #ifdef HAVE_LIQUID
+
+void ui_accept_asset_op_transaction_flow(void) {
+    ux_flow_init(0, ux_accept_asset_op_transaction_flow, NULL);
+}
 
 void ui_display_output_address_amount_flow_ext(int index,
                                                bool display_asset_tag,

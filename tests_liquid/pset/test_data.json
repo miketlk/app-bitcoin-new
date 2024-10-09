@@ -3,9 +3,9 @@
     "wpkh": {
       "description": "Single signature P2WPKH",
       "mbk": "slip77(0c11648c2c6df4f9dacdb4c8d35d6166d94cea2b9ad37833a82210bb7c9f5fb4)",
-      "policy_map": "wpkh(@0)",
+      "policy_map": "wpkh(@0/**)",
       "keys_info": [
-        "[f5acc2fd/84'/1'/0']tpubDCtKfsNyRhULjZ9XMS4VKKtVcPdVDi8MKUbcSD9MJDyjRu1A2ND5MiipozyyspBT9bg8upEp7a8EAgFxNxXn1d7QkdbL52Ty5jiSLcxPt1P/**"
+        "[f5acc2fd/84'/1'/0']tpubDCtKfsNyRhULjZ9XMS4VKKtVcPdVDi8MKUbcSD9MJDyjRu1A2ND5MiipozyyspBT9bg8upEp7a8EAgFxNxXn1d7QkdbL52Ty5jiSLcxPt1P"
       ],
       "tests": [
         {
@@ -416,9 +416,9 @@
     "sh_wpkh": {
       "description": "Single signature P2SH-P2WPKH",
       "mbk": "slip77(0c11648c2c6df4f9dacdb4c8d35d6166d94cea2b9ad37833a82210bb7c9f5fb4)",
-      "policy_map": "sh(wpkh(@0))",
+      "policy_map": "sh(wpkh(@0/**))",
       "keys_info": [
-        "[f5acc2fd/49'/1'/0']tpubDC871vGLAiKPcwAw22EjhKVLk5L98UGXBEcGR8gpcigLQVDDfgcYW24QBEyTHTSFEjgJgbaHU8CdRi9vmG4cPm1kPLmZhJEP17FMBdNheh3/**"
+        "[f5acc2fd/49'/1'/0']tpubDC871vGLAiKPcwAw22EjhKVLk5L98UGXBEcGR8gpcigLQVDDfgcYW24QBEyTHTSFEjgJgbaHU8CdRi9vmG4cPm1kPLmZhJEP17FMBdNheh3"
       ],
       "tests": [
         {
@@ -794,10 +794,10 @@
     "wsh_sortedmulti": {
       "description": "Multiple signature 1-of-2 P2WSH",
       "mbk": "slip77(0c11648c2c6df4f9dacdb4c8d35d6166d94cea2b9ad37833a82210bb7c9f5fb4)",
-      "policy_map": "wsh(sortedmulti(1,@0,@1))",
+      "policy_map": "wsh(sortedmulti(1,@0/**,@1/**))",
       "keys_info": [
-        "[12345678/48'/1'/0'/2']tpubDDwf2gdFxFahr9RUtDQCuZmsx34CfdZ7RALAirwC2FGeLBzW1TDiEpqFeRdxLdZD7rfsbZHYwSaT6CLM3TAcYRw6xfRv4U6KCQt4Zuhvjkz/**",
-        "[f5acc2fd/48'/1'/0'/2']tpubDFAqEGNyad35aBCKUAXbQGDjdVhNueno5ZZVEn3sQbW5ci457gLR7HyTmHBg93oourBssgUxuWz1jX5uhc1qaqFo9VsybY1J5FuedLfm4dK/**"
+        "[12345678/48'/1'/0'/2']tpubDDwf2gdFxFahr9RUtDQCuZmsx34CfdZ7RALAirwC2FGeLBzW1TDiEpqFeRdxLdZD7rfsbZHYwSaT6CLM3TAcYRw6xfRv4U6KCQt4Zuhvjkz",
+        "[f5acc2fd/48'/1'/0'/2']tpubDFAqEGNyad35aBCKUAXbQGDjdVhNueno5ZZVEn3sQbW5ci457gLR7HyTmHBg93oourBssgUxuWz1jX5uhc1qaqFo9VsybY1J5FuedLfm4dK"
       ],
       "tests": [
         {
@@ -1173,10 +1173,10 @@
     "sh_wsh_sortedmulti": {
       "description": "Multiple signature 1-of-2 P2SH-P2WSH",
       "mbk": "slip77(0c11648c2c6df4f9dacdb4c8d35d6166d94cea2b9ad37833a82210bb7c9f5fb4)",
-      "policy_map": "sh(wsh(sortedmulti(1,@0,@1)))",
+      "policy_map": "sh(wsh(sortedmulti(1,@0/**,@1/**)))",
       "keys_info": [
-        "[12345678/48'/1'/0'/1']tpubDDwf2gdFxFahnG1bxjMj3MmK6KSrrZ7jwR3M6GeCGLrRxJ3ofYR66jSpdXMEKX6XXLrwGaebXHbgKDJWT5opjWDskw2rMHBF17gT1nPrHDW/**",
-        "[f5acc2fd/48'/1'/0'/1']tpubDFAqEGNyad35YgH8zxvxFZqNUoPtr5mDojs7wzbXQBHTZ4xHeVXG6w2HvsKvjBpaRpTmjYDjdPg5w2c6Wvu8QBkyMDrmBWdCyqkDM7reSsY/**"
+        "[12345678/48'/1'/0'/1']tpubDDwf2gdFxFahnG1bxjMj3MmK6KSrrZ7jwR3M6GeCGLrRxJ3ofYR66jSpdXMEKX6XXLrwGaebXHbgKDJWT5opjWDskw2rMHBF17gT1nPrHDW",
+        "[f5acc2fd/48'/1'/0'/1']tpubDFAqEGNyad35YgH8zxvxFZqNUoPtr5mDojs7wzbXQBHTZ4xHeVXG6w2HvsKvjBpaRpTmjYDjdPg5w2c6Wvu8QBkyMDrmBWdCyqkDM7reSsY"
       ],
       "tests": [
         {

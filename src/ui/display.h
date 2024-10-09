@@ -14,6 +14,7 @@
 #include "../common/format.h"
 #include "../common/script.h"
 #include "../constants.h"
+#include "../util.h"
 
 #ifdef HAVE_LIQUID
 #include "../liquid/liquid_assets.h"
@@ -23,6 +24,12 @@
 #define MESSAGE_CHUNK_PER_DISPLAY 2   // This could be changed depending on screen sizes
 #define MESSAGE_MAX_DISPLAY_SIZE \
     (MESSAGE_CHUNK_SIZE * MESSAGE_CHUNK_PER_DISPLAY + 2 * sizeof("...") - 1)
+
+/**
+ * Maximum length (characters) of asset operation text.
+ * Currently supported types: 'issuance', 'reissuance', 'burn'
+ */
+#define MAX_ASSET_OP_TYPE_LEN (MAX3_SIZEOF("issuance", "reissuance", "burn") - 1)
 
 // TODO: hard to keep track of what globals are used in the same flows
 //       (especially since the same flow step can be shared in different flows)
@@ -73,6 +80,9 @@ typedef struct {
 
 typedef struct {
     char fee[MAX_AMOUNT_LENGTH + 1];
+#ifdef HAVE_LIQUID
+    char asset_op_type[MAX_ASSET_OP_TYPE_LEN + 1];
+#endif
 } ui_validate_transaction_state_t;
 
 #ifdef HAVE_LIQUID
@@ -187,7 +197,12 @@ bool ui_warn_high_fee(dispatcher_context_t *context);
 bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
-                             bool is_self_transfer);
+                             bool is_self_transfer
+#ifdef HAVE_LIQUID
+                             , uint8_t decimals,
+                             const char *asset_op_type
+#endif
+                            );
 
 #ifdef HAVE_LIQUID
 bool ui_warn_unknown_asset(dispatcher_context_t *context,
@@ -243,6 +258,10 @@ void ui_display_output_address_amount_no_index_flow(int index);
 void ui_warn_high_fee_flow(void);
 
 void ui_accept_transaction_flow(bool is_self_transfer);
+
+#ifdef HAVE_LIQUID
+void ui_accept_asset_op_transaction_flow(void);
+#endif
 
 void ui_display_transaction_prompt(const int external_outputs_total_count);
 
