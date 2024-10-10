@@ -1078,7 +1078,7 @@ init_global_state(dispatcher_context_t *dc,
                                                          wallet_policy_map_bytes,
                                                          MAX_WALLET_POLICY_BYTES);
         if (desc_temp_len < 0) {
-            PRINTF("Failed to read or parse wallet policy");
+            PRINTF("Failed to read or parse wallet policy\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
@@ -1239,7 +1239,7 @@ static bool find_first_internal_key_placeholder(dispatcher_context_t *dc,
         ++placeholder_info->cur_index;
     }
 
-    PRINTF("No internal key found in wallet policy");
+    PRINTF("No internal key found in wallet policy\n");
     SEND_SW(dc, SW_INCORRECT_DATA);
     return false;
 }
@@ -1332,11 +1332,11 @@ static bool check_input_commitments(dispatcher_context_t *dc,
                                                                asset_gen,
                                                                blinded_asset_gen);
             if (!result) {
-                PRINTF("Invalid asset commitment for input");
+                PRINTF("Invalid asset commitment for input\n");
                 return false;
             }
         } else {
-            PRINTF("Asset tag not provided for input");
+            PRINTF("Asset tag not provided for input\n");
             return false;
         }
     }
@@ -1367,7 +1367,7 @@ static bool check_input_commitments(dispatcher_context_t *dc,
                                                      sizeof(in_out_info->value_commitment),
                                                      blinded_asset_gen);
         if (!result) {
-            PRINTF("Invalid value commitment for input");
+            PRINTF("Invalid value commitment for input\n");
             PRINTF("value=%llu\n", in_out_info->value);
             PRINT_HEX("asset_tag=", in_out_info->asset_tag, sizeof(in_out_info->asset_tag));
             return false;
@@ -1970,7 +1970,7 @@ process_output_asset_and_fee(dispatcher_context_t *dc,
                              unsigned int output_index) {
     // Ensure non-blinded in_out_info->value is present and fetched
     if (!(in_out_info->key_read_status & HAS_PREVOUT_AMOUNT)) {
-        PRINTF("Non-blinded amount is not provided");
+        PRINTF("Non-blinded amount is not provided\n");
         return false;
     }
 
@@ -2130,7 +2130,6 @@ check_output_commitments(dispatcher_context_t *dc,
             PRINTF("Error fetching value proof\n");
             return false;
         }
-
         bool result = liquid_rangeproof_verify_exact(proof,
                                                      (size_t)proof_len,
                                                      in_out_info->value,
@@ -2901,7 +2900,7 @@ static bool __attribute__((noinline)) compute_sighash_segwitv1(dispatcher_contex
                                                 1,
                                                 tmp,
                                                 32)) {
-            PRINTF("Error fetching input's prevout txid");
+            PRINTF("Error fetching input's prevout txid\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
@@ -2914,7 +2913,7 @@ static bool __attribute__((noinline)) compute_sighash_segwitv1(dispatcher_contex
                                                1,
                                                tmp,
                                                4)) {
-            PRINTF("Error fetching input's prevout index");
+            PRINTF("Error fetching input's prevout index\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
@@ -2926,7 +2925,7 @@ static bool __attribute__((noinline)) compute_sighash_segwitv1(dispatcher_contex
                                               1,
                                               tmp,
                                               8 + 1 + MAX_PREVOUT_SCRIPTPUBKEY_LEN)) {
-            PRINTF("Error fetching input's scriptpubkey");
+            PRINTF("Error fetching input's scriptpubkey\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
@@ -3562,7 +3561,7 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
         } else if (segwit_version == 1) {
 
             if (IS_LIQUID) {
-                PRINTF("SegWit version 1 is not supported yet for Liquid");
+                PRINTF("SegWit version 1 is not supported yet for Liquid\n");
                 SEND_SW(dc, SW_NOT_SUPPORTED);
                 return false;
             }
