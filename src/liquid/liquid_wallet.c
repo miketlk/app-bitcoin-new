@@ -35,10 +35,6 @@
 /// Maximum length of blinding key returned token prefix in characters
 #define TOKEN_PREFIX_LEN 7
 
-// TODO: consider removing
-/// Maximum length of public key wildcard in characters
-#define MAX_POLICY_MAP_KEY_WILDCARD_LEN (sizeof("/<0;1>/*") - 1)
-
 /// Bits specifying used characters
 typedef enum {
     // BASIC CATEGORIES /////////////////////////////////////////////

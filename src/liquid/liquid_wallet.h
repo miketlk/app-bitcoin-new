@@ -3,19 +3,6 @@
 
 #include "../common/wallet.h"
 
-// TODO: remove
-#ifdef HAVE_LIQUID
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_COSIGNERS 7
-#else
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_COSIGNERS 5
-#endif
-
-// TODO: replace with MAX_PUBKEYS_PER_MULTISIG
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_KEYS MAX_POLICY_MAP_COSIGNERS
-
 /// Policy node ct()
 typedef struct {
     /// Type of this policy node is TOKEN_MULTI or TOKEN_SORTEDMULTI
