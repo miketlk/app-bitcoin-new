@@ -2,7 +2,42 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "os.h"
 #include "./display_utils.h"
+
+/// Descriptor of sighash flag combination
+typedef struct {
+    sighash_name_t name;
+    uint32_t sighash;
+} sighash_descriptor_t;
+
+// clang-format off
+/// Table of known sighash types
+static const sighash_descriptor_t KNOWN_SIGHASH_TYPES[] = {
+    { .name = {1, {"DEFAULT"}},                              .sighash = (SIGHASH_DEFAULT) },
+    { .name = {1, {"ALL"}},                                  .sighash = (SIGHASH_ALL) },
+    { .name = {2, {"ALL", "ANYONECANPAY"}},                  .sighash = (SIGHASH_ALL|SIGHASH_ANYONECANPAY) },
+    { .name = {1, {"NONE"}},                                 .sighash = (SIGHASH_NONE)},
+    { .name = {2, {"NONE", "ANYONECANPAY"}},                 .sighash = (SIGHASH_NONE|SIGHASH_ANYONECANPAY) },
+    { .name = {1, {"SINGLE"}},                               .sighash = (SIGHASH_SINGLE) },
+    { .name = {2, {"SINGLE", "ANYONECANPAY"}},               .sighash = (SIGHASH_SINGLE|SIGHASH_ANYONECANPAY) },
+#ifdef HAVE_LIQUID
+    { .name = {2, {"ALL", "RANGEPROOF"}},                    .sighash = (SIGHASH_ALL|SIGHASH_RANGEPROOF) },
+    { .name = {3, {"ALL", "ANYONECANPAY", "RANGEPROOF"}},    .sighash = (SIGHASH_ALL|SIGHASH_ANYONECANPAY|SIGHASH_RANGEPROOF) },
+    { .name = {2, {"NONE", "RANGEPROOF"}},                   .sighash = (SIGHASH_NONE|SIGHASH_RANGEPROOF) },
+    { .name = {3, {"NONE", "ANYONECANPAY", "RANGEPROOF"}},   .sighash = (SIGHASH_NONE|SIGHASH_ANYONECANPAY|SIGHASH_RANGEPROOF) },
+    { .name = {2, {"SINGLE", "RANGEPROOF"}},                 .sighash = (SIGHASH_SINGLE|SIGHASH_RANGEPROOF) },
+    { .name = {3, {"SINGLE", "ANYONECANPAY", "RANGEPROOF"}}, .sighash = (SIGHASH_SINGLE|SIGHASH_ANYONECANPAY|SIGHASH_RANGEPROOF) },
+#endif // HAVE_LIQUID
+};
+// clang-format on
+
+// Number of descriptors in the table of known sighash types
+static const size_t N_KNOWN_SIGHASH_TYPES =
+    sizeof(KNOWN_SIGHASH_TYPES) / sizeof(KNOWN_SIGHASH_TYPES[0]);
+
+// Constatnt name for an unknown sighash type.
+const sighash_name_t sighash_name_unknown = { 1, {"UNKNOWN"} };
 
 // Division and modulus operators over uint64_t causes the inclusion of the __udivmoddi4 and other
 // library functions that occupy more than 400 bytes. Since performance is not critical and division
@@ -118,4 +153,15 @@ void format_amount(const char *coin_name,
             fract_part_str[i] = '\0';
         }
     }
+}
+
+void sighash_get_name(sighash_name_t* name, uint32_t sighash_type) {
+    const sighash_descriptor_t *dsc = PIC(KNOWN_SIGHASH_TYPES);
+    for (size_t i = 0; i < N_KNOWN_SIGHASH_TYPES; ++i, ++dsc) {
+        if (sighash_type == dsc->sighash) {
+            *name = dsc->name;
+            return;
+        }
+    }
+    *name = *((const sighash_name_t* ) PIC(&sighash_name_unknown));
 }

@@ -39,6 +39,26 @@
 #define MAX3(a, b, c) MAX(a, MAX(b, c))
 
 /**
+ * Returns maximum of the 4 numbers.
+ */
+#define MAX4(a, b, c, d) MAX3(a, b, MAX(c, d))
+
+/**
+ * Returns maximum of the 5 numbers.
+ */
+#define MAX5(a, b, c, d, e) MAX4(a, b, c, MAX(d, e))
+
+/**
+ * Returns maximum of the 6 numbers.
+ */
+#define MAX6(a, b, c, d, e, f) MAX5(a, b, c, d, MAX(e, f))
+
+/**
+ * Returns maximum of the 7 numbers.
+ */
+#define MAX7(a, b, c, d, e, f, g) MAX6(a, b, c, d, e, MAX(f, g))
+
+/**
  * Returns maximum size of the 2 objects.
  */
 #define MAX_SIZEOF(a, b) MAX(sizeof(a), sizeof(b))
@@ -47,6 +67,28 @@
  * Returns maximum size of the 3 objects.
  */
 #define MAX3_SIZEOF(a, b, c) MAX3(sizeof(a), sizeof(b), sizeof(c))
+
+/**
+ * Returns maximum size of the 4 objects.
+ */
+#define MAX4_SIZEOF(a, b, c, d) MAX4(sizeof(a), sizeof(b), sizeof(c), sizeof(d))
+
+/**
+ * Returns maximum size of the 5 objects.
+ */
+#define MAX5_SIZEOF(a, b, c, d, e) MAX5(sizeof(a), sizeof(b), sizeof(c), sizeof(d), sizeof(e))
+
+/**
+ * Returns maximum size of the 6 objects.
+ */
+#define MAX6_SIZEOF(a, b, c, d, e, f) \
+    MAX6(sizeof(a), sizeof(b), sizeof(c), sizeof(d), sizeof(e), sizeof(f))
+
+/**
+ * Returns maximum size of the 7 objects.
+ */
+#define MAX7_SIZEOF(a, b, c, d, e, f, g) \
+    MAX7(sizeof(a), sizeof(b), sizeof(c), sizeof(d), sizeof(e), sizeof(f), sizeof(g))
 
 /**
  * Reverses data in-place.

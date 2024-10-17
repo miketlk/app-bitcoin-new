@@ -45,11 +45,11 @@
 #include "lib/get_merkleized_map.h"
 #include "lib/get_merkleized_map_value.h"
 #include "lib/get_merkle_leaf_element.h"
+#include "../liquid/liquid.h"
+#include "../liquid/liquid_proofs.h"
+#include "../liquid/liquid_asset_metadata.h"
+#include "lib/pset_parse_rawtx.h"
 #ifdef HAVE_LIQUID
-    #include "../liquid/liquid.h"
-    #include "../liquid/liquid_proofs.h"
-    #include "../liquid/liquid_asset_metadata.h"
-    #include "lib/pset_parse_rawtx.h"
     #include "../liquid/liquid_pset.h"
 #else
     #include "lib/psbt_parse_rawtx.h"
@@ -71,21 +71,6 @@
 #define ASSET_CACHE_SIZE 1
 /// A constant used for `fee_output_index` to indicate that fee index is unknown
 #define SIGN_PSET_FEE_INDEX_UNKNOWN UINT32_MAX
-
-// Helper macros to reduce the number of ifdef sections
-#ifdef HAVE_LIQUID
-    #define LIQUID_PARAM(x) ,x
-    #define IF_LIQUID(...) __VA_ARGS__
-    #define IF_NOT_LIQUID(...)
-    #define IF_LIQUID_ELSE(x,y) x
-    #define IS_LIQUID true
-#else
-    #define LIQUID_PARAM(x)
-    #define IF_LIQUID(...)
-    #define IF_NOT_LIQUID(...) __VA_ARGS__
-    #define IF_LIQUID_ELSE(x,y) y
-    #define IS_LIQUID false
-#endif
 
 #if !defined(HAVE_LIQUID)
 typedef uint64_t tx_amount_t;
@@ -241,8 +226,10 @@ typedef struct {
     // if any segwitv0 input is missing the non-witness-utxo, we show a warning
     bool show_missing_nonwitnessutxo_warning;
 
+#if !defined(HAVE_LIQUID)
     // if any of the internal inputs has non-default sighash, we show a warning
     bool show_nondefault_sighash_warning;
+#endif
 
     merkleized_map_commitment_t global_map;
 #ifdef HAVE_LIQUID
@@ -1755,7 +1742,14 @@ preprocess_inputs(dispatcher_context_t *dc,
 #endif
                    )) {
             PRINTF("Sighash type is non-default, will show a warning.\n");
+#ifdef HAVE_LIQUID
+            if (!ui_warn_nondefault_sighash(dc, cur_input_index, input.sighash_type)) {
+                SEND_SW(dc, SW_DENY);
+                return false;
+            }
+#else
             st->show_nondefault_sighash_warning = true;
+#endif
         } else {
             PRINTF("Unsupported sighash\n");
             SEND_SW(dc, SW_NOT_SUPPORTED);
@@ -1816,13 +1810,13 @@ show_alerts(dispatcher_context_t *dc,
         SEND_SW(dc, SW_DENY);
         return false;
     }
-#endif // !defined(HAVE_LIQUID)
 
     // If any input has non-default sighash, we warn the user
     if (st->show_nondefault_sighash_warning && !ui_warn_nondefault_sighash(dc)) {
         SEND_SW(dc, SW_DENY);
         return false;
     }
+#endif // !defined(HAVE_LIQUID)
 
     return true;
 }
@@ -1928,22 +1922,22 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
                                           st->outputs.n_external,
                                           output_address,
                                           output->in_out.asset_info.ticker,
+                                          output->in_out.value,
                                           output->in_out.asset_info.decimals,
                                           output->in_out.asset_tag,
                                           !output->in_out.built_in_asset, /* display_asset_tag */
-                                          output->in_out.asset_is_reissuance_token,
-                                          output->in_out.value);
+                                          output->in_out.asset_is_reissuance_token);
         } else { // Unknown asset
             accepted = ui_validate_output(dc,
                                           external_outputs_count,
                                           st->outputs.n_external,
                                           output_address,
                                           UNKNOWN_ASSET_TICKER,
+                                          output->in_out.value,
                                           UNKNOWN_ASSET_DECIMALS,
                                           output->in_out.asset_tag,
                                           true, /* display_asset_tag */
-                                          false, /* asset_is_reissuance_token */
-                                          output->in_out.value);
+                                          false); /* asset_is_reissuance_token */
         }
 #else // HAVE_LIQUID
         accepted = ui_validate_output(dc,

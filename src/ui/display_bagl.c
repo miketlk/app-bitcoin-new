@@ -139,8 +139,19 @@ UX_STEP_NOCB(ux_unverified_segwit_input_flow_1_step, pb, {&C_icon_warning, "Unve
 UX_STEP_NOCB(ux_unverified_segwit_input_flow_2_step, nn, {"Update", "Ledger Live"});
 UX_STEP_NOCB(ux_unverified_segwit_input_flow_3_step, nn, {"or third party", "wallet software"});
 
+#ifdef HAVE_LIQUID
+// Step with warning icon for nondefault sighash, also displaying the index of related input
+UX_STEP_NOCB(ux_nondefault_sighash_flow_1_step,
+             pnn,
+             {
+                 &C_icon_warning,
+                 "Odd sighash",
+                 g_ui_state.sighash_flags.index,
+             });
+#else
 // Step with warning icon for nondefault sighash
 UX_STEP_NOCB(ux_nondefault_sighash_flow_1_step, pb, {&C_icon_warning, "Non-default sighash"});
+#endif
 
 // Step with eye icon and "Review" and the output index
 UX_STEP_NOCB(ux_review_step,
@@ -340,6 +351,24 @@ UX_STEP_NOCB(ux_confirm_asset_op_step,
                 "Confirm",
                 g_ui_state.validate_transaction.asset_op_type,
              });
+
+// Step for displaying a single sighash flag
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_1_step, nn,
+             { "Sighash flag", g_ui_state.sighash_flags.sighash_name.flags[0] });
+
+// Steps for displaying 2 sighash flags on the separate pages
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_2_step, nn,
+             { "Sighash flag (1/2)", g_ui_state.sighash_flags.sighash_name.flags[0] });
+UX_STEP_NOCB(ux_display_sighash_flag_2_of_2_step, nn,
+             { "Sighash flag (2/2)", g_ui_state.sighash_flags.sighash_name.flags[1] });
+
+// Steps for displaying 3 sighash flags on the separate pages
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_3_step, nn,
+             { "Sighash flag (1/3)", g_ui_state.sighash_flags.sighash_name.flags[0] });
+UX_STEP_NOCB(ux_display_sighash_flag_2_of_3_step, nn,
+             { "Sighash flag (2/3)", g_ui_state.sighash_flags.sighash_name.flags[1] });
+UX_STEP_NOCB(ux_display_sighash_flag_3_of_3_step, nn,
+             { "Sighash flag (3/3)", g_ui_state.sighash_flags.sighash_name.flags[2] });
 #endif // HAVE_LIQUID
 
 // FLOW to display BIP32 path to sign a message:
@@ -481,6 +510,7 @@ UX_FLOW(ux_display_unverified_segwit_inputs_flow,
         &ux_display_continue_step,
         &ux_display_reject_step);
 
+#if !defined(HAVE_LIQUID)
 // FLOW to warn about segwitv1 inputs with non-default sighash
 // #1 screen: warning icon + "Non default sighash"
 // #2 screen: crossmark icon + "Reject if not sure" (user can reject here)
@@ -491,6 +521,7 @@ UX_FLOW(ux_display_nondefault_sighash_flow,
         &ux_display_reject_if_not_sure_step,
         &ux_display_continue_step,
         &ux_display_reject_step);
+#endif // !defined(HAVE_LIQUID)
 
 // FLOW to validate a single output
 // #1 screen: eye icon + "Review" + index of output to validate
@@ -621,6 +652,51 @@ UX_FLOW(ux_validate_asset_flow,
         &ux_va_review_asset_domain_step,
         &ux_display_approve_step,
         &ux_display_reject_step);
+
+// FLOW to warn about segwitv1 input with non-default sighash having 1 flag
+// #1 screen: warning icon + "Non default sighash" + index of input
+// #2 screen: sighash flag (1/1)
+// #3 screen: crossmark icon + "Reject if not sure" (user can reject here)
+// #4 screen: "continue" button
+// #5 screen: "reject" button
+UX_FLOW(ux_display_nondefault_sighash_flags_1_flow,
+        &ux_nondefault_sighash_flow_1_step,
+        &ux_display_sighash_flag_1_of_1_step,
+        &ux_display_reject_if_not_sure_step,
+        &ux_display_continue_step,
+        &ux_display_reject_step);
+
+// FLOW to warn about segwitv1 input with non-default sighash having 2 flags
+// #1 screen: warning icon + "Non default sighash" + index of input
+// #2 screen: sighash flag (1/2)
+// #3 screen: sighash flag (2/2)
+// #4 screen: crossmark icon + "Reject if not sure" (user can reject here)
+// #5 screen: "continue" button
+// #6 screen: "reject" button
+UX_FLOW(ux_display_nondefault_sighash_flags_2_flow,
+        &ux_nondefault_sighash_flow_1_step,
+        &ux_display_sighash_flag_1_of_2_step,
+        &ux_display_sighash_flag_2_of_2_step,
+        &ux_display_reject_if_not_sure_step,
+        &ux_display_continue_step,
+        &ux_display_reject_step);
+
+// FLOW to warn about segwitv1 input with non-default sighash having 3 flags
+// #1 screen: warning icon + "Non default sighash" + index of input
+// #2 screen: sighash flag (1/3)
+// #3 screen: sighash flag (2/3)
+// #4 screen: sighash flag (3/3)
+// #5 screen: crossmark icon + "Reject if not sure" (user can reject here)
+// #6 screen: "continue" button
+// #7 screen: "reject" button
+UX_FLOW(ux_display_nondefault_sighash_flags_3_flow,
+        &ux_nondefault_sighash_flow_1_step,
+        &ux_display_sighash_flag_1_of_3_step,
+        &ux_display_sighash_flag_2_of_3_step,
+        &ux_display_sighash_flag_3_of_3_step,
+        &ux_display_reject_if_not_sure_step,
+        &ux_display_continue_step,
+        &ux_display_reject_step);
 #endif
 
 void ui_display_pubkey_flow(void) {
@@ -677,7 +753,25 @@ void ui_display_unverified_segwit_inputs_flows(void) {
 }
 
 void ui_display_nondefault_sighash_flow(void) {
+#ifdef HAVE_LIQUID
+    const ui_sighash_flags_state_t *st = &g_ui_state.sighash_flags;
+    switch(st->sighash_name.n_flags) {
+        case 1:
+            ux_flow_init(0, ux_display_nondefault_sighash_flags_1_flow, NULL);
+            break;
+        case 2:
+            ux_flow_init(0, ux_display_nondefault_sighash_flags_2_flow, NULL);
+            break;
+        case 3:
+            ux_flow_init(0, ux_display_nondefault_sighash_flags_3_flow, NULL);
+            break;
+        default:
+            LEDGER_ASSERT(0, "Unsupported number of sighash flags: %d", st->sighash_name.n_flags);
+            return;
+    }
+#else // HAVE_LIQUID
     ux_flow_init(0, ux_display_nondefault_sighash_flow, NULL);
+#endif // HAVE_LIQUID
 }
 
 void ui_display_output_address_amount_flow(int index) {

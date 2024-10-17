@@ -245,3 +245,50 @@ def test_asset_operations(navigator: Navigator, firmware: Firmware, client: Ragg
                 assert result_sig.signature.hex() == sigs["final_scriptwitness"][0]
                 assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
+def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, speculos_globals: SpeculosGlobals):
+    # Tests for correctness of sighash display
+
+    client.debug = False
+    random.seed(1)
+
+    with open(f"{tests_root}/pset/sighash_flags.json", "r") as read_file:
+        test_data = json.load(read_file)
+
+    # Loop through all test suites
+    for suite_index, (_, suite) in enumerate(test_data["valid"].items()):
+        wallet = BlindedWallet(
+            name = "",
+            blinding_key = suite["mbk"],
+            descriptor_template = suite["policy_map"],
+            keys_info = suite["keys_info"]
+        )
+
+        # Loop through all tests within a suite
+        for test_index, test in enumerate(suite["tests"]):
+            print("TEST:", suite["description"], test["description"])
+
+            pset = PSET()
+            pset.deserialize(test["pset"])
+
+            result = client.sign_psbt(
+                pset,
+                wallet,
+                None,
+                navigator,
+                instructions = liquid_sign_psbt_instruction_approve(
+                    firmware,
+                    nondef_sighash = True
+                ),
+                testname = f"{test_name}_{suite_index}_{test_index}"
+            )
+
+            assert len(result) == len(test["signatures"].items())
+            for n_input, sigs in test["signatures"].items():
+                assert int(n_input) < len(result)
+                n, s = result[int(n_input)]
+                assert n == int(n_input)
+                result_sig = s.signature.hex()
+                assert len(result_sig) >= 100 and len(result_sig) <= 144
+                assert result_sig.startswith("304")
+                assert result_sig in sigs["final_scriptwitness"]
+

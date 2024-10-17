@@ -1,4 +1,20 @@
 #pragma once
+
+// Helper macros to reduce the number of ifdef sections
+#ifdef HAVE_LIQUID
+    #define LIQUID_PARAM(...) , __VA_ARGS__
+    #define IF_LIQUID(...) __VA_ARGS__
+    #define IF_NOT_LIQUID(...)
+    #define IF_LIQUID_ELSE(x,y) x
+    #define IS_LIQUID true
+#else
+    #define LIQUID_PARAM(x)
+    #define IF_LIQUID(...)
+    #define IF_NOT_LIQUID(...) __VA_ARGS__
+    #define IF_LIQUID_ELSE(x,y) y
+    #define IS_LIQUID false
+#endif
+
 #ifdef HAVE_LIQUID
 
 #include <stddef.h>   // size_t

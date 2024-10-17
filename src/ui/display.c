@@ -216,7 +216,16 @@ bool ui_warn_unverified_segwit_inputs(dispatcher_context_t *context) {
     return io_ui_process(context, true);
 }
 
-bool ui_warn_nondefault_sighash(dispatcher_context_t *context) {
+bool ui_warn_nondefault_sighash(dispatcher_context_t *context
+                                LIQUID_PARAM(uint32_t input_index)
+                                LIQUID_PARAM(uint32_t sighash_type)) {
+#ifdef HAVE_LIQUID
+    ui_sighash_flags_state_t *state = &g_ui_state.sighash_flags;
+
+    LEDGER_ASSERT(input_index <= 999, "Unsupported input index");
+    snprintf(state->index, sizeof(state->index), "of input #%d", input_index);
+    sighash_get_name(&state->sighash_name, sighash_type);
+#endif
     ui_display_nondefault_sighash_flow();
     return io_ui_process(context, true);
 }
@@ -231,13 +240,11 @@ bool ui_validate_output(dispatcher_context_t *context,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
-#ifdef HAVE_LIQUID
-                        uint8_t decimals,
-                        const uint8_t asset_tag[static 32],
-                        bool display_asset_tag,
-                        bool asset_is_reissuance_token,
-#endif
-                        uint64_t amount) {
+                        uint64_t amount
+                        LIQUID_PARAM(uint8_t decimals)
+                        LIQUID_PARAM(const uint8_t asset_tag[static 32])
+                        LIQUID_PARAM(bool display_asset_tag)
+                        LIQUID_PARAM(bool asset_is_reissuance_token)) {
     ui_validate_output_state_t *state = (ui_validate_output_state_t *) &g_ui_state;
 
     strncpy(state->address_or_description,
@@ -246,7 +253,7 @@ bool ui_validate_output(dispatcher_context_t *context,
 
 #ifdef HAVE_LIQUID
     UNUSED(total_count);
-    
+
     if (asset_is_reissuance_token) {
         format_amount("token", amount, decimals, state->amount);
         snprintf(state->token_ticker, sizeof(state->token_ticker), "of asset %s", coin_name);
@@ -280,11 +287,8 @@ bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
                              bool is_self_transfer
-#ifdef HAVE_LIQUID
-                             , uint8_t decimals,
-                             const char *asset_op_type
-#endif
-                             ) {
+                             LIQUID_PARAM(uint8_t decimals)
+                             LIQUID_PARAM(const char *asset_op_type)) {
     ui_validate_transaction_state_t *state = (ui_validate_transaction_state_t *) &g_ui_state;
 
 #ifdef HAVE_LIQUID

@@ -4,7 +4,6 @@
 #include "../boilerplate/dispatcher.h"
 
 #include "../common/wallet.h"
-#include "./display.h"
 #include "./display_utils.h"
 #include "../constants.h"
 #include "../globals.h"
@@ -16,9 +15,8 @@
 #include "../constants.h"
 #include "../util.h"
 
-#ifdef HAVE_LIQUID
+#include "../liquid/liquid.h"
 #include "../liquid/liquid_assets.h"
-#endif
 
 #define MESSAGE_CHUNK_SIZE        64  // Protocol specific
 #define MESSAGE_CHUNK_PER_DISPLAY 2   // This could be changed depending on screen sizes
@@ -98,6 +96,11 @@ typedef struct {
     char domain[MAX_ASSET_DOMAIN_LENGTH + 1];
 } ui_validate_asset_state_t;
 
+typedef struct {
+    char index[sizeof("of input #999")];
+    sighash_name_t sighash_name;
+} ui_sighash_flags_state_t;
+
 #endif // HAVE_LIQUID
 
 /**
@@ -114,6 +117,7 @@ typedef union {
 #ifdef HAVE_LIQUID
     ui_validate_asset_state_t validate_asset;
     ui_asset_state_t asset;
+    ui_sighash_flags_state_t sighash_flags;
 #endif
 } ui_state_t;
 extern ui_state_t g_ui_state;
@@ -177,20 +181,20 @@ bool ui_warn_external_inputs(dispatcher_context_t *context);
 
 bool ui_warn_unverified_segwit_inputs(dispatcher_context_t *context);
 
-bool ui_warn_nondefault_sighash(dispatcher_context_t *context);
+bool ui_warn_nondefault_sighash(dispatcher_context_t *context
+                                LIQUID_PARAM(uint32_t input_index)
+                                LIQUID_PARAM(uint32_t sighash_type));
 
 bool ui_validate_output(dispatcher_context_t *context,
                         int index,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
-#ifdef HAVE_LIQUID
-                        uint8_t decimals,
-                        const uint8_t asset_tag[static 32],
-                        bool display_asset_tag,
-                        bool asset_is_reissuance_token,
-#endif
-                        uint64_t amount);
+                        uint64_t amount
+                        LIQUID_PARAM(uint8_t decimals)
+                        LIQUID_PARAM(const uint8_t asset_tag[static 32])
+                        LIQUID_PARAM(bool display_asset_tag)
+                        LIQUID_PARAM(bool asset_is_reissuance_token));
 
 bool ui_warn_high_fee(dispatcher_context_t *context);
 
@@ -198,11 +202,8 @@ bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
                              bool is_self_transfer
-#ifdef HAVE_LIQUID
-                             , uint8_t decimals,
-                             const char *asset_op_type
-#endif
-                            );
+                             LIQUID_PARAM(uint8_t decimals)
+                             LIQUID_PARAM(const char *asset_op_type));
 
 #ifdef HAVE_LIQUID
 bool ui_warn_unknown_asset(dispatcher_context_t *context,
