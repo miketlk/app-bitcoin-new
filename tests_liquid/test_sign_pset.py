@@ -3,6 +3,7 @@ import pytest
 import json
 
 from pathlib import Path
+from collections.abc import Iterable
 
 from bitcoin_client.ledger_bitcoin import BlindedWallet
 
@@ -56,6 +57,11 @@ def random_wallet_name() -> str:
     charset = string.ascii_letters+string.digits
     return "wallet_" + ''.join(random.choice(charset) for i in range(random.randint(2, 16-7)))
 
+def is_sighash_nondef(sighash):
+    if isinstance(sighash, int):
+        return sighash not in [0, 1]
+    else:
+        return sighash not in ["DEFAULT", "ALL"]
 
 def test_sign_pset_batch(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, speculos_globals: SpeculosGlobals, enable_slow_tests: bool):
     # A series of tests for various script and sighash combinations.
@@ -92,7 +98,7 @@ def test_sign_pset_batch(navigator: Navigator, firmware: Firmware, client: Ragge
                 instructions = liquid_sign_psbt_instruction_approve(
                     firmware,
                     wallet_spend = True,
-                    nondef_sighash = test["sighash"] not in [0, 1],
+                    nondef_sighash = 1 if is_sighash_nondef(test["sighash"]) else 0,
                     unknown_assets = 1 if (("asset_tag" in test) and ("asset_contract" not in test)) else 0,
                     assets = 2 if ("asset_contract" in test) else 0,
                     outs = pset_outputs_to_verify(pset),
@@ -277,7 +283,7 @@ def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerC
                 navigator,
                 instructions = liquid_sign_psbt_instruction_approve(
                     firmware,
-                    nondef_sighash = True
+                    nondef_sighash = 1
                 ),
                 testname = f"{test_name}_{suite_index}_{test_index}"
             )
@@ -292,3 +298,44 @@ def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerC
                 assert result_sig.startswith("304")
                 assert result_sig in sigs["final_scriptwitness"]
 
+def test_sighashes_multi_input(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+    # Test correctness of displayed asset ticker and precision when processing PSET with embedded
+    # asset metadata.
+
+    with open(f"{tests_root}/pset/sighashes_multi_input.json", "r") as read_file:
+        test_data = json.load(read_file)["valid"]["wpkh"]
+
+    wallet = BlindedWallet(
+        name="",
+        blinding_key=test_data["mbk"],
+        descriptor_template=test_data["policy_map"],
+        keys_info=test_data["keys_info"]
+    )
+
+    # Loop through all test vectors
+    for index, test_vector in enumerate(test_data["tests"]):
+        pset = PSET()
+        pset.deserialize(test_vector["pset"])
+
+        # Multiple sighashes are expected for this test
+        assert isinstance(test_vector["sighash"], Iterable)
+
+        result = client.sign_psbt(
+            pset, wallet, None, navigator,
+            instructions=liquid_sign_psbt_instruction_approve(
+                firmware,
+                nondef_sighash=sum(is_sighash_nondef(sh) for sh in test_vector["sighash"]),
+                outs=pset_outputs_to_verify(pset)
+            ),
+            testname=f"{test_name}_{index}"
+        )
+
+        ref_signatures = test_vector["signatures"].items()
+        if ref_signatures:
+            assert len(result) == len(ref_signatures)
+            for n_input, sigs in ref_signatures:
+                assert int(n_input) < len(result)
+                result_n_input, result_sig = result[int(n_input)]
+                assert result_n_input == int(n_input)
+                assert result_sig.signature.hex() == sigs["final_scriptwitness"][0]
+                assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]

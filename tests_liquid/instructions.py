@@ -98,14 +98,14 @@ def register_wallet_instruction_reject(model: Firmware) -> Instructions:
     return instructions
 
 
-def liquid_sign_psbt_instruction_approve(model: Firmware, wallet_spend=False, nondef_sighash=False, unknown_assets=0, assets=0, outs=1, save_screenshots=True) -> Instructions:
+def liquid_sign_psbt_instruction_approve(model: Firmware, wallet_spend=False, nondef_sighash=0, unknown_assets=0, assets=0, outs=1, save_screenshots=True) -> Instructions:
     instructions = Instructions(model)
 
     if model.name.startswith("nano"):
         if wallet_spend:
             # Spend from|known wallet > Wallet name: > Continue <>
             instructions.new_request("Continue", save_screenshot=save_screenshots)
-        if nondef_sighash:
+        for _ in range(0, nondef_sighash):
             # Non-default sighash > Reject if you're|not sure > Continue <>
             instructions.new_request("Continue", save_screenshot=save_screenshots)
         for _ in range(0, unknown_assets):
