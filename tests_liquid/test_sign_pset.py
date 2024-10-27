@@ -57,11 +57,13 @@ def random_wallet_name() -> str:
     charset = string.ascii_letters+string.digits
     return "wallet_" + ''.join(random.choice(charset) for i in range(random.randint(2, 16-7)))
 
+
 def is_sighash_nondef(sighash):
     if isinstance(sighash, int):
         return sighash not in [0, 1]
     else:
         return sighash not in ["DEFAULT", "ALL"]
+
 
 def test_sign_pset_batch(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, speculos_globals: SpeculosGlobals, enable_slow_tests: bool):
     # A series of tests for various script and sighash combinations.
@@ -164,6 +166,47 @@ def test_asset_metadata_display(navigator: Navigator, firmware: Firmware, client
             assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
 
+def test_asset_metadata_display_no_ticker(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+    # Test correctness of displayed asset metadata without asset ticker provided
+
+    if not is_speculos:
+        pytest.skip("Requires speculos")
+
+    with open(f"{tests_root}/pset/asset_metadata_no_ticker.json", "r") as read_file:
+        test_data = json.load(read_file)["valid"]["wpkh"]
+
+    wallet = BlindedWallet(
+        name="",
+        blinding_key=test_data["mbk"],
+        descriptor_template=test_data["policy_map"],
+        keys_info=test_data["keys_info"]
+    )
+
+    # Loop through all test vectors
+    for index, test_vector in enumerate(test_data["tests"]):
+        pset = PSET()
+        pset.deserialize(test_vector["pset"])
+
+        result = client.sign_psbt(
+            pset, wallet, None, navigator,
+            instructions=liquid_sign_psbt_instruction_approve(
+                firmware,
+                assets=1,
+                outs=pset_outputs_to_verify(pset)
+            ),
+            testname=f"{test_name}_{index}"
+        )
+
+        ref_signatures = test_vector["signatures"].items()
+        assert len(result) == len(ref_signatures)
+        for n_input, sigs in ref_signatures:
+            assert int(n_input) < len(result)
+            result_n_input, result_sig = result[int(n_input)]
+            assert result_n_input == int(n_input)
+            assert result_sig.signature.hex() == sigs["final_scriptwitness"][0]
+            assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
+
+
 def test_unknown_asset_display(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
     # Test correctness of displayed unknown asset information when processing PSET with embedded
     # asset metadata.
@@ -251,6 +294,7 @@ def test_asset_operations(navigator: Navigator, firmware: Firmware, client: Ragg
                 assert result_sig.signature.hex() == sigs["final_scriptwitness"][0]
                 assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
+
 def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, speculos_globals: SpeculosGlobals):
     # Tests for correctness of sighash display
 
@@ -297,6 +341,7 @@ def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerC
                 assert len(result_sig) >= 100 and len(result_sig) <= 144
                 assert result_sig.startswith("304")
                 assert result_sig in sigs["final_scriptwitness"]
+
 
 def test_sighashes_multi_input(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
     # Test correctness of displayed asset ticker and precision when processing PSET with embedded
