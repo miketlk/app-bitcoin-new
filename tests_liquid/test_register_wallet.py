@@ -108,7 +108,7 @@ def test_register_wallet_reject_header(navigator: Navigator, firmware: Firmware,
         client.register_wallet(wallet, navigator,
                                instructions=register_wallet_instruction_reject(
                                    firmware),
-                               testname=test_name)
+                               testname=test_name, sanity_check=False)
 
     assert DeviceException.exc.get(e.value.status) == DenyError
     assert len(e.value.data) == 0
@@ -129,7 +129,7 @@ def test_register_wallet_invalid_pubkey_version(navigator: Navigator, firmware: 
                 "[76223a6e/48'/1'/0'/2']xpub6DjjtjxALtJSP9dKRKuhejeTpZc711gUGZyS9nCM5GAtrNTDuMBZD2FcndJoHst6LYNbJktm4NmJyKqspLi5uRmtnDMAdcPAf2jiSj9gFTX",
                 "[f5acc2fd/48'/1'/0'/2']tpubDFAqEGNyad35aBCKUAXbQGDjdVhNueno5ZZVEn3sQbW5ci457gLR7HyTmHBg93oourBssgUxuWz1jX5uhc1qaqFo9VsybY1J5FuedLfm4dK",
             ],
-        ), navigator, instructions=register_wallet_instruction_approve(firmware), testname=test_name)
+        ), navigator, instructions=register_wallet_instruction_approve(firmware), testname=test_name, sanity_check=False)
     assert DeviceException.exc.get(e.value.status) == IncorrectDataError
     assert len(e.value.data) == 0
 
@@ -157,7 +157,7 @@ def test_register_wallet_invalid_names(navigator: Navigator, firmware: Firmware,
 
         with pytest.raises(ExceptionRAPDU) as e:
             client.register_wallet(wallet, navigator,
-                                   testname=test_name)
+                                   testname=test_name, sanity_check=False)
 
         assert DeviceException.exc.get(e.value.status) == IncorrectDataError
         assert len(e.value.data) == 0
@@ -174,7 +174,7 @@ def test_register_wallet_missing_key(client: RaggerClient):
     )
 
     with pytest.raises(ExceptionRAPDU) as e:
-        client.register_wallet(wallet)
+        client.register_wallet(wallet, sanity_check=False)
     assert DeviceException.exc.get(e.value.status) == IncorrectDataError
     assert len(e.value.data) == 0
 
@@ -192,7 +192,8 @@ def test_register_wallet_unsupported_policy(navigator: Navigator, firmware: Firm
             ]
         ),
             navigator,
-            testname=test_name)
+            testname=test_name,
+            sanity_check=False)
 
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
@@ -213,7 +214,7 @@ def test_register_miniscript_long_policy(navigator: Navigator, firmware: Firmwar
 
     if (firmware.name == "nanos"):
         with pytest.raises(ExceptionRAPDU) as e:
-            client.register_wallet(wallet)
+            client.register_wallet(wallet, sanity_check=False)
 
         assert DeviceException.exc.get(e.value.status) == IncorrectDataError
         assert len(e.value.data) == 0
@@ -221,7 +222,7 @@ def test_register_miniscript_long_policy(navigator: Navigator, firmware: Firmwar
         wallet_id, wallet_hmac = client.register_wallet(wallet, navigator,
                                                         instructions=register_wallet_instruction_approve_long(
                                                             firmware),
-                                                        testname=test_name)
+                                                        testname=test_name, sanity_check=False)
 
         assert wallet_id == wallet.id
 
@@ -247,7 +248,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDDV6FDLcCieWUeN7R3vZK2Qs3KuQed3ScTY9EiwMXvyCkLjDbCb8RXaAgWDbkG4tW1BMKVF1zERHnyt78QKd4ZaAYGMJMpvHPwgSSU1AxZ3",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
 
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
@@ -263,7 +265,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDDV6FDLcCieWUeN7R3vZK2Qs3KuQed3ScTY9EiwMXvyCkLjDbCb8RXaAgWDbkG4tW1BMKVF1zERHnyt78QKd4ZaAYGMJMpvHPwgSSU1AxZ3",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
@@ -278,7 +281,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDDV6FDLcCieWUeN7R3vZK2Qs3KuQed3ScTY9EiwMXvyCkLjDbCb8RXaAgWDbkG4tW1BMKVF1zERHnyt78QKd4ZaAYGMJMpvHPwgSSU1AxZ3",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
@@ -293,7 +297,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDDV6FDLcCieWUeN7R3vZK2Qs3KuQed3ScTY9EiwMXvyCkLjDbCb8RXaAgWDbkG4tW1BMKVF1zERHnyt78QKd4ZaAYGMJMpvHPwgSSU1AxZ3",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
@@ -310,7 +315,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDF4kujkh5dAhC1pFgBToZybXdvJFXXGX4BWdDxWqP7EUpG8gxkfMQeDjGPDnTr9e4NrkFmDM1ocav3Jz6x79CRZbxGr9dzFokJLuvDDnyRh",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
@@ -325,7 +331,8 @@ def test_register_wallet_not_sane_policy(navigator: Navigator, firmware: Firmwar
                 "tpubDDV6FDLcCieWUeN7R3vZK2Qs3KuQed3ScTY9EiwMXvyCkLjDbCb8RXaAgWDbkG4tW1BMKVF1zERHnyt78QKd4ZaAYGMJMpvHPwgSSU1AxZ3",
             ]),
             navigator,
-            testname=test_name
+            testname=test_name,
+            sanity_check=False
         )
     assert DeviceException.exc.get(e.value.status) == NotSupportedError
     assert len(e.value.data) == 0
