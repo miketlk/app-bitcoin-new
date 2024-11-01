@@ -1,14 +1,13 @@
-import threading
-
 import pytest
 
-from ledger_bitcoin import Client
-from ledger_bitcoin.exception import DenyError, NotSupportedError
-from ledger_bitcoin.exception.device_exception import DeviceException
-from ragger.error import ExceptionRAPDU
 from ragger_bitcoin import RaggerClient
+from ragger.navigator import Navigator
+from ragger.firmware import Firmware
+from ragger.error import ExceptionRAPDU
 
-from speculos.client import SpeculosClient
+from ledger_bitcoin.exception.errors import NotSupportedError, DenyError
+from ledger_bitcoin.exception.device_exception import DeviceException
+from .instructions import pubkey_instruction_approve, pubkey_instruction_reject_early, pubkey_reject
 
 
 def test_get_extended_pubkey_standard_nodisplay(client: RaggerClient):
@@ -53,98 +52,52 @@ def test_get_extended_pubkey_nonstandard_nodisplay(client: RaggerClient):
         assert DeviceException.exc.get(e.value.status) == NotSupportedError
         assert len(e.value.data) == 0
 
-def test_get_extended_pubkey_non_standard(client: RaggerClient, comm: SpeculosClient, is_speculos: bool):
+def test_get_extended_pubkey_non_standard(navigator: Navigator, firmware: Firmware, client:
+                                          RaggerClient,
+                                          test_name: str):
     # Test the successful UX flow for a non-standard path (here, root path)
     # (Slow test, not feasible to repeat it for many paths)
 
-    if not is_speculos:
-        pytest.skip("Requires speculos")
-
-    def ux_thread():
-        event = comm.wait_for_text_event("path is unusual")
-
-        # press right until the last screen (will press the "right" button more times than needed)
-        while "Reject" != event["text"]:
-            comm.press_and_release("right")
-
-            event = comm.get_next_event()
-
-        # go back to the Accept screen, then accept
-        comm.press_and_release("left")
-        comm.press_and_release("both")
-
-    x = threading.Thread(target=ux_thread)
-    x.start()
-
     pub_key = client.get_extended_pubkey(
         path="m",  # root pubkey
-        display=True
+        display=True,
+        navigator=navigator,
+        instructions=pubkey_instruction_approve(firmware),
+        testname=test_name
     )
-
-    x.join()
 
     assert pub_key == "tpubD6NzVbkrYhZ4YgUx2ZLNt2rLYAMTdYysCRzKoLu2BeSHKvzqPaBDvf17GeBPnExUVPkuBpx4kniP964e2MxyzzazcXLptxLXModSVCVEV1T"
 
 
-def test_get_extended_pubkey_non_standard_reject_early(client: RaggerClient, comm: SpeculosClient, is_speculos: bool):
+def test_get_extended_pubkey_non_standard_reject_early(navigator: Navigator, firmware: Firmware,
+                                                       client: RaggerClient, test_name: str):
     # Test rejecting after the "Reject if you're not sure" warning
     # (Slow test, not feasible to repeat it for many paths)
 
-    if not is_speculos:
-        pytest.skip("Requires speculos")
-
-    def ux_thread():
-        comm.wait_for_text_event("path is unusual")
-        comm.press_and_release("right")
-        comm.wait_for_text_event("Confirm public key")
-        comm.press_and_release("right")
-        comm.wait_for_text_event("111'/222'/333'")
-        comm.press_and_release("right")
-        comm.wait_for_text_event("not sure")  # second line of "Reject if you're not sure"
-        comm.press_and_release("both")
-
-    x = threading.Thread(target=ux_thread)
-    x.start()
-
     with pytest.raises(ExceptionRAPDU) as e:
         client.get_extended_pubkey(
             path="m/111'/222'/333'",
-            display=True
+            display=True,
+            navigator=navigator,
+            instructions=pubkey_instruction_reject_early(firmware),
+            testname=test_name
         )
     assert DeviceException.exc.get(e.value.status) == DenyError
     assert len(e.value.data) == 0
 
-    x.join()
 
-
-def test_get_extended_pubkey_non_standard_reject(client: RaggerClient, comm: SpeculosClient, is_speculos: bool):
+def test_get_extended_pubkey_non_standard_reject(navigator: Navigator, firmware: Firmware, client:
+                                                 RaggerClient, test_name: str):
     # Test rejecting at the end
     # (Slow test, not feasible to repeat it for many paths)
 
-    if not is_speculos:
-        pytest.skip("Requires speculos")
-
-    def ux_thread():
-        event = comm.wait_for_text_event("path is unusual")
-
-        # press right until the last screen (will press the "right" button more times than needed)
-        while "Reject" != event["text"]:
-            comm.press_and_release("right")
-
-            event = comm.get_next_event()
-
-        # finally, reject
-        comm.press_and_release("both")
-
-    x = threading.Thread(target=ux_thread)
-    x.start()
-
     with pytest.raises(ExceptionRAPDU) as e:
         client.get_extended_pubkey(
             path="m/111'/222'/333'",
-            display=True
+            display=True,
+            navigator=navigator,
+            instructions=pubkey_reject(firmware),
+            testname=test_name,
         )
     assert DeviceException.exc.get(e.value.status) == DenyError
     assert len(e.value.data) == 0
-
-    x.join()

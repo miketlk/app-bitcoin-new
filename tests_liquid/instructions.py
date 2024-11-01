@@ -45,6 +45,38 @@ def message_instruction_reject(model: Firmware) -> Instructions:
     return instructions
 
 
+def pubkey_instruction_approve(model: Firmware) -> Instructions:
+    instructions = Instructions(model)
+
+    if model.name.startswith("nano"):
+        instructions.new_request("Approve")
+    else:
+        instructions.choice_confirm()
+    return instructions
+
+
+def pubkey_instruction_reject_early(model: Firmware) -> Instructions:
+    instructions = Instructions(model)
+
+    if model.name.startswith("nano"):
+        instructions.new_request("Reject")
+    else:
+        instructions.footer_cancel()
+    return instructions
+
+
+def pubkey_reject(model: Firmware) -> Instructions:
+    instructions = Instructions(model)
+
+    if model.name.startswith("nano"):
+        instructions.nano_skip_screen("Reject")
+        instructions.same_request("Reject")
+    else:
+        instructions.choice_reject()
+
+    return instructions
+
+
 def register_wallet_instruction_approve(model: Firmware) -> Instructions:
     instructions = Instructions(model)
 
