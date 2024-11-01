@@ -66,7 +66,7 @@ endif
 
 # Setting to allow building variant applications
 VARIANT_PARAM = COIN
-VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid_regtest_headless liquid liquid_headless
+VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid
 
 # simplify for tests
 ifndef COIN
@@ -127,25 +127,6 @@ DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"el\"
 
 APPNAME = "Liquid Regtest"
 
-else ifeq ($(COIN),liquid_regtest_headless)
-
-# Liquid regtest headless
-DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
-DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
-DEFINES   += BIP44_COIN_TYPE=1
-DEFINES   += COIN_P2PKH_VERSION=111
-DEFINES   += COIN_P2SH_VERSION=75
-DEFINES   += COIN_PREFIX_CONFIDENTIAL=4
-DEFINES   += HAVE_LIQUID
-DEFINES   += HAVE_LIQUID_TEST
-DEFINES   += COIN_BLINDED_VERSION=4
-DEFINES   += COIN_COINID_SHORT=\"L-BTC\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ert\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"el\"
-DEFINES   += HAVE_LIQUID_HEADLESS
-
-APPNAME = "Liquid Regtest Hless"
-
 else ifeq ($(COIN),liquid)
 
 # Liquid
@@ -163,29 +144,9 @@ DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"lq\"
 
 APPNAME = "Liquid"
 
-else ifeq ($(COIN),liquid_headless)
-
-# Liquid Headless
-DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
-DEFINES   += BIP32_PRIVKEY_VERSION=0x0488ADE4
-DEFINES   += BIP44_COIN_TYPE=1776
-DEFINES   += COIN_P2PKH_VERSION=57
-DEFINES   += COIN_P2SH_VERSION=39
-DEFINES   += COIN_PREFIX_CONFIDENTIAL=12
-DEFINES   += HAVE_LIQUID
-DEFINES   += COIN_BLINDED_VERSION=12
-DEFINES   += COIN_COLOR_HDR=0xFCB653
-DEFINES   += COIN_COLOR_DB=0xFEDBA9
-DEFINES   += COIN_COINID_SHORT=\"L-BTC\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ex\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"lq\"
-DEFINES   += HAVE_LIQUID_HEADLESS
-
-APPNAME = "Liquid Hless"
-
 else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_regtest_headless, liquid, liquid_headless)
+$(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid)
 endif
 endif
 
