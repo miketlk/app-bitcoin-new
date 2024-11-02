@@ -47,10 +47,17 @@ include $(BOLOS_SDK)/Makefile.defines
 CURVE_APP_LOAD_PARAMS = secp256k1
 
 # Application allowed derivation paths.
+#
+#       If there would be a dedicated SDK function returning master key
+#       fingerprint without the need to derive the root pubkey, the proper path
+#       configuration should be:
+#
+#       PATH_APP_LOAD_PARAMS = "44'/1'" "48'/1'" "49'/1'" "84'/1'" "86'/1'"
+#
 PATH_APP_LOAD_PARAMS = ""
 
 # Allowed SLIP21 paths
-PATH_SLIP21_APP_LOAD_PARAMS = "LEDGER-Wallet policy" --path_slip21 "SLIP-0077"
+PATH_SLIP21_APP_LOAD_PARAMS = "LEDGER-Wallet policy"
 
 # Application version
 APPVERSION_M = 2
@@ -148,6 +155,13 @@ else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
 $(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid)
 endif
+endif
+
+ifneq (,$(findstring liquid,$(COIN)))
+# Add the second SLIP-0021 path for the SLIP-0077 derivation.
+# HACK: Using '--path_slip21' is a temporary solution due to lack of support for
+# multiple SLIP-0021 path entries in the SDK.
+PATH_SLIP21_APP_LOAD_PARAMS += --path_slip21 "SLIP-0077"
 endif
 
 ifdef DISPLAYED_APPNAME
