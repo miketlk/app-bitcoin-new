@@ -48,6 +48,7 @@ def test_sign_message_accept_long(navigator: Navigator, firmware: Firmware, clie
     assert res == 'H4frM6TYm5ty1MAf9o/Zz9Qiy3VEldAYFY91SJ/5nYMAZY1UUB97fiRjKW8mJit2+V4OCa1YCqjDqyFnD9Fw75k='
 
 
+@pytest.mark.use_on_backend("speculos")
 def test_sign_message_reject(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     with pytest.raises(ExceptionRAPDU) as e:
         client.sign_message("Anything", "m/44'/1'/0'/0/0",
@@ -90,6 +91,7 @@ def test_sign_message_accept_too_long(navigator: Navigator, firmware: Firmware, 
     assert res == 'IDAl9RThAyunmYuol9DaDs/CScUpiol3FDSjIjyK9y0tc/x1HWrbT/ufdkPFY1Bmi+L9hc3ip1me2RmufprVuNk='
 
 
+@pytest.mark.use_on_backend("speculos")
 def test_sign_message_hash_reject(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     with pytest.raises(ExceptionRAPDU) as e:
         client.sign_message("Hello\nworld!",

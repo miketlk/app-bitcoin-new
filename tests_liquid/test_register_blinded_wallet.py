@@ -67,6 +67,7 @@ def test_register_blinded_wallet_accept_wit(navigator: Navigator, firmware: Firm
     )
 
 
+@pytest.mark.use_on_backend("speculos")
 def test_register_blinded_wallet_reject_header(navigator: Navigator, firmware: Firmware, client:
                                                RaggerClient, test_name: str, speculos_globals):
     wallet = BlindedMultisigWallet(

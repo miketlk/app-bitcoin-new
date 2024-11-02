@@ -124,12 +124,9 @@ def test_sign_pset_batch(navigator: Navigator, firmware: Firmware, client: Ragge
                 break
 
 
-def test_asset_metadata_display(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+def test_asset_metadata_display(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     # Test correctness of displayed asset ticker and precision when processing PSET with embedded
     # asset metadata.
-
-    if not is_speculos:
-        pytest.skip("Requires speculos")
 
     with open(f"{tests_root}/pset/asset_metadata.json", "r") as read_file:
         test_data = json.load(read_file)["valid"]["wpkh"]
@@ -166,11 +163,8 @@ def test_asset_metadata_display(navigator: Navigator, firmware: Firmware, client
             assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
 
-def test_asset_metadata_display_no_ticker(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+def test_asset_metadata_display_no_ticker(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     # Test correctness of displayed asset metadata without asset ticker provided
-
-    if not is_speculos:
-        pytest.skip("Requires speculos")
 
     with open(f"{tests_root}/pset/asset_metadata_no_ticker.json", "r") as read_file:
         test_data = json.load(read_file)["valid"]["wpkh"]
@@ -207,12 +201,9 @@ def test_asset_metadata_display_no_ticker(navigator: Navigator, firmware: Firmwa
             assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
 
-def test_unknown_asset_display(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+def test_unknown_asset_display(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     # Test correctness of displayed unknown asset information when processing PSET with embedded
     # asset metadata.
-
-    if not is_speculos:
-        pytest.skip("Requires speculos")
 
     with open(f"{tests_root}/pset/unknown_asset.json", "r") as read_file:
         test_data = json.load(read_file)["valid"]["wpkh"]
@@ -250,7 +241,7 @@ def test_unknown_asset_display(navigator: Navigator, firmware: Firmware, client:
             assert result_sig.pubkey.hex() == sigs["final_scriptwitness"][1]
 
 
-def test_asset_operations(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+def test_asset_operations(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     # Test correct signing of asset reissuance transaction.
 
     client.debug = False
@@ -343,7 +334,7 @@ def test_sighash_flags(navigator: Navigator, firmware: Firmware, client: RaggerC
                 assert result_sig in sigs["final_scriptwitness"]
 
 
-def test_sighashes_multi_input(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str, is_speculos: bool):
+def test_sighashes_multi_input(navigator: Navigator, firmware: Firmware, client: RaggerClient, test_name: str):
     # Test correctness of displayed asset ticker and precision when processing PSET with embedded
     # asset metadata.
 

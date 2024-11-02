@@ -11,6 +11,8 @@ from . import default_settings, SpeculosGlobals
 from bitcoin_client.ledger_bitcoin import TransportClient, Client, Chain, createClient
 
 from speculos.client import SpeculosClient
+from ragger.backend import SpeculosBackend
+from ragger_bitcoin import RaggerClient
 
 """
 This module contains fixtures that are shared among several of the test suites.
@@ -148,8 +150,8 @@ def comm(settings, root_directory, hid, headless, model, app_version: str) -> Un
 
 
 @pytest.fixture
-def is_speculos(comm: Union[TransportClient, SpeculosClient]) -> bool:
-    return isinstance(comm, SpeculosClient)
+def is_speculos(client: RaggerClient) -> bool:
+    return isinstance(client.transport_client, SpeculosBackend)
 
 
 @pytest.fixture

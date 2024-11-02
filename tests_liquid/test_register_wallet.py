@@ -92,6 +92,7 @@ def test_register_wallet_with_long_name(navigator: Navigator, firmware: Firmware
         test_name=test_name)
 
 
+@pytest.mark.use_on_backend("speculos")
 def test_register_wallet_reject_header(navigator: Navigator, firmware: Firmware, client:
                                        RaggerClient, test_name: str):
     wallet = MultisigWallet(
