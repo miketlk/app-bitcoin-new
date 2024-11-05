@@ -256,11 +256,6 @@ APP_SOURCE_FILES += ${BOLOS_SDK}/lib_standard_app/crypto_helpers.c
 
 include $(BOLOS_SDK)/Makefile.standard_app
 
-$(info APP_INSTALL_PARAMS=$(APP_INSTALL_PARAMS)) # !!!!
-$(info APP_FLAGS_APP_LOAD_PARAMS=$(APP_FLAGS_APP_LOAD_PARAMS)) #!!!!
-$(info APP_LOAD_PARAMS=$(APP_FLAGS_APP_LOAD_PARAMS)) # !!!!
-
-
 # Makes a detailed report of code and data size in debug/size-report.txt
 # More useful for production builds with DEBUG=0
 size-report: bin/app.elf
