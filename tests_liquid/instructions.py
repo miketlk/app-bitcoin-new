@@ -130,7 +130,34 @@ def register_wallet_instruction_reject(model: Firmware) -> Instructions:
     return instructions
 
 
-def liquid_sign_psbt_instruction_approve(model: Firmware, wallet_spend=False, nondef_sighash=0, unknown_assets=0, assets=0, outs=1, save_screenshots=True) -> Instructions:
+def liquid_sign_psbt_instruction_approve(model: Firmware,
+                                         wallet_spend: bool = False,
+                                         nondef_sighash: int = 0,
+                                         unknown_assets: int = 0,
+                                         assets: int = 0,
+                                         outs: int = 1,
+                                         save_screenshots: bool = True) -> Instructions:
+    """Generates instructions for signing a PSET
+
+    :param model: The Firmware that defines the wallet model
+    :type model: Firmware
+    :param wallet_spend: whether a nonstandard wallet is being spent, defaults to False
+    :type wallet_spend: bool, optional
+    :param nondef_sighash: number of inputs with non-default sighashes, defaults to 0
+    :type nondef_sighash: int, optional
+    :param unknown_assets: number of assets with no metadata, defaults to 0
+    :type unknown_assets: int, optional
+    :param assets: number of assets with included metadata, defaults to 0
+    :type assets: int, optional
+    :param outs: number of transaction outputs to confirm, defaults to 1
+    :type outs: int, optional
+    :param save_screenshots: request screenshot comparison, defaults to True
+    :type save_screenshots: bool, optional
+    :raises NotImplementedError: for unsupported wallet models
+    :return: automation instructions
+    :rtype: Instructions
+    """
+
     instructions = Instructions(model)
 
     if model.name.startswith("nano"):
