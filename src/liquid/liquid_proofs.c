@@ -384,7 +384,7 @@ static bool secp256k1_fe_sqrt(secp256k1_fe *r, const secp256k1_fe *a) {
 /**
  * If flag is true, sets *r equal to *a; otherwise leaves it as is
  *
- * @param[out] r
+ * @param[in,out] r
  *    Resulting field element.
  * @param[in] a
  *    Argument field element.
@@ -813,10 +813,12 @@ static bool shallue_van_de_woestijne(secp256k1_ge* ge, const secp256k1_fe* t) {
         betaquad = secp256k1_fe_sqrt(&y2, &betain);
         (void)secp256k1_fe_sqrt(&y3, &gammain);
 
-        secp256k1_fe_cmov(&x1, &x2, !alphaquad && betaquad);
-        secp256k1_fe_cmov(&y1, &y2, !alphaquad && betaquad);
-        secp256k1_fe_cmov(&x1, &x3, !alphaquad && !betaquad);
-        secp256k1_fe_cmov(&y1, &y3, !alphaquad && !betaquad);
+        if (ok) {
+            secp256k1_fe_cmov(&x1, &x2, !alphaquad && betaquad);
+            secp256k1_fe_cmov(&y1, &y2, !alphaquad && betaquad);
+            secp256k1_fe_cmov(&x1, &x3, !alphaquad && !betaquad);
+            secp256k1_fe_cmov(&y1, &y3, !alphaquad && !betaquad);
+        }
 
         secp256k1_ge_set_xy(ge, &x1, &y1);
     }
@@ -827,7 +829,9 @@ static bool shallue_van_de_woestijne(secp256k1_ge* ge, const secp256k1_fe* t) {
      * as long as negation of t results in negation of the y coordinate. Here
      * we choose to use t's oddness, as it is faster to determine. */
     ok = ok && secp256k1_fe_negate(&tmp, (secp256k1_fe*)&ge->n[GE_OFFSET_Y]); // 1
-    secp256k1_fe_cmov((secp256k1_fe*)&ge->n[GE_OFFSET_Y], &tmp, secp256k1_fe_is_odd(t));
+    if (ok) {
+        secp256k1_fe_cmov((secp256k1_fe*)&ge->n[GE_OFFSET_Y], &tmp, secp256k1_fe_is_odd(t));
+    }
 
     return ok;
 }

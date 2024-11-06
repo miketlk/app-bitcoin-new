@@ -362,7 +362,9 @@ int blech32_addr_decode(uint8_t *witver,
         witdata, witdata_limit, witdata_len, 8, data + 1, data_len - 1, 5, 0);
     ok = ok && (*witdata_len >= 2 && *witdata_len <= 65) &&
         !(data[0] == 0 && *witdata_len != 53 && *witdata_len != 65);
-    *witver = data[0];
+    if (ok) {
+        *witver = data[0];
+    }
 
     call_explicit_bzero(data, sizeof(data));
     call_explicit_bzero(hrp_actual, sizeof(hrp_actual));
