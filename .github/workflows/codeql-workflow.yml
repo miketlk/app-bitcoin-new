@@ -19,8 +19,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - SDK: "$NANOS_SDK"
-            artifact: boilerplate-app-nanoS
           - SDK: "$NANOX_SDK"
             artifact: boilerplate-app-nanoX
           - SDK: "$NANOSP_SDK"
@@ -32,7 +30,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
