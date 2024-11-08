@@ -15,6 +15,7 @@ on:
       - master
       - main
       - develop
+      - liquid_develop
   pull_request:
 
 jobs:

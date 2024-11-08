@@ -5,10 +5,12 @@ on:
     branches:
       - master
       - develop
+      - liquid_develop
   pull_request:
     branches:
       - master
       - develop
+      - liquid_develop
     types: [opened, synchronize, reopened]
 
 jobs:

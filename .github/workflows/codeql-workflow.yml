@@ -6,15 +6,17 @@ on:
     branches:
       - master
       - develop
+      - liquid_develop
   pull_request:
     branches:
       - master
       - develop
+      - liquid_develop
 
 jobs:
   analyse:
     name: CodeQL Analyse of boilerplate application
-    strategy: 
+    strategy:
       matrix:
         include:
           - SDK: "$NANOS_SDK"
@@ -37,11 +39,11 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
-    
+
       - name: Build
         run: |
           make BOLOS_SDK=${{ matrix.SDK }}
-        
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 
