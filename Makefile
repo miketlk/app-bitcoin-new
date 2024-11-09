@@ -71,14 +71,14 @@ else
 APPVERSION = "$(APPVERSION_M).$(APPVERSION_N).$(APPVERSION_P)-$(strip $(APPVERSION_SUFFIX))"
 endif
 
-# Setting to allow building variant applications
-VARIANT_PARAM = COIN
-VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid
-
 # simplify for tests
 ifndef COIN
 COIN=liquid_regtest
 endif
+
+# Setting to allow building variant applications
+VARIANT_PARAM = COIN
+VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid
 
 ########################################
 #     Application custom permissions   #
