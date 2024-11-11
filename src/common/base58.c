@@ -202,8 +202,6 @@ uint32_t base58_checksum(const uint8_t *in, size_t in_len) {
     uint8_t hash[32];
     cx_hash_sha256(in, in_len, hash, sizeof(hash));
     cx_hash_sha256(hash, sizeof(hash), hash, sizeof(hash));
-    return (uint32_t) hash[0] << 24 |
-           (uint32_t) hash[1] << 16 |
-           (uint32_t) hash[2] << 8  |
+    return (uint32_t) hash[0] << 24 | (uint32_t) hash[1] << 16 | (uint32_t) hash[2] << 8 |
            (uint32_t) hash[3];
 }

@@ -12,7 +12,7 @@
 #ifdef SKIP_FOR_CMOCKA
 // disable problematic macros when compiling unit tests with CMOCKA
 #define PIC(x) (x)
-#endif // SKIP_FOR_CMOCKA
+#endif  // SKIP_FOR_CMOCKA
 
 /// RIPEMD160 message digest size
 #define HASH160_LEN 20
@@ -20,22 +20,21 @@
 #ifndef SKIP_FOR_CMOCKA
 
 /// Network configuration defined at build time from Makefile variables
-const liquid_network_config_t G_liquid_network_config =  {
+const liquid_network_config_t G_liquid_network_config = {
     .p2pkh_version = COIN_P2PKH_VERSION,
     .p2sh_version = COIN_P2SH_VERSION,
     .prefix_confidential = COIN_PREFIX_CONFIDENTIAL,
     .segwit_prefix = COIN_NATIVE_SEGWIT_PREFIX,
-    .segwit_prefix_confidential = COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL
-};
+    .segwit_prefix_confidential = COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL};
 
 // ELIP 150 tag for computing the hashed tag function used for tweaking public keys
 static const uint8_t ELIP150_hash_tag[] =
     {'C', 'T', '-', 'B', 'l', 'i', 'n', 'd', 'i', 'n', 'g', '-', 'K', 'e', 'y', '/', '1', '.', '0'};
 
 // ELIP 151 tag for computing the hashed tag function used for private blinding key derivation
-static const uint8_t ELIP151_hash_tag[] =
-    {'D', 'e', 't', 'e', 'r', 'm', 'i', 'n', 'i', 's', 't', 'i', 'c', '-', 'V', 'i', 'e', 'w', '-',
-     'K', 'e', 'y', '/', '1', '.', '0'};
+static const uint8_t ELIP151_hash_tag[] = {'D', 'e', 't', 'e', 'r', 'm', 'i', 'n', 'i',
+                                           's', 't', 'i', 'c', '-', 'V', 'i', 'e', 'w',
+                                           '-', 'K', 'e', 'y', '/', '1', '.', '0'};
 
 bool liquid_get_master_blinding_key(uint8_t mbk[static 32]) {
     return crypto_derive_symmetric_key(SLIP77_LABEL, SLIP77_LABEL_LEN, mbk);
@@ -56,16 +55,14 @@ bool liquid_get_blinding_key(const uint8_t mbk[static 32],
                              size_t script_length,
                              uint8_t blinding_key[static 32]) {
     cx_hmac_sha256_t hmac;
-    return ( CX_OK == cx_hmac_sha256_init_no_throw(&hmac, mbk, 32) &&
-             CX_OK == cx_hmac_no_throw( (cx_hmac_t*)&hmac,
-                                        CX_LAST,
-                                        script,
-                                        script_length,
-                                        blinding_key,
-                                        32) );
+    return (CX_OK == cx_hmac_sha256_init_no_throw(&hmac, mbk, 32) &&
+            CX_OK == cx_hmac_no_throw((cx_hmac_t *) &hmac,
+                                      CX_LAST,
+                                      script,
+                                      script_length,
+                                      blinding_key,
+                                      32));
 }
-
-
 
 /**
  * Derives blinding public key from given bare public key according to ELIP 150.
@@ -87,8 +84,8 @@ static bool __attribute__((noinline)) elip150_derive_public_key(
     const uint8_t *script,
     size_t script_length,
     uint8_t out_pubkey[static 33]) {
-    if(!bare_pubkey || !script || !out_pubkey ||
-       !(0x02 == bare_pubkey[0] || 0x03 == bare_pubkey[0])) {
+    if (!bare_pubkey || !script || !out_pubkey ||
+        !(0x02 == bare_pubkey[0] || 0x03 == bare_pubkey[0])) {
         return false;
     }
 
@@ -130,10 +127,9 @@ static bool __attribute__((noinline)) elip150_derive_public_key(
         // Uncompress bare public key
         ok = ok && 0 == crypto_get_uncompressed_pubkey(bare_pubkey, point);
         // Add tweak point
-        ok = ok && CX_OK == cx_ecfp_add_point_no_throw(CX_CURVE_SECP256K1,
-                                                       point,
-                                                       point,
-                                                       tweak_pubkey_inst.W);
+        ok = ok &&
+             CX_OK ==
+                 cx_ecfp_add_point_no_throw(CX_CURVE_SECP256K1, point, point, tweak_pubkey_inst.W);
         // Compress and output resulting public key
         if (ok) {
             out_pubkey[0] = ((point[64] & 1) ? 0x03 : 0x02);
@@ -167,7 +163,7 @@ static bool __attribute__((noinline)) elip151_derive_private_key(
     liquid_get_script_callback_t get_script_callback,
     void *get_script_callback_state,
     uint8_t out_privkey[static 32]) {
-    if(!get_script_callback || !out_privkey || !n_descriptors) {
+    if (!get_script_callback || !out_privkey || !n_descriptors) {
         return false;
     }
 
@@ -178,20 +174,19 @@ static bool __attribute__((noinline)) elip151_derive_private_key(
     // Expand multi-path to every single descriptor and process each
     // `scriptPubKey` at index 2^31-1.
     uint8_t script[MAX_PREVOUT_SCRIPTPUBKEY_LEN];
-    for(uint32_t descriptor_idx = 0; descriptor_idx < n_descriptors; ++descriptor_idx) {
+    for (uint32_t descriptor_idx = 0; descriptor_idx < n_descriptors; ++descriptor_idx) {
         // Obtain scriptPubKey at index 2^31-1
         buffer_t script_buffer = buffer_create(script, sizeof(script));
-        bool res = ((liquid_get_script_callback_t) PIC(get_script_callback))(
-            get_script_callback_state,
-            descriptor_idx,
-            LIQUID_ELIP151_RESERVED_INDEX,
-            &script_buffer
-        );
+        bool res =
+            ((liquid_get_script_callback_t) PIC(get_script_callback))(get_script_callback_state,
+                                                                      descriptor_idx,
+                                                                      LIQUID_ELIP151_RESERVED_INDEX,
+                                                                      &script_buffer);
         if (!res) {
             return false;
         }
         // Hash scriptPubKey prepended with OP_INVALIDOPCODE
-        crypto_hash_update_u8(&hash_context.header, 1); // Length of OP_INVALIDOPCODE
+        crypto_hash_update_u8(&hash_context.header, 1);  // Length of OP_INVALIDOPCODE
         crypto_hash_update_u8(&hash_context.header, OP_INVALIDOPCODE);
         crypto_hash_update_varint(&hash_context.header, buffer_stored(&script_buffer));
         crypto_hash_update(&hash_context.header, script, buffer_stored(&script_buffer));
@@ -254,7 +249,7 @@ static bool derive_pubkey_slip77(const policy_node_t *blinding_key_node,
         return false;
     }
     const policy_node_blinding_privkey_t *slip77 =
-        (const policy_node_blinding_privkey_t*) blinding_key_node;
+        (const policy_node_blinding_privkey_t *) blinding_key_node;
 
     uint8_t raw_privkey[32];
 
@@ -268,7 +263,6 @@ static bool derive_pubkey_slip77(const policy_node_t *blinding_key_node,
 
     return ok;
 }
-
 
 /**
  * Derives public blinding key from a bare public key according to ELIP 150.
@@ -288,12 +282,11 @@ static bool derive_pubkey_elip150_from_bare_pubkey(const policy_node_t *blinding
                                                    const uint8_t *script,
                                                    size_t script_length,
                                                    uint8_t pubkey[static 33]) {
-    if (TOKEN_HEX_PUB != blinding_key_node->type &&
-        TOKEN_XPUB != blinding_key_node->type) {
+    if (TOKEN_HEX_PUB != blinding_key_node->type && TOKEN_XPUB != blinding_key_node->type) {
         return false;
     }
     const policy_node_blinding_pubkey_t *node_pubkey =
-        (const policy_node_blinding_pubkey_t*) blinding_key_node;
+        (const policy_node_blinding_pubkey_t *) blinding_key_node;
 
     return elip150_derive_public_key(node_pubkey->pubkey, script, script_length, pubkey);
 }
@@ -316,12 +309,11 @@ static bool derive_pubkey_elip150_from_bare_privkey(const policy_node_t *blindin
                                                     const uint8_t *script,
                                                     size_t script_length,
                                                     uint8_t pubkey[static 33]) {
-    if (TOKEN_HEX_PRV != blinding_key_node->type &&
-        TOKEN_XPRV != blinding_key_node->type) {
+    if (TOKEN_HEX_PRV != blinding_key_node->type && TOKEN_XPRV != blinding_key_node->type) {
         return false;
     }
     const policy_node_blinding_privkey_t *node_privkey =
-        (const policy_node_blinding_privkey_t*) blinding_key_node;
+        (const policy_node_blinding_privkey_t *) blinding_key_node;
 
     bool ok = crypto_generate_compressed_pubkey_pair(node_privkey->privkey, pubkey);
     ok = ok && elip150_derive_public_key(pubkey, script, script_length, pubkey);
@@ -331,16 +323,14 @@ static bool derive_pubkey_elip150_from_bare_privkey(const policy_node_t *blindin
 
 /// Table of functions deriving public blinding key.
 static const pubkey_derivator_t PUBKEY_DERIVATORS[] = {
-    { .type = TOKEN_SLIP77,  .derivator = derive_pubkey_slip77 },
-    { .type = TOKEN_HEX_PUB, .derivator = derive_pubkey_elip150_from_bare_pubkey },
-    { .type = TOKEN_HEX_PRV, .derivator = derive_pubkey_elip150_from_bare_privkey },
-    { .type = TOKEN_XPUB,    .derivator = derive_pubkey_elip150_from_bare_pubkey },
-    { .type = TOKEN_XPRV,    .derivator = derive_pubkey_elip150_from_bare_privkey }
-};
+    {.type = TOKEN_SLIP77, .derivator = derive_pubkey_slip77},
+    {.type = TOKEN_HEX_PUB, .derivator = derive_pubkey_elip150_from_bare_pubkey},
+    {.type = TOKEN_HEX_PRV, .derivator = derive_pubkey_elip150_from_bare_privkey},
+    {.type = TOKEN_XPUB, .derivator = derive_pubkey_elip150_from_bare_pubkey},
+    {.type = TOKEN_XPRV, .derivator = derive_pubkey_elip150_from_bare_privkey}};
 
 /// Number of records in the table of known blinding key signatures
-static const size_t N_PUBKEY_DERIVATORS =
-    sizeof(PUBKEY_DERIVATORS) / sizeof(PUBKEY_DERIVATORS[0]);
+static const size_t N_PUBKEY_DERIVATORS = sizeof(PUBKEY_DERIVATORS) / sizeof(PUBKEY_DERIVATORS[0]);
 
 /**
  * Finds the appropriate function deriving public blinding for the given policy node type.
@@ -431,7 +421,7 @@ static int get_descriptor_number(const policy_node_t *policy) {
             return -1;
         }
         n_descriptors = n_curr;
-    } while(++i < n_placeholders);
+    } while (++i < n_placeholders);
 
     return n_descriptors;
 }
@@ -442,7 +432,7 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
                                     liquid_get_script_callback_t get_script_callback,
                                     void *get_script_callback_state,
                                     uint8_t pubkey[static 33]) {
-    if(!policy || TOKEN_CT != policy->type || !script || !pubkey) {
+    if (!policy || TOKEN_CT != policy->type || !script || !pubkey) {
         return false;
     }
 
@@ -455,7 +445,7 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
     if (TOKEN_ELIP151 == mbk_script->type) {
         int n_descriptors =
             get_descriptor_number(r_policy_node(&((const policy_node_ct_t *) policy)->script));
-        if(n_descriptors < 1) {
+        if (n_descriptors < 1) {
             return false;
         }
         return get_blinding_public_key_elip151(script,
@@ -466,19 +456,18 @@ bool liquid_get_blinding_public_key(const policy_node_t *policy,
                                                pubkey);
     } else {
         pubkey_derivator_proto_t derivator = find_pubkey_derivator(mbk_script->type);
-        return NULL == derivator ?
-            false : (*derivator)(mbk_script, script, script_length, pubkey);
+        return NULL == derivator ? false : (*derivator)(mbk_script, script, script_length, pubkey);
     }
 }
 
 bool liquid_is_blinding_key_acceptable(const policy_node_t *policy) {
-    if(!policy || policy->type != TOKEN_CT) {
+    if (!policy || policy->type != TOKEN_CT) {
         return false;
     }
 
     const policy_node_t *mbk_script =
         r_policy_node(&((const policy_node_ct_t *) policy)->mbk_script);
-    if(mbk_script) {
+    if (mbk_script) {
         // Ensure we have an appropriate derivation function for this kind of key
         if (NULL == find_pubkey_derivator(mbk_script->type)) {
             return false;
@@ -488,7 +477,7 @@ bool liquid_is_blinding_key_acceptable(const policy_node_t *policy) {
         // descriptors
         if (TOKEN_SLIP77 == mbk_script->type && !policy_is_multisig(policy)) {
             const policy_node_blinding_privkey_t *slip77 =
-                (const policy_node_blinding_privkey_t *)mbk_script;
+                (const policy_node_blinding_privkey_t *) mbk_script;
             if (!liquid_is_master_blinding_key_ours(slip77->privkey)) {
                 return false;
             }
@@ -499,7 +488,7 @@ bool liquid_is_blinding_key_acceptable(const policy_node_t *policy) {
     return false;
 }
 
-#endif // !SKIP_FOR_CMOCKA
+#endif  // !SKIP_FOR_CMOCKA
 
 int liquid_get_script_confidential_address(const uint8_t *script,
                                            size_t script_len,
@@ -508,13 +497,13 @@ int liquid_get_script_confidential_address(const uint8_t *script,
                                            size_t pub_key_len,
                                            char *out,
                                            size_t out_len) {
-    if(!script || !network_config ||!pub_key || !out) {
+    if (!script || !network_config || !pub_key || !out) {
         return -1;
     }
 
     int script_type = get_script_type(script, script_len);
-    if(script_type < 0 || script_len < 4) {
-        return -1; // invalid script
+    if (script_type < 0 || script_len < 4) {
+        return -1;  // invalid script
     }
 
     int addr_len = -1;
@@ -524,7 +513,7 @@ int liquid_get_script_confidential_address(const uint8_t *script,
             int offset = (script_type == SCRIPT_TYPE_P2PKH) ? 3 : 2;
             int ver = (script_type == SCRIPT_TYPE_P2PKH) ? network_config->p2pkh_version
                                                          : network_config->p2sh_version;
-            if(script_len - offset < HASH160_LEN) {
+            if (script_len - offset < HASH160_LEN) {
                 return -1;
             }
             addr_len = liquid_encode_address_base58(script + offset,
@@ -541,9 +530,9 @@ int liquid_get_script_confidential_address(const uint8_t *script,
         case SCRIPT_TYPE_P2WSH:
         case SCRIPT_TYPE_P2TR:
         case SCRIPT_TYPE_UNKNOWN_SEGWIT: {
-            uint8_t prog_len = script[1];  // length of the witness program
-            int version = (script[0] == 0 ? 0 : script[0] - 80); // witness program version
-            if(prog_len > script_len - 2) {
+            uint8_t prog_len = script[1];                         // length of the witness program
+            int version = (script[0] == 0 ? 0 : script[0] - 80);  // witness program version
+            if (prog_len > script_len - 2) {
                 return -1;
             }
             addr_len = liquid_encode_address_segwit(script + 2,
@@ -564,4 +553,4 @@ int liquid_get_script_confidential_address(const uint8_t *script,
 #include "liquid_tests.h"
 #endif
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

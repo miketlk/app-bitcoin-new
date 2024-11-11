@@ -12,7 +12,7 @@
 #include "liquid_hash_wrappers.h"
 
 /// Maximum reasonable length of the contract
-#define CONTRACT_MAX_LEN (10*1024)
+#define CONTRACT_MAX_LEN (10 * 1024)
 /// Maximum length of key field in JSON (not including quotes and terminating null)
 #define CONTRACT_MAX_KEY_LEN 9
 /// Maximum length of value field in JSON (not including quotes and terminating null)
@@ -103,4 +103,4 @@ void contract_parser_process(contract_parser_context_t *ctx, buffer_t *data);
 WARN_UNUSED_RESULT bool contract_parser_finalize(contract_parser_context_t *ctx,
                                                  uint8_t hash[static SHA256_LEN]);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

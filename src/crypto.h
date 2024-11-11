@@ -259,7 +259,8 @@ void crypto_hash160(const uint8_t *in, uint16_t in_len, uint8_t *out);
  *
  * @return 0 on success, a negative number on failure.
  */
-WARN_UNUSED_RESULT int crypto_get_compressed_pubkey(const uint8_t uncompressed_key[static 65], uint8_t out[static 33]);
+WARN_UNUSED_RESULT int crypto_get_compressed_pubkey(const uint8_t uncompressed_key[static 65],
+                                                    uint8_t out[static 33]);
 
 /**
  * Computes the 65-bytes uncompressed public key from the compressed 33-bytes public key.
@@ -274,7 +275,8 @@ WARN_UNUSED_RESULT int crypto_get_compressed_pubkey(const uint8_t uncompressed_k
  *
  * @return 0 on success, a negative number on failure.
  */
-WARN_UNUSED_RESULT int crypto_get_uncompressed_pubkey(const uint8_t compressed_key[static 33], uint8_t out[static 65]);
+WARN_UNUSED_RESULT int crypto_get_uncompressed_pubkey(const uint8_t compressed_key[static 33],
+                                                      uint8_t out[static 65]);
 
 /**
  * Generates compressed public key from the given private key.
@@ -336,7 +338,7 @@ uint32_t crypto_get_key_fingerprint(const uint8_t pub_key[static 33]);
  * Computes the fingerprint of the master key as per BIP32.
  *
  * @return the fingerprint of the master key.
-  */
+ */
 uint32_t crypto_get_master_key_fingerprint(void);
 
 /**
@@ -370,7 +372,9 @@ WARN_UNUSED_RESULT int get_extended_pubkey_at_path(const uint32_t bip32_path[],
  *
  * @return true on success, false in case of error.
  */
-WARN_UNUSED_RESULT bool crypto_derive_symmetric_key(const char *label, size_t label_len, uint8_t key[static 32]);
+WARN_UNUSED_RESULT bool crypto_derive_symmetric_key(const char *label,
+                                                    size_t label_len,
+                                                    uint8_t key[static 32]);
 
 /**
  * Encodes a 20-bytes hash in base58 with checksum, after prepending a version prefix.
@@ -390,7 +394,10 @@ WARN_UNUSED_RESULT bool crypto_derive_symmetric_key(const char *label, size_t la
  * @return the length of the encoded output on success, -1 on failure (that is, if the output
  *   would be longer than out_len).
  */
-WARN_UNUSED_RESULT int base58_encode_address(const uint8_t in[20], uint32_t version, char *out, size_t out_len);
+WARN_UNUSED_RESULT int base58_encode_address(const uint8_t in[20],
+                                             uint32_t version,
+                                             char *out,
+                                             size_t out_len);
 
 /**
  * Signs a SHA-256 hash using the ECDSA with deterministic nonce accordin to RFC6979; the signing

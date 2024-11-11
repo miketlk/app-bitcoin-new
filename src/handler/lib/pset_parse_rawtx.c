@@ -21,7 +21,7 @@
 #include "../../crypto.h"
 
 /// Maximum size of a single transaction element
-#define MAX_ELEMENT_LENGTH (16*1024*1024)
+#define MAX_ELEMENT_LENGTH (16 * 1024 * 1024)
 /// Maximum number of elements in a vector
 #define MAX_VECTOR_N_ELEMENTS 1024
 
@@ -217,7 +217,6 @@ typedef struct pset_parse_rawtx_state_s {
     /// Set to true if there was an error during parsing
     bool parser_error;
 } pset_parse_rawtx_state_t;
-
 
 /*****************************************************************************
  * PARSER FOR A RAWTX INPUT
@@ -431,10 +430,11 @@ static int parse_rawtxinput_asset_issuance_entropy(parse_rawtxinput_state_t *sta
  *
  * @return 0 if step continues, 1 if step complete, a negative number on error.
  */
-static int parse_rawtxinput_asset_issuance_commitments_init(parse_rawtxinput_state_t *state, buffer_t *buffers[2]) {
+static int parse_rawtxinput_asset_issuance_commitments_init(parse_rawtxinput_state_t *state,
+                                                            buffer_t *buffers[2]) {
     (void) buffers;
 
-    state->commitment_id = AMOUNT_COMMITMENT; // begin with first commitment
+    state->commitment_id = AMOUNT_COMMITMENT;  // begin with first commitment
     return 1;
 }
 
@@ -448,7 +448,8 @@ static int parse_rawtxinput_asset_issuance_commitments_init(parse_rawtxinput_sta
  *
  * @return 0 if step continues, 1 if step complete, a negative number on error.
  */
-static int parse_rawtxinput_asset_issuance_commitment(parse_rawtxinput_state_t *state, buffer_t *buffers[2]) {
+static int parse_rawtxinput_asset_issuance_commitment(parse_rawtxinput_state_t *state,
+                                                      buffer_t *buffers[2]) {
     if (!(state->vout & VOUT_FLAG_HAS_ISSUANCE)) {
         return 1;  // no asset issuance
     }
@@ -457,13 +458,12 @@ static int parse_rawtxinput_asset_issuance_commitment(parse_rawtxinput_state_t *
     size_t data_len = 0;
 
     uint8_t kind;
-    bool result = dbuffer_peek(buffers, &kind); // peek first byte
+    bool result = dbuffer_peek(buffers, &kind);  // peek first byte
 
-    if(result) {
+    if (result) {
         if (kind == COMMITMENT_NONE) {
             data_len = 1;
-        }
-        else if (kind == COMMITMENT_NONCONFIDENTIAL) {
+        } else if (kind == COMMITMENT_NONCONFIDENTIAL) {
             data_len = 9;
         } else {
             kind = COMMITMENT_CONFIDENTIAL;
@@ -495,14 +495,13 @@ static const parsing_step_t parse_rawtxinput_steps[] = {
     (parsing_step_t) parse_rawtxinput_asset_issuance_nonce,
     (parsing_step_t) parse_rawtxinput_asset_issuance_entropy,
     (parsing_step_t) parse_rawtxinput_asset_issuance_commitments_init,
-    (parsing_step_t) parse_rawtxinput_asset_issuance_commitment, // amount commitment
-    (parsing_step_t) parse_rawtxinput_asset_issuance_commitment  // token commitment
+    (parsing_step_t) parse_rawtxinput_asset_issuance_commitment,  // amount commitment
+    (parsing_step_t) parse_rawtxinput_asset_issuance_commitment   // token commitment
 };
 
 /// Number of steps of transaction's input parser
 const int n_parse_rawtxinput_steps =
     sizeof(parse_rawtxinput_steps) / sizeof(parse_rawtxinput_steps[0]);
-
 
 /*****************************************************************************
  * PARSER FOR A RAWTX OUTPUT
@@ -520,11 +519,11 @@ const int n_parse_rawtxinput_steps =
  */
 static int parse_rawtxoutput_asset(parse_rawtxoutput_state_t *state, buffer_t *buffers[2]) {
     uint8_t header;
-    bool result = dbuffer_peek(buffers, &header); // peek first byte
+    bool result = dbuffer_peek(buffers, &header);  // peek first byte
 
     if (result) {
         if (header != 0x01 && header != 0x0a && header != 0x0b) {
-            return -1; // parser error
+            return -1;  // parser error
         }
 
         uint8_t asset[33];
@@ -563,10 +562,10 @@ static int parse_rawtxoutput_asset(parse_rawtxoutput_state_t *state, buffer_t *b
  */
 static int parse_rawtxoutput_value(parse_rawtxoutput_state_t *state, buffer_t *buffers[2]) {
     uint8_t header;
-    bool result = dbuffer_peek(buffers, &header); // peek first byte
-    if(result) {
+    bool result = dbuffer_peek(buffers, &header);  // peek first byte
+    if (result) {
         if (header != 0x01 && header != 0x08 && header != 0x09) {
-            return -1; // parser error
+            return -1;  // parser error
         }
 
         uint8_t data[33];
@@ -576,7 +575,7 @@ static int parse_rawtxoutput_value(parse_rawtxoutput_state_t *state, buffer_t *b
         if (result) {
             parse_rawtx_state_t *parent = state->parent_state;
             txid_parser_vout_t *vout = parent->parser_output_vout;
-            if(parent->hash_context) {
+            if (parent->hash_context) {
                 crypto_hash_update(&parent->hash_context->header, data, data_len);
             }
             if (parent->output_index != -1 &&
@@ -609,17 +608,17 @@ static int parse_rawtxoutput_ecdh_pubkey(parse_rawtxoutput_state_t *state, buffe
     size_t data_len = 0;
 
     uint8_t flag;
-    bool result = dbuffer_peek(buffers, &flag); // peek first byte
-    if(result) {
+    bool result = dbuffer_peek(buffers, &flag);  // peek first byte
+    if (result) {
         parse_rawtx_state_t *parent = state->parent_state;
-        if (flag == 0x00) { // no ECDH public key
+        if (flag == 0x00) {  // no ECDH public key
             data_len = 1;
-        } else { // ECDH public key is provided
+        } else {  // ECDH public key is provided
             data_len = 33;
         }
         result = dbuffer_read_bytes(buffers, data, data_len);
         if (result) {
-            if(parent->hash_context) {
+            if (parent->hash_context) {
                 crypto_hash_update(&parent->hash_context->header, data, data_len);
             }
 #if RAWTX_DECODE_ECDH_PUBKEY
@@ -634,7 +633,7 @@ static int parse_rawtxoutput_ecdh_pubkey(parse_rawtxoutput_state_t *state, buffe
                     }
                 }
             }
-#endif // RAWTX_DECODE_ECDH_PUBKEY
+#endif  // RAWTX_DECODE_ECDH_PUBKEY
         }
     }
     return result ? 1 : 0;
@@ -657,8 +656,9 @@ static int parse_rawtxoutput_scriptpubkey_size(parse_rawtxoutput_state_t *state,
     if (result) {
         state->scriptpubkey_size = (unsigned int) scriptpubkey_size;
 
-        if(state->parent_state->hash_context) {
-            crypto_hash_update_varint(&state->parent_state->hash_context->header, scriptpubkey_size);
+        if (state->parent_state->hash_context) {
+            crypto_hash_update_varint(&state->parent_state->hash_context->header,
+                                      scriptpubkey_size);
         }
 
         if (state->parent_state->output_index != -1) {
@@ -717,7 +717,7 @@ static int parse_rawtxoutput_scriptpubkey(parse_rawtxoutput_state_t *state, buff
             return 0;  // could not read enough data
         }
 
-        if(state->parent_state->hash_context) {
+        if (state->parent_state->hash_context) {
             crypto_hash_update(&state->parent_state->hash_context->header, data, data_len);
         }
 
@@ -734,7 +734,7 @@ static int parse_rawtxoutput_scriptpubkey(parse_rawtxoutput_state_t *state, buff
                 if (state->scriptpubkey_counter + data_len <=
                     sizeof(state->parent_state->parser_output_vout->scriptpubkey)) {
                     memcpy(state->parent_state->parser_output_vout->scriptpubkey +
-                           state->scriptpubkey_counter,
+                               state->scriptpubkey_counter,
                            data,
                            data_len);
                 } else {
@@ -765,7 +765,6 @@ static const parsing_step_t parse_rawtxoutput_steps[] = {
 const int n_parse_rawtxoutput_steps =
     sizeof(parse_rawtxoutput_steps) / sizeof(parse_rawtxoutput_steps[0]);
 
-
 /*****************************************************************************
  * PARSER FOR TRANSACTION INPUT WITNESS
  *****************************************************************************/
@@ -785,7 +784,7 @@ const int n_parse_rawtxoutput_steps =
 static int parse_in_witness_proofs_init(parse_in_witness_state_t *state, buffer_t *buffers[2]) {
     (void) buffers;
 
-    state->proof_id = AMOUNT_PROOF; // begin with amount proof
+    state->proof_id = AMOUNT_PROOF;  // begin with amount proof
 
     return 1;
 }
@@ -805,7 +804,7 @@ static int parse_in_witness_proof_length(parse_in_witness_state_t *state, buffer
     bool result = dbuffer_read_varint(buffers, &proof_length);
 
     if (result) {
-        if(proof_length > MAX_ELEMENT_LENGTH) {
+        if (proof_length > MAX_ELEMENT_LENGTH) {
             return -1;
         }
         state->element_length = (unsigned int) proof_length;
@@ -865,7 +864,7 @@ static int parse_in_witness_proof(parse_in_witness_state_t *state, buffer_t *buf
 static int parse_in_witness_vectors_init(parse_in_witness_state_t *state, buffer_t *buffers[2]) {
     (void) buffers;
 
-    state->witness_id = SCRIPT_WITNESS_VECTOR; // begin with script witness
+    state->witness_id = SCRIPT_WITNESS_VECTOR;  // begin with script witness
 
     return 1;
 }
@@ -885,7 +884,7 @@ static int parse_in_witness_vector_size(parse_in_witness_state_t *state, buffer_
     bool result = dbuffer_read_varint(buffers, &vector_n_elements);
 
     if (result) {
-        if(vector_n_elements > MAX_VECTOR_N_ELEMENTS) {
+        if (vector_n_elements > MAX_VECTOR_N_ELEMENTS) {
             return -1;
         }
         state->vector_n_elements = (unsigned int) vector_n_elements;
@@ -916,7 +915,7 @@ static int parse_in_witness_vector_elements(parse_in_witness_state_t *state, buf
                 return 0;  // incomplete, read more data
             }
             if (element_length > MAX_ELEMENT_LENGTH) {
-                return -1; // size of an element is outside of allowed boundaries
+                return -1;  // size of an element is outside of allowed boundaries
             }
             state->is_element_length_read = true;
             state->element_length = (unsigned int) element_length;
@@ -948,21 +947,20 @@ static int parse_in_witness_vector_elements(parse_in_witness_state_t *state, buf
 /// Table of steps of input witness parser
 static const parsing_step_t parse_in_witness_steps[] = {
     (parsing_step_t) parse_in_witness_proofs_init,
-    (parsing_step_t) parse_in_witness_proof_length,    // size of amount proof
-    (parsing_step_t) parse_in_witness_proof,           // amount proof
-    (parsing_step_t) parse_in_witness_proof_length,    // size of token proof
-    (parsing_step_t) parse_in_witness_proof,           // token proof
+    (parsing_step_t) parse_in_witness_proof_length,  // size of amount proof
+    (parsing_step_t) parse_in_witness_proof,         // amount proof
+    (parsing_step_t) parse_in_witness_proof_length,  // size of token proof
+    (parsing_step_t) parse_in_witness_proof,         // token proof
     (parsing_step_t) parse_in_witness_vectors_init,
-    (parsing_step_t) parse_in_witness_vector_size,     // number of elements in script witness
-    (parsing_step_t) parse_in_witness_vector_elements, // elements of script witness
-    (parsing_step_t) parse_in_witness_vector_size,     // number of elements in pegin witness
-    (parsing_step_t) parse_in_witness_vector_elements  // elements of pegin witness
+    (parsing_step_t) parse_in_witness_vector_size,      // number of elements in script witness
+    (parsing_step_t) parse_in_witness_vector_elements,  // elements of script witness
+    (parsing_step_t) parse_in_witness_vector_size,      // number of elements in pegin witness
+    (parsing_step_t) parse_in_witness_vector_elements   // elements of pegin witness
 };
 
 /// Number of steps of input witness parser
 const int n_parse_in_witness_steps =
     sizeof(parse_in_witness_steps) / sizeof(parse_in_witness_steps[0]);
-
 
 /*****************************************************************************
  * PARSER FOR TRANSACTION OUTPUT WITNESS
@@ -983,7 +981,7 @@ const int n_parse_in_witness_steps =
 static int parse_out_witness_proofs_init(parse_out_witness_state_t *state, buffer_t *buffers[2]) {
     (void) buffers;
 
-    state->proof_id = SURJECTION_PROOF; // begin with amount proof
+    state->proof_id = SURJECTION_PROOF;  // begin with amount proof
 
     return 1;
 }
@@ -1003,7 +1001,7 @@ static int parse_out_witness_proof_length(parse_out_witness_state_t *state, buff
     bool result = dbuffer_read_varint(buffers, &proof_length);
 
     if (result) {
-        if(proof_length > MAX_ELEMENT_LENGTH) {
+        if (proof_length > MAX_ELEMENT_LENGTH) {
             return -1;
         }
         state->field_length = (unsigned int) proof_length;
@@ -1051,16 +1049,15 @@ static int parse_out_witness_proof(parse_out_witness_state_t *state, buffer_t *b
 /// Table of steps of output witness parser
 static const parsing_step_t parse_out_witness_steps[] = {
     (parsing_step_t) parse_out_witness_proofs_init,
-    (parsing_step_t) parse_out_witness_proof_length, // size of surjection proof
-    (parsing_step_t) parse_out_witness_proof,        // surjection proof
-    (parsing_step_t) parse_out_witness_proof_length, // size of range proof
-    (parsing_step_t) parse_out_witness_proof,        // range proof
+    (parsing_step_t) parse_out_witness_proof_length,  // size of surjection proof
+    (parsing_step_t) parse_out_witness_proof,         // surjection proof
+    (parsing_step_t) parse_out_witness_proof_length,  // size of range proof
+    (parsing_step_t) parse_out_witness_proof,         // range proof
 };
 
 /// Number of steps of output witness parser
 const int n_parse_out_witness_steps =
     sizeof(parse_out_witness_steps) / sizeof(parse_out_witness_steps[0]);
-
 
 /*****************************************************************************
  * PARSER FOR A FULL RAWTX
@@ -1106,8 +1103,7 @@ static int parse_rawtx_check_segwit(parse_rawtx_state_t *state, buffer_t *buffer
     if (result) {
         if (flag == 0x00) {
             state->is_segwit = false;
-        }
-        else if (flag == 0x01) {
+        } else if (flag == 0x01) {
             state->is_segwit = true;
         } else {
             PRINTF("Unexpected flag while parsing a transaction: %02x.\n", flag);
@@ -1413,7 +1409,7 @@ static const parsing_step_t parse_rawtx_steps[] = {(parsing_step_t) parse_rawtx_
                                                    (parsing_step_t) parse_rawtx_in_witnesses_init,
                                                    (parsing_step_t) parse_rawtx_in_witnesses,
                                                    (parsing_step_t) parse_rawtx_out_witnesses_init,
-                                                   (parsing_step_t) parse_rawtx_out_witnesses };
+                                                   (parsing_step_t) parse_rawtx_out_witnesses};
 
 /// Number of steps of a full transaction
 const int n_parse_rawtx_steps = sizeof(parse_rawtx_steps) / sizeof(parse_rawtx_steps[0]);
@@ -1513,9 +1509,11 @@ static void cb_process_single_output_data(buffer_t *data, void *cb_state) {
     buffer_t store_buf = buffer_create(state->store, state->store_data_length);
     buffer_t *buffers[] = {&store_buf, data};
 
-    int result =
-        parser_run(parse_rawtxoutput_steps, n_parse_rawtxoutput_steps, &state->parser_context,
-                   buffers, pic);
+    int result = parser_run(parse_rawtxoutput_steps,
+                            n_parse_rawtxoutput_steps,
+                            &state->parser_context,
+                            buffers,
+                            pic);
     if (result == 0) {
         parser_consolidate_buffers(buffers, sizeof(state->store));
         state->store_data_length = store_buf.size;
@@ -1568,4 +1566,4 @@ int call_psbt_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context
     return 0;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

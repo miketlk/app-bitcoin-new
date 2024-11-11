@@ -101,7 +101,7 @@ typedef struct {
     sighash_name_t sighash_name;
 } ui_sighash_flags_state_t;
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 /**
  * Union of all the states for each of the UI screens, in order to save memory.
@@ -181,33 +181,29 @@ bool ui_warn_external_inputs(dispatcher_context_t *context);
 
 bool ui_warn_unverified_segwit_inputs(dispatcher_context_t *context);
 
-bool ui_warn_nondefault_sighash(dispatcher_context_t *context
-                                LIQUID_PARAM(uint32_t input_index)
-                                LIQUID_PARAM(uint32_t sighash_type));
+bool ui_warn_nondefault_sighash(dispatcher_context_t *context LIQUID_PARAM(uint32_t input_index)
+                                    LIQUID_PARAM(uint32_t sighash_type));
 
 bool ui_validate_output(dispatcher_context_t *context,
                         int index,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
-                        uint64_t amount
-                        LIQUID_PARAM(uint8_t decimals)
-                        LIQUID_PARAM(const uint8_t asset_tag[static 32])
-                        LIQUID_PARAM(bool display_asset_tag)
-                        LIQUID_PARAM(bool asset_is_reissuance_token));
+                        uint64_t amount LIQUID_PARAM(uint8_t decimals)
+                            LIQUID_PARAM(const uint8_t asset_tag[static 32])
+                                LIQUID_PARAM(bool display_asset_tag)
+                                    LIQUID_PARAM(bool asset_is_reissuance_token));
 
 bool ui_warn_high_fee(dispatcher_context_t *context);
 
 bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
-                             bool is_self_transfer
-                             LIQUID_PARAM(uint8_t decimals)
-                             LIQUID_PARAM(const char *asset_op_type));
+                             bool is_self_transfer LIQUID_PARAM(uint8_t decimals)
+                                 LIQUID_PARAM(const char *asset_op_type));
 
 #ifdef HAVE_LIQUID
-bool ui_warn_unknown_asset(dispatcher_context_t *context,
-                           const uint8_t asset_tag[static 32]);
+bool ui_warn_unknown_asset(dispatcher_context_t *context, const uint8_t asset_tag[static 32]);
 
 bool ui_validate_asset(dispatcher_context_t *context,
                        const uint8_t asset_tag[static 32],

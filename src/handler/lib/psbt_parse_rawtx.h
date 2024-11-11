@@ -25,4 +25,4 @@ int call_psbt_parse_rawtx(dispatcher_context_t *dispatcher_context,
                           int output_index,
                           txid_parser_outputs_t *outputs);
 
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)

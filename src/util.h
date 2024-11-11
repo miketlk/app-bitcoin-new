@@ -8,7 +8,7 @@
 /**
  * Fall-through between switch labels as Clang C attribute
  */
-#if defined (__has_c_attribute)
+#if defined(__has_c_attribute)
 #if __has_c_attribute(fallthrough)
 #define UTIL_FALLTHROUGH [[fallthrough]]
 #endif
@@ -27,7 +27,7 @@
  */
 #ifndef UTIL_FALLTHROUGH
 #if defined(__GNUC__) && __GNUC__ >= 4
-#define UTIL_FALLTHROUGH __attribute__ ((fallthrough))
+#define UTIL_FALLTHROUGH __attribute__((fallthrough))
 #else
 #define UTIL_FALLTHROUGH
 #endif
@@ -156,7 +156,7 @@ static inline void call_explicit_bzero(void *dest, size_t len) {
  *
  * @return true if blocks are equal, false otherwise.
  */
-static inline bool memeq(const void * ptr1, const void * ptr2, size_t num) {
+static inline bool memeq(const void *ptr1, const void *ptr2, size_t num) {
     return 0 == memcmp(ptr1, ptr2, num);
 }
 
@@ -178,6 +178,6 @@ static inline bool memeq(const void * ptr1, const void * ptr2, size_t num) {
  *
  * @return true if strings are equal, false otherwise.
  */
-static inline bool streq(const char * str1, const char * str2, size_t num) {
+static inline bool streq(const char *str1, const char *str2, size_t num) {
     return 0 == strncmp(str1, str2, num);
 }

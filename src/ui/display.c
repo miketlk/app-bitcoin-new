@@ -216,9 +216,8 @@ bool ui_warn_unverified_segwit_inputs(dispatcher_context_t *context) {
     return io_ui_process(context, true);
 }
 
-bool ui_warn_nondefault_sighash(dispatcher_context_t *context
-                                LIQUID_PARAM(uint32_t input_index)
-                                LIQUID_PARAM(uint32_t sighash_type)) {
+bool ui_warn_nondefault_sighash(dispatcher_context_t *context LIQUID_PARAM(uint32_t input_index)
+                                    LIQUID_PARAM(uint32_t sighash_type)) {
 #ifdef HAVE_LIQUID
     ui_sighash_flags_state_t *state = &g_ui_state.sighash_flags;
 
@@ -240,11 +239,10 @@ bool ui_validate_output(dispatcher_context_t *context,
                         int total_count,
                         const char *address_or_description,
                         const char *coin_name,
-                        uint64_t amount
-                        LIQUID_PARAM(uint8_t decimals)
-                        LIQUID_PARAM(const uint8_t asset_tag[static 32])
-                        LIQUID_PARAM(bool display_asset_tag)
-                        LIQUID_PARAM(bool asset_is_reissuance_token)) {
+                        uint64_t amount LIQUID_PARAM(uint8_t decimals)
+                            LIQUID_PARAM(const uint8_t asset_tag[static 32])
+                                LIQUID_PARAM(bool display_asset_tag)
+                                    LIQUID_PARAM(bool asset_is_reissuance_token)) {
     ui_validate_output_state_t *state = (ui_validate_output_state_t *) &g_ui_state;
 
     strncpy(state->address_or_description,
@@ -274,7 +272,6 @@ bool ui_validate_output(dispatcher_context_t *context,
 #endif
 
     return io_ui_process(context, true);
-
 }
 
 bool ui_warn_high_fee(dispatcher_context_t *context) {
@@ -286,9 +283,8 @@ bool ui_warn_high_fee(dispatcher_context_t *context) {
 bool ui_validate_transaction(dispatcher_context_t *context,
                              const char *coin_name,
                              uint64_t fee,
-                             bool is_self_transfer
-                             LIQUID_PARAM(uint8_t decimals)
-                             LIQUID_PARAM(const char *asset_op_type)) {
+                             bool is_self_transfer LIQUID_PARAM(uint8_t decimals)
+                                 LIQUID_PARAM(const char *asset_op_type)) {
     ui_validate_transaction_state_t *state = (ui_validate_transaction_state_t *) &g_ui_state;
 
 #ifdef HAVE_LIQUID
@@ -309,8 +305,7 @@ bool ui_validate_transaction(dispatcher_context_t *context,
 
 #ifdef HAVE_LIQUID
 
-bool ui_warn_unknown_asset(dispatcher_context_t *context,
-                           const uint8_t asset_tag[static 32]) {
+bool ui_warn_unknown_asset(dispatcher_context_t *context, const uint8_t asset_tag[static 32]) {
     ui_asset_state_t *state = (ui_asset_state_t *) &g_ui_state;
 
     liquid_format_asset_tag(asset_tag, state->tag_hex);
@@ -333,7 +328,7 @@ bool ui_validate_asset(dispatcher_context_t *context,
     return io_ui_process(context, true);
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #ifdef HAVE_BAGL
 bool ui_post_processing_confirm_wallet_registration(dispatcher_context_t *context, bool success) {

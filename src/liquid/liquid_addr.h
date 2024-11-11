@@ -74,4 +74,4 @@ WARN_UNUSED_RESULT int liquid_encode_address_segwit(const uint8_t *witprog,
                                                     char *out,
                                                     size_t out_len);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

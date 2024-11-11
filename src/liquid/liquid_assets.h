@@ -83,7 +83,7 @@ extern const uint8_t liquid_bitcoin_tag[LIQUID_ASSET_TAG_LEN];
  *
  * @return pointer to asset definition structure or NULL if not found
  */
-const asset_info_t* liquid_get_asset_info(const uint8_t tag[static LIQUID_ASSET_TAG_LEN]);
+const asset_info_t *liquid_get_asset_info(const uint8_t tag[static LIQUID_ASSET_TAG_LEN]);
 
 /**
  * Checks wether the given asset tag corresponds to L-BTC (or TL-BTC for tentnet build)
@@ -146,12 +146,10 @@ static inline asset_cache_t asset_cache_create(void *ptr, size_t size) {
     _Static_assert(LIQUID_ASSET_TAG_LEN == (1 << 5), "Unsupported asset tag size");
     LEDGER_ASSERT((size >> 5) > 0 && (size >> 5) <= UINT8_MAX, "Invalid size of asset cache");
 
-    return (asset_cache_t) {
-        .buffer = (uint8_t *)ptr,
-        .capacity = (size >> 5),
-        .asset_n = 0,
-        .write_idx = 0
-    };
+    return (asset_cache_t) {.buffer = (uint8_t *) ptr,
+                            .capacity = (size >> 5),
+                            .asset_n = 0,
+                            .write_idx = 0};
 }
 
 /**
@@ -165,8 +163,7 @@ static inline asset_cache_t asset_cache_create(void *ptr, size_t size) {
  * @param[in] asset_tag
  *   Asset tag to put intop cache.
  */
-void asset_cache_put(asset_cache_t *cache,
-                     const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]);
+void asset_cache_put(asset_cache_t *cache, const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]);
 
 /**
  * Searches through cached assets for a given asset tag.
@@ -185,4 +182,4 @@ void asset_cache_put(asset_cache_t *cache,
 bool asset_cache_find(const asset_cache_t *cache,
                       const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN]);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

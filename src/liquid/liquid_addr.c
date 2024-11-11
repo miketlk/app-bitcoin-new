@@ -27,7 +27,7 @@
 
 #ifdef HAVE_LIQUID
 
-#include <string.h>   // memmove, memset
+#include <string.h>  // memmove, memset
 #include "liquid_addr.h"
 #include "../util.h"
 #include "../common/buffer.h"
@@ -54,8 +54,8 @@ int liquid_encode_address_base58(const uint8_t *in,
                                  size_t pub_key_len,
                                  char *out,
                                  size_t out_len) {
-    if(!in || in_len != HASH160_LEN || prefix > 0xFF || version > 0xFF || !pub_key ||
-       pub_key_len != EC_PUBLIC_KEY_LEN || !out || !out_len) {
+    if (!in || in_len != HASH160_LEN || prefix > 0xFF || version > 0xFF || !pub_key ||
+        pub_key_len != EC_PUBLIC_KEY_LEN || !out || !out_len) {
         return -1;
     }
 
@@ -70,9 +70,9 @@ int liquid_encode_address_base58(const uint8_t *in,
     ok = ok && buffer_write_bytes(&buf, in, in_len);
     ok = ok && buffer_write_u32(&buf, base58_checksum(data, buf.offset), BE);
 
-    if(ok) {
+    if (ok) {
         addr_len = base58_encode(data, buf.offset, out, out_len - 1);
-        if(addr_len >= 0 && (size_t)addr_len < out_len) {
+        if (addr_len >= 0 && (size_t) addr_len < out_len) {
             out[addr_len] = '\0';
         } else {
             ok = false;
@@ -92,7 +92,7 @@ int liquid_encode_address_segwit(const uint8_t *witprog,
                                  size_t pub_key_len,
                                  char *out,
                                  size_t out_len) {
-    if(!witprog || !prefix || version > 0xFF || !pub_key || !out || !out_len) {
+    if (!witprog || !prefix || version > 0xFF || !pub_key || !out || !out_len) {
         return -1;
     }
 
@@ -109,4 +109,4 @@ int liquid_encode_address_segwit(const uint8_t *witprog,
     return ok ? addr_len : -1;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

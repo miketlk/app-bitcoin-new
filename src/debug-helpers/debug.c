@@ -7,10 +7,8 @@
 
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-static const char dectohex[16] = {
-    '0', '1', '2', '3', '4', '5', '6', '7',
-    '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-};
+static const char dectohex[16] =
+    {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
 void debug_write(const char *buf) {
     asm volatile(
@@ -21,12 +19,12 @@ void debug_write(const char *buf) {
 }
 
 void debug_write_hex(unsigned int word, unsigned int bytes) {
-    if(bytes && bytes <= 4) {
+    if (bytes && bytes <= 4) {
         char asc[9];
         char *p_asc = asc;
 
         word <<= (4 - bytes) << 3;
-        for(unsigned int i = 0; i < bytes; ++i) {
+        for (unsigned int i = 0; i < bytes; ++i) {
             *p_asc++ = dectohex[word >> 28 & 15];
             *p_asc++ = dectohex[word >> 24 & 15];
             word <<= 8;
@@ -84,20 +82,20 @@ static unsigned int __attribute__((noinline)) get_stack_pointer() {
 #ifdef HAVE_BOLOS_APP_STACK_CANARY
 
 void stack_fill_canary(void) {
-    unsigned int *ptr = (unsigned int *)(get_stack_pointer() - 4 * sizeof(void*));
+    unsigned int *ptr = (unsigned int *) (get_stack_pointer() - 4 * sizeof(void *));
     // Handle canary variable separately because it can be located at NULL address
     app_stack_canary = STACK_CANARY_CONSTANT;
-    while(ptr > &app_stack_canary) {
+    while (ptr > &app_stack_canary) {
         *ptr-- = STACK_CANARY_CONSTANT;
     }
 }
 
 unsigned int stack_unused_bytes(void) {
     unsigned int *ptr = &app_stack_canary;
-    unsigned int *ptr_end = (unsigned int *)(get_stack_pointer());
+    unsigned int *ptr_end = (unsigned int *) (get_stack_pointer());
     unsigned int n_words = 0;
 
-    while(ptr < ptr_end) {
+    while (ptr < ptr_end) {
         if (*ptr++ != STACK_CANARY_CONSTANT) {
             break;
         }
@@ -108,10 +106,10 @@ unsigned int stack_unused_bytes(void) {
 
 unsigned int stack_available_bytes(void) {
     unsigned int t = get_stack_pointer();
-    return t >= ((unsigned int)&app_stack_canary) ? t - ((unsigned int)&app_stack_canary) : 0;
+    return t >= ((unsigned int) &app_stack_canary) ? t - ((unsigned int) &app_stack_canary) : 0;
 }
 
-#endif // HAVE_BOLOS_APP_STACK_CANARY
+#endif  // HAVE_BOLOS_APP_STACK_CANARY
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -145,15 +143,15 @@ void print_stack_pointer(const char *file, int line, const char *func_name) {
 
 void print_hash(const char *msg, const void *sha256_context) {
     if (sha256_context) {
-        cx_sha256_t ctx = *(const cx_sha256_t*)sha256_context;
-        uint8_t hash[32] = { 0 };
+        cx_sha256_t ctx = *(const cx_sha256_t *) sha256_context;
+        uint8_t hash[32] = {0};
         crypto_hash_digest(&ctx.header, hash, 32);
         cx_hash_sha256(hash, 32, hash, 32);
 
         debug_write("HASH '");
         debug_write(msg);
         debug_write("' ");
-        for (int i=0; i<32; ++i) {
+        for (int i = 0; i < 32; ++i) {
             debug_write_hex(hash[i], 1);
         }
         debug_write("\n");
@@ -161,7 +159,7 @@ void print_hash(const char *msg, const void *sha256_context) {
 }
 
 void print_data_hash(const char *msg, const void *buf, unsigned int len) {
-    uint8_t hash[32] = { 0 };
+    uint8_t hash[32] = {0};
     cx_hash_sha256(buf, len, hash, 32);
 
     debug_write("HASH '");
@@ -174,7 +172,7 @@ void print_data_hash(const char *msg, const void *buf, unsigned int len) {
 }
 
 void print_hex(const char *msg, const void *buf, unsigned int len) {
-    const uint8_t *bytes = (const uint8_t *)buf;
+    const uint8_t *bytes = (const uint8_t *) buf;
     debug_write(msg);
     for (unsigned int i = 0; i < len; ++i) {
         debug_write_hex(bytes[i], 1);
@@ -183,9 +181,9 @@ void print_hex(const char *msg, const void *buf, unsigned int len) {
 }
 
 void print_hex_reverse(const char *msg, const void *buf, unsigned int len) {
-    const uint8_t *bytes = (const uint8_t *)buf;
+    const uint8_t *bytes = (const uint8_t *) buf;
     debug_write(msg);
-    for (int i = (int)(len - 1); i >= 0; --i) {
+    for (int i = (int) (len - 1); i >= 0; --i) {
         debug_write_hex(bytes[i], 1);
     }
     debug_write("\n");

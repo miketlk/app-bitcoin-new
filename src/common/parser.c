@@ -138,8 +138,9 @@ int parser_run(const parsing_step_t *parsing_steps,
                void *(*pic_fn)(void *) ) {
     while (parser_context->cur_step < n_steps) {
         parsing_step_t step_fn =
-            pic_fn != NULL ? (parsing_step_t) pic_fn((void*)parsing_steps[parser_context->cur_step])
-                           : parsing_steps[parser_context->cur_step];
+            pic_fn != NULL
+                ? (parsing_step_t) pic_fn((void *) parsing_steps[parser_context->cur_step])
+                : parsing_steps[parser_context->cur_step];
 
         int step_result = step_fn(parser_context->state, buffers);
 

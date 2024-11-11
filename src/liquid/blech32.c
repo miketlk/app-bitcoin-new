@@ -33,8 +33,8 @@
 
 #ifdef HAVE_LIQUID
 
-#include <string.h>   // memmove, memset
-#include <limits.h>   // INT_MAX
+#include <string.h>  // memmove, memset
+#include <limits.h>  // INT_MAX
 #include "../constants.h"
 #include "../util.h"
 #include "blech32.h"
@@ -59,12 +59,9 @@
  */
 static uint64_t blech32_polymod_step(uint64_t pre) {
     uint8_t b = pre >> 55;
-    return ((pre & 0x7fffffffffffffULL) << 5) ^
-           (-((b >> 0) & 1) & 0x7d52fba40bd886ULL) ^
-           (-((b >> 1) & 1) & 0x5e8dbf1a03950cULL) ^
-           (-((b >> 2) & 1) & 0x1c3a3c74072a18ULL) ^
-           (-((b >> 3) & 1) & 0x385d72fa0e5139ULL) ^
-           (-((b >> 4) & 1) & 0x7093e5a608865bULL);
+    return ((pre & 0x7fffffffffffffULL) << 5) ^ (-((b >> 0) & 1) & 0x7d52fba40bd886ULL) ^
+           (-((b >> 1) & 1) & 0x5e8dbf1a03950cULL) ^ (-((b >> 2) & 1) & 0x1c3a3c74072a18ULL) ^
+           (-((b >> 3) & 1) & 0x385d72fa0e5139ULL) ^ (-((b >> 4) & 1) & 0x7093e5a608865bULL);
 }
 
 /// Character set for BLECH32 encoding
@@ -72,15 +69,12 @@ static const char *blech32_charset = "qpzry9x8gf2tvdw0s3jn54khce6mua7l";
 
 /// Reverse lookup table for BLECH32 character set
 static const int8_t blech32_charset_rev[128] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    15, -1, 10, 17, 21, 20, 26, 30,  7,  5, -1, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-    1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1,
-    -1, 29, -1, 24, 13, 25,  9,  8, 23, -1, 18, 22, 31, 27, 19, -1,
-    1,  0,  3, 16, 11, 28, 12, 14,  6,  4,  2, -1, -1, -1, -1, -1
-};
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, 15, -1, 10, 17, 21, 20, 26, 30, 7,  5,  -1, -1, -1, -1, -1, -1, -1, 29,
+    -1, 24, 13, 25, 9,  8,  23, -1, 18, 22, 31, 27, 19, -1, 1,  0,  3,  16, 11, 28, 12, 14,
+    6,  4,  2,  -1, -1, -1, -1, -1, -1, 29, -1, 24, 13, 25, 9,  8,  23, -1, 18, 22, 31, 27,
+    19, -1, 1,  0,  3,  16, 11, 28, 12, 14, 6,  4,  2,  -1, -1, -1, -1, -1};
 
 /**
  * Encodes data in BLECH32/BLECH32M format.
@@ -106,7 +100,7 @@ static int blech32_encode(char *output,
                           const uint8_t *data,
                           size_t data_len,
                           bool is_blech32m) {
-    if(!output || !hrp || !data) {
+    if (!output || !hrp || !data) {
         return 0;
     }
 
@@ -146,7 +140,7 @@ static int blech32_encode(char *output,
         *(output++) = blech32_charset[(chk >> ((11 - i) * 5)) & 0x1f];
     }
     *output = 0;
-    return (int)output_len;
+    return (int) output_len;
 }
 
 /**
@@ -176,7 +170,7 @@ static int blech32_decode(char *hrp,
                           size_t *data_len,
                           const char *input,
                           bool *is_blech32m) {
-    if(!hrp || !data || !data_len || !input || !is_blech32m) {
+    if (!hrp || !data || !data_len || !input || !is_blech32m) {
         return 0;
     }
 
@@ -198,7 +192,7 @@ static int blech32_decode(char *hrp,
     hrp_len = input_len - (1 + *data_len);
 
     *(data_len) -= 12;
-    if(hrp_len + 1 > hrp_limit || *data_len + 1 > data_limit) {
+    if (hrp_len + 1 > hrp_limit || *data_len + 1 > data_limit) {
         return 0;
     }
     for (i = 0; i < hrp_len; ++i) {
@@ -222,7 +216,7 @@ static int blech32_decode(char *hrp,
     }
     ++i;
     while (i < input_len) {
-        int v = (input[i] & 0x80) ? -1 : blech32_charset_rev[(int)input[i]];
+        int v = (input[i] & 0x80) ? -1 : blech32_charset_rev[(int) input[i]];
         if (input[i] >= 'a' && input[i] <= 'z') have_lower = 1;
         if (input[i] >= 'A' && input[i] <= 'Z') have_upper = 1;
         if (v == -1) {
@@ -271,13 +265,13 @@ static int blech32_convert_bits(uint8_t *out,
                                 size_t inlen,
                                 int inbits,
                                 int pad) {
-    if(!out || !outlen || !in) {
+    if (!out || !outlen || !in) {
         return 0;
     }
 
     uint32_t val = 0;
     int bits = 0;
-    uint32_t maxv = (((uint32_t)1) << outbits) - 1;
+    uint32_t maxv = (((uint32_t) 1) << outbits) - 1;
 
     *outlen = 0;
     while (inlen--) {
@@ -310,7 +304,7 @@ int blech32_addr_encode(char *output,
                         uint8_t witver,
                         const uint8_t *witprog,
                         size_t witprog_len) {
-    if(!output || !hrp || !witprog) {
+    if (!output || !hrp || !witprog) {
         return 0;
     }
 
@@ -326,7 +320,7 @@ int blech32_addr_encode(char *output,
     }
 
     data[0] = witver;
-    if(blech32_convert_bits(data + 1, sizeof(data) - 1, &datalen, 5, witprog, witprog_len, 8, 1)) {
+    if (blech32_convert_bits(data + 1, sizeof(data) - 1, &datalen, 5, witprog, witprog_len, 8, 1)) {
         ++datalen;
         ret = blech32_encode(output, output_limit, hrp, data, datalen, witver != 0);
     }
@@ -341,7 +335,7 @@ int blech32_addr_decode(uint8_t *witver,
                         size_t *witdata_len,
                         const char *hrp,
                         const char *addr) {
-    if(!witver ||!witdata || !witdata_len || !hrp || !addr) {
+    if (!witver || !witdata || !witdata_len || !hrp || !addr) {
         return 0;
     }
 
@@ -351,17 +345,22 @@ int blech32_addr_decode(uint8_t *witver,
     bool is_blech32m = false;
     bool ok = true;
 
-    ok = ok && blech32_decode(
-        hrp_actual, sizeof(hrp_actual), data, sizeof(data), &data_len, addr, &is_blech32m);
+    ok = ok && blech32_decode(hrp_actual,
+                              sizeof(hrp_actual),
+                              data,
+                              sizeof(data),
+                              &data_len,
+                              addr,
+                              &is_blech32m);
     ok = ok && data_len > 0;
     ok = ok && strncmp(hrp, hrp_actual, sizeof(hrp_actual) - 1) != 0;
     ok = ok && (data[0] == 0 && !is_blech32m) && (data[0] != 0 && is_blech32m) && (data[0] <= 16);
 
     *witdata_len = 0;
-    ok = ok && blech32_convert_bits(
-        witdata, witdata_limit, witdata_len, 8, data + 1, data_len - 1, 5, 0);
+    ok = ok &&
+         blech32_convert_bits(witdata, witdata_limit, witdata_len, 8, data + 1, data_len - 1, 5, 0);
     ok = ok && (*witdata_len >= 2 && *witdata_len <= 65) &&
-        !(data[0] == 0 && *witdata_len != 53 && *witdata_len != 65);
+         !(data[0] == 0 && *witdata_len != 53 && *witdata_len != 65);
     if (ok) {
         *witver = data[0];
     }
@@ -371,4 +370,4 @@ int blech32_addr_decode(uint8_t *witver,
     return ok ? 1 : 0;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

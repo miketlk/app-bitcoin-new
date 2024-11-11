@@ -40,7 +40,7 @@ int call_check_merkle_tree_sorted_with_callback(dispatcher_context_t *dispatcher
             return -1;
         }
 
-        memcpy(prev_el, cur_el, MIN((size_t)cur_el_len, sizeof(prev_el)));
+        memcpy(prev_el, cur_el, MIN((size_t) cur_el_len, sizeof(prev_el)));
         prev_el_len = cur_el_len;
 
         if (callback != NULL) {

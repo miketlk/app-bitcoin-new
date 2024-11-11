@@ -23,7 +23,7 @@ void handler_liquid_get_blinding_key(dispatcher_context_t *dc, uint8_t protocol_
         SEND_SW(dc, SW_WRONG_DATA_LENGTH);
         return;
     }
-    if (!buffer_can_read(&dc->read_buffer, (size_t)script_length)) {
+    if (!buffer_can_read(&dc->read_buffer, (size_t) script_length)) {
         SEND_SW(dc, SW_INCORRECT_DATA);
         return;
     }
@@ -36,7 +36,7 @@ void handler_liquid_get_blinding_key(dispatcher_context_t *dc, uint8_t protocol_
     uint8_t mbk[32];
     uint8_t blinding_key[32];
 
-    bool ok =  liquid_get_master_blinding_key(mbk);
+    bool ok = liquid_get_master_blinding_key(mbk);
     uint8_t *script_ptr = dc->read_buffer.ptr + dc->read_buffer.offset;
     ok = ok && liquid_get_blinding_key(mbk, script_ptr, script_length, blinding_key);
 
@@ -51,4 +51,4 @@ void handler_liquid_get_blinding_key(dispatcher_context_t *dc, uint8_t protocol_
     explicit_bzero(blinding_key, sizeof(blinding_key));
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

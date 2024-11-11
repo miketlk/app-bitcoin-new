@@ -28,8 +28,8 @@
 
 // Allow overriding Makefile constants for tests using global variables
 #if defined(SKIP_FOR_CMOCKA) && !defined(BIP32_PUBKEY_VERSION) && !defined(BIP32_PRIVKEY_VERSION)
-    extern uint32_t BIP32_PUBKEY_VERSION;
-    extern uint32_t BIP32_PRIVKEY_VERSION;
+extern uint32_t BIP32_PUBKEY_VERSION;
+extern uint32_t BIP32_PRIVKEY_VERSION;
 #endif
 
 /// Maximum length of blinding key returned token prefix in characters
@@ -55,19 +55,19 @@ typedef enum {
 
     // COMBINATIONS OT TRAITS ///////////////////////////////////////
     /// Lowercase hexadecimal numbers
-    CHARSET_HEX_LOW = (CHARSET_NUM|CHARSET_ALPHA_AF_LOW),
+    CHARSET_HEX_LOW = (CHARSET_NUM | CHARSET_ALPHA_AF_LOW),
     /// Lowercase latin letters
-    CHARSET_ALPHA_LOW = (CHARSET_ALPHA_AF_LOW|CHARSET_ALPHA_GZ_LOW),
+    CHARSET_ALPHA_LOW = (CHARSET_ALPHA_AF_LOW | CHARSET_ALPHA_GZ_LOW),
     /// Uppercase latin letters
-    CHARSET_ALPHA_UP = (CHARSET_ALPHA_AF_UP|CHARSET_ALPHA_GZ_UP),
+    CHARSET_ALPHA_UP = (CHARSET_ALPHA_AF_UP | CHARSET_ALPHA_GZ_UP),
     /// Latin letters of any case
-    CHARSET_ALPHA = (CHARSET_ALPHA_LOW|CHARSET_ALPHA_UP),
+    CHARSET_ALPHA = (CHARSET_ALPHA_LOW | CHARSET_ALPHA_UP),
     /// Alphanumeric: numbers and latin letters of any case
-    CHARSET_ALPHANUM = (CHARSET_NUM|CHARSET_ALPHA),
+    CHARSET_ALPHANUM = (CHARSET_NUM | CHARSET_ALPHA),
     /// Alphanumeric: numbers and lowercase latin letters
-    CHARSET_ALPHANUM_LOW = (CHARSET_NUM|CHARSET_ALPHA_LOW),
+    CHARSET_ALPHANUM_LOW = (CHARSET_NUM | CHARSET_ALPHA_LOW),
     /// Alphanumeric: numbers and uppercase latin letters
-    CHARSET_ALPHANUM_UP = (CHARSET_NUM|CHARSET_ALPHA_UP),
+    CHARSET_ALPHANUM_UP = (CHARSET_NUM | CHARSET_ALPHA_UP),
 } charset_t;
 
 /// Token scan result
@@ -97,14 +97,12 @@ extern uint8_t lowercase_hex_to_int(char c);
  *
  * @return true if sucessfull, false in case of error
  */
-static bool scan_token(buffer_t *buffer,
-                       char separator,
-                       token_scan_result_t *result) {
+static bool scan_token(buffer_t *buffer, char separator, token_scan_result_t *result) {
     buffer_snapshot_t in_buf_snapshot = buffer_snapshot(buffer);
     memset(result, 0, sizeof(token_scan_result_t));
 
     char c;
-    while (buffer_peek(buffer, (uint8_t*)&c) && c != separator) {
+    while (buffer_peek(buffer, (uint8_t *) &c) && c != separator) {
         if (++result->token_len < sizeof(result->prefix)) {
             result->prefix[result->token_len - 1] = c;
         }
@@ -146,10 +144,7 @@ static bool scan_token(buffer_t *buffer,
  *
  * @return length of outputted data in bytes or -1 in case of error
  */
-static int read_lowercase_hex_data(buffer_t *buffer,
-                                   uint8_t *out,
-                                   size_t out_len,
-                                   int terminator) {
+static int read_lowercase_hex_data(buffer_t *buffer, uint8_t *out, size_t out_len, int terminator) {
     size_t out_idx = 0;
     uint8_t c;
     char num[2];
@@ -167,7 +162,7 @@ static int read_lowercase_hex_data(buffer_t *buffer,
         }
         out[out_idx++] = lowercase_hex_to_int(num[0]) << 4 | lowercase_hex_to_int(num[1]);
     }
-    return (int)out_idx;
+    return (int) out_idx;
 }
 
 /**
@@ -205,18 +200,20 @@ typedef int (*blinding_key_parser_t)(buffer_t *in_buf, buffer_t *out_buf, size_t
 static int parse_ct_slip77(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
-    policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
+    policy_node_blinding_privkey_t *node =
+        (policy_node_blinding_privkey_t *) buffer_alloc(out_buf,
+                                                        sizeof(policy_node_blinding_privkey_t),
+                                                        true);
     if (NULL == node) {
         return -1;
     }
     node->base.type = TOKEN_SLIP77;
     node->base.flags.is_miniscript = 0;
 
-    bool ok = buffer_skip_data(in_buf, (const uint8_t*) "slip77(", sizeof("slip77(") - 1);
+    bool ok = buffer_skip_data(in_buf, (const uint8_t *) "slip77(", sizeof("slip77(") - 1);
     ok = ok && sizeof(node->privkey) ==
-            read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ')');
-    ok = ok && buffer_skip_data(in_buf, (const uint8_t*) ")", 1);
+                   read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ')');
+    ok = ok && buffer_skip_data(in_buf, (const uint8_t *) ")", 1);
 
     return ok ? 0 : -1;
 }
@@ -238,8 +235,10 @@ static int parse_ct_slip77(buffer_t *in_buf, buffer_t *out_buf, size_t token_len
 static int parse_ct_hex_pubkey(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
-    policy_node_blinding_pubkey_t *node = (policy_node_blinding_pubkey_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_blinding_pubkey_t), true);
+    policy_node_blinding_pubkey_t *node =
+        (policy_node_blinding_pubkey_t *) buffer_alloc(out_buf,
+                                                       sizeof(policy_node_blinding_pubkey_t),
+                                                       true);
     if (NULL == node) {
         return -1;
     }
@@ -247,7 +246,7 @@ static int parse_ct_hex_pubkey(buffer_t *in_buf, buffer_t *out_buf, size_t token
     node->base.flags.is_miniscript = 0;
 
     bool ok = sizeof(node->pubkey) ==
-        read_lowercase_hex_data(in_buf, node->pubkey, sizeof(node->pubkey), ',');
+              read_lowercase_hex_data(in_buf, node->pubkey, sizeof(node->pubkey), ',');
 
     return ok && (0x02 == node->pubkey[0] || 0x03 == node->pubkey[0]) ? 0 : -1;
 }
@@ -269,8 +268,10 @@ static int parse_ct_hex_pubkey(buffer_t *in_buf, buffer_t *out_buf, size_t token
 static int parse_ct_hex_privkey(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
-    policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
+    policy_node_blinding_privkey_t *node =
+        (policy_node_blinding_privkey_t *) buffer_alloc(out_buf,
+                                                        sizeof(policy_node_blinding_privkey_t),
+                                                        true);
     if (NULL == node) {
         return -1;
     }
@@ -278,7 +279,7 @@ static int parse_ct_hex_privkey(buffer_t *in_buf, buffer_t *out_buf, size_t toke
     node->base.flags.is_miniscript = 0;
 
     bool ok = sizeof(node->privkey) ==
-        read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ',');
+              read_lowercase_hex_data(in_buf, node->privkey, sizeof(node->privkey), ',');
 
     return ok ? 0 : -1;
 }
@@ -304,7 +305,7 @@ static int parse_ct_xpub(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
     if (!buffer_can_read(in_buf, token_len)) {
         return -1;
     }
-    if (sizeof(pubkey_check) != base58_decode((char*) buffer_get_cur(in_buf),
+    if (sizeof(pubkey_check) != base58_decode((char *) buffer_get_cur(in_buf),
                                               token_len,
                                               (uint8_t *) &pubkey_check,
                                               sizeof(pubkey_check))) {
@@ -312,7 +313,7 @@ static int parse_ct_xpub(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
     }
 
     uint8_t checksum[4];
-    crypto_get_checksum((uint8_t *)&pubkey_check.serialized_extended_pubkey,
+    crypto_get_checksum((uint8_t *) &pubkey_check.serialized_extended_pubkey,
                         sizeof(pubkey_check.serialized_extended_pubkey),
                         checksum);
     if (!memeq(checksum, pubkey_check.checksum, sizeof(checksum))) {
@@ -323,8 +324,10 @@ static int parse_ct_xpub(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
         return -1;
     }
 
-    policy_node_blinding_pubkey_t *node = (policy_node_blinding_pubkey_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_blinding_pubkey_t), true);
+    policy_node_blinding_pubkey_t *node =
+        (policy_node_blinding_pubkey_t *) buffer_alloc(out_buf,
+                                                       sizeof(policy_node_blinding_pubkey_t),
+                                                       true);
     if (NULL == node) {
         return -1;
     }
@@ -356,7 +359,7 @@ static int parse_ct_xprv(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
     if (!buffer_can_read(in_buf, token_len)) {
         return -1;
     }
-    if (sizeof(privkey_check) != base58_decode((char*) buffer_get_cur(in_buf),
+    if (sizeof(privkey_check) != base58_decode((char *) buffer_get_cur(in_buf),
                                                token_len,
                                                (uint8_t *) &privkey_check,
                                                sizeof(privkey_check))) {
@@ -364,19 +367,20 @@ static int parse_ct_xprv(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
     }
 
     uint8_t checksum[4];
-    crypto_get_checksum((uint8_t *)&privkey_check.serialized_extended_privkey,
+    crypto_get_checksum((uint8_t *) &privkey_check.serialized_extended_privkey,
                         sizeof(privkey_check.serialized_extended_privkey),
                         checksum);
     if (!memeq(checksum, privkey_check.checksum, sizeof(checksum))) {
         return -1;
     }
-    if (read_u32_be(privkey->version, 0) != BIP32_PRIVKEY_VERSION ||
-        0 != privkey->null_prefix) {
+    if (read_u32_be(privkey->version, 0) != BIP32_PRIVKEY_VERSION || 0 != privkey->null_prefix) {
         return -1;
     }
 
-    policy_node_blinding_privkey_t *node = (policy_node_blinding_privkey_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_blinding_privkey_t), true);
+    policy_node_blinding_privkey_t *node =
+        (policy_node_blinding_privkey_t *) buffer_alloc(out_buf,
+                                                        sizeof(policy_node_blinding_privkey_t),
+                                                        true);
     if (NULL == node) {
         return -1;
     }
@@ -404,12 +408,11 @@ static int parse_ct_xprv(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) 
 static int parse_ct_elip151(buffer_t *in_buf, buffer_t *out_buf, size_t token_len) {
     UNUSED(token_len);
 
-    if (!buffer_skip_data(in_buf, (const uint8_t*) "elip151", sizeof("elip151") - 1)) {
+    if (!buffer_skip_data(in_buf, (const uint8_t *) "elip151", sizeof("elip151") - 1)) {
         return -1;
     }
 
-    policy_node_t *node = (policy_node_t *)
-        buffer_alloc(out_buf, sizeof(policy_node_t), true);
+    policy_node_t *node = (policy_node_t *) buffer_alloc(out_buf, sizeof(policy_node_t), true);
 
     if (node) {
         node->type = TOKEN_ELIP151;
@@ -430,49 +433,36 @@ typedef struct {
 
 /// Table of known blinding key signatures
 static const blinding_key_signature_t BLINDING_KEY_SIGNATURES[] = {
-    {
-        .prefix = "slip77",
-        .min_len = 72,
-        .max_len = 72,
-        .charset = CHARSET_ALPHANUM_LOW|CHARSET_BRACKETS,
-        .parser = parse_ct_slip77
-    },
-    {
-        .prefix = "xpub",
-        .min_len = 111,
-        .max_len = 112,
-        .charset = CHARSET_ALPHANUM,
-        .parser = parse_ct_xpub
-    },
-    {
-        .prefix = "xprv",
-        .min_len = 111,
-        .max_len = 112,
-        .charset = CHARSET_ALPHANUM,
-        .parser = parse_ct_xprv
-    },
-    {
-        .prefix = "elip151",
-        .min_len = 7,
-        .max_len = 7,
-        .charset = CHARSET_ALPHANUM_LOW,
-        .parser = parse_ct_elip151
-    },
-    {
-        .prefix = "",
-        .min_len = 64,
-        .max_len = 64,
-        .charset = CHARSET_HEX_LOW,
-        .parser = parse_ct_hex_privkey
-    },
-    {
-        .prefix = "",
-        .min_len = 66,
-        .max_len = 66,
-        .charset = CHARSET_HEX_LOW,
-        .parser = parse_ct_hex_pubkey
-    }
-};
+    {.prefix = "slip77",
+     .min_len = 72,
+     .max_len = 72,
+     .charset = CHARSET_ALPHANUM_LOW | CHARSET_BRACKETS,
+     .parser = parse_ct_slip77},
+    {.prefix = "xpub",
+     .min_len = 111,
+     .max_len = 112,
+     .charset = CHARSET_ALPHANUM,
+     .parser = parse_ct_xpub},
+    {.prefix = "xprv",
+     .min_len = 111,
+     .max_len = 112,
+     .charset = CHARSET_ALPHANUM,
+     .parser = parse_ct_xprv},
+    {.prefix = "elip151",
+     .min_len = 7,
+     .max_len = 7,
+     .charset = CHARSET_ALPHANUM_LOW,
+     .parser = parse_ct_elip151},
+    {.prefix = "",
+     .min_len = 64,
+     .max_len = 64,
+     .charset = CHARSET_HEX_LOW,
+     .parser = parse_ct_hex_privkey},
+    {.prefix = "",
+     .min_len = 66,
+     .max_len = 66,
+     .charset = CHARSET_HEX_LOW,
+     .parser = parse_ct_hex_pubkey}};
 /// Number of records in the table of known blinding key signatures
 static const size_t N_BLINDING_KEY_SIGNATURES =
     sizeof(BLINDING_KEY_SIGNATURES) / sizeof(BLINDING_KEY_SIGNATURES[0]);
@@ -519,26 +509,25 @@ int liquid_parse_blinding_key_script(buffer_t *in_buf, buffer_t *out_buf) {
 bool policy_is_multisig(const policy_node_t *policy) {
     const policy_node_t *node = policy;
 
-    while(node != NULL) {
-        switch(node->type)
-        {
-        case TOKEN_CT:
-            node = r_policy_node(&((const policy_node_ct_t *) node)->script);
-            break;
+    while (node != NULL) {
+        switch (node->type) {
+            case TOKEN_CT:
+                node = r_policy_node(&((const policy_node_ct_t *) node)->script);
+                break;
 
-        case TOKEN_SH:
-        case TOKEN_WSH:
-            node = r_policy_node(&((const policy_node_with_script_t *) node)->script);
-            break;
+            case TOKEN_SH:
+            case TOKEN_WSH:
+                node = r_policy_node(&((const policy_node_with_script_t *) node)->script);
+                break;
 
-        case TOKEN_MULTI:
-        case TOKEN_SORTEDMULTI:
-            return true;
+            case TOKEN_MULTI:
+            case TOKEN_SORTEDMULTI:
+                return true;
 
-        // TOKEN_PKH, TOKEN_WPKH, TOKEN_TR
-        // TODO: add Taproot multisig when it will be supported project-wise
-        default:
-            return false;
+            // TOKEN_PKH, TOKEN_WPKH, TOKEN_TR
+            // TODO: add Taproot multisig when it will be supported project-wise
+            default:
+                return false;
         }
     }
 
@@ -552,10 +541,9 @@ bool validate_policy_map_extended_pubkey(const policy_map_key_info_t *key_info,
         &key_info->ext_pubkey,
         key_info->master_key_derivation,
         key_info->has_key_origin ? key_info->master_key_derivation_len : -1,
-        bip32_pubkey_version
-    );
+        bip32_pubkey_version);
 
     return EXTENDED_PUBKEY_VALID == status;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

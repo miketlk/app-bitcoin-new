@@ -11,12 +11,12 @@
 
 /// Context of test environment
 typedef struct test_ctx_s {
-    int n_tests;              ///< Counter of tests
-    int n_passed;             ///< Counter of passed tests
-    int assert_fails;         ///< Counter of failed asserts
-    bool lock;                ///< Lock flag to detect nested tests
-    bool global_error;        ///< Flag indicating global error in test environment
-    const char *suite_name;   ///< Pointer to string with test suite name
+    int n_tests;             ///< Counter of tests
+    int n_passed;            ///< Counter of passed tests
+    int assert_fails;        ///< Counter of failed asserts
+    bool lock;               ///< Lock flag to detect nested tests
+    bool global_error;       ///< Flag indicating global error in test environment
+    const char *suite_name;  ///< Pointer to string with test suite name
 } test_ctx_t;
 
 /**
@@ -36,32 +36,46 @@ typedef void (*test_fn_t)(test_ctx_t *test_ctx);
 #define RUN_TEST(fn) test_run_internal(test_ctx, fn, #fn)
 
 /// Tests a condition and breaks test execution if failed
-#define TEST_ASSERT(cond) \
-    do { if(!(cond)) { \
+#define TEST_ASSERT(cond)                                                       \
+    do {                                                                        \
+        if (!(cond)) {                                                          \
             test_handle_assert_fail(test_ctx, #cond, true, __FILE__, __LINE__); \
-            return; \
-        } \
-    } while(0)
+            return;                                                             \
+        }                                                                       \
+    } while (0)
 
 /// Tests if a condition is true and breaks test execution otherwise
 #define TEST_ASSERT_TRUE(cond) TEST_ASSERT(cond)
 
 /// Tests if a condition is false and breaks test execution otherwise
-#define TEST_ASSERT_FALSE(cond) \
-    do { if((cond)) { \
+#define TEST_ASSERT_FALSE(cond)                                                  \
+    do {                                                                         \
+        if ((cond)) {                                                            \
             test_handle_assert_fail(test_ctx, #cond, false, __FILE__, __LINE__); \
-            return; \
-        } \
-    } while(0)
+            return;                                                              \
+        }                                                                        \
+    } while (0)
 
 // Compares two memory buffers for equality
 #define TEST_ASSERT_EQUAL_MEMORY(expected, actual, len) \
-    test_assert_equal_memory(test_ctx, expected, #expected, actual, #actual, len, __FILE__, \
+    test_assert_equal_memory(test_ctx,                  \
+                             expected,                  \
+                             #expected,                 \
+                             actual,                    \
+                             #actual,                   \
+                             len,                       \
+                             __FILE__,                  \
                              __LINE__)
 
 // Checks if each byte in memory buffer is equal to given value
 #define TEST_ASSERT_EACH_EQUAL_MEMORY(expected, actual, len) \
-    test_assert_each_equal_memory(test_ctx, expected, #expected, actual, #actual, len, __FILE__, \
+    test_assert_each_equal_memory(test_ctx,                  \
+                                  expected,                  \
+                                  #expected,                 \
+                                  actual,                    \
+                                  #actual,                   \
+                                  len,                       \
+                                  __FILE__,                  \
                                   __LINE__)
 
 /**
@@ -120,7 +134,7 @@ extern void test_handle_assert_fail(test_ctx_t *test_ctx,
  * @param[in] actual
  *   Memory buffer containing actual data.
  * @param[in] actual_name
-*    Name of memory buffer with actual data.
+ *    Name of memory buffer with actual data.
  * @param[in] len
  *   Number of bytes to compare.
  * @param[in] file
@@ -150,7 +164,7 @@ void test_assert_equal_memory(test_ctx_t *test_ctx,
  * @param[in] actual
  *   Memory buffer containing actual data.
  * @param[in] actual_name
-*    Name of memory buffer with actual data.
+ *    Name of memory buffer with actual data.
  * @param[in] len
  *   Number of bytes to compare.
  * @param[in] file
@@ -159,15 +173,15 @@ void test_assert_equal_memory(test_ctx_t *test_ctx,
  *   Line in the source file.
  */
 void test_assert_each_equal_memory(test_ctx_t *test_ctx,
-                                    uint8_t expected,
-                                    const char *expected_name,
-                                    const void *actual,
-                                    const char *actual_name,
-                                    size_t len,
-                                    const char *file,
-                                    int line);
+                                   uint8_t expected,
+                                   const char *expected_name,
+                                   const void *actual,
+                                   const char *actual_name,
+                                   size_t len,
+                                   const char *file,
+                                   int line);
 
-#else // defined(HAVE_SEMIHOSTED_PRINTF) && defined(RUN_ON_DEVICE_TESTS)
+#else  // defined(HAVE_SEMIHOSTED_PRINTF) && defined(RUN_ON_DEVICE_TESTS)
 
 #ifdef IMPLEMENT_ON_DEVICE_TESTS
 #error On-device tests require semihosted IO and must be run only on Speculos!
@@ -182,4 +196,4 @@ void test_assert_each_equal_memory(test_ctx_t *test_ctx,
 static inline void run_on_device_tests(void) {
 }
 
-#endif // defined(HAVE_SEMIHOSTED_PRINTF) && defined(RUN_ON_DEVICE_TESTS)
+#endif  // defined(HAVE_SEMIHOSTED_PRINTF) && defined(RUN_ON_DEVICE_TESTS)

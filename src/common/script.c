@@ -103,11 +103,11 @@ int get_script_address(const uint8_t script[], size_t script_len, char *out, siz
                 return -1;  // should never happen
             }
 
-            size_t result_len = (int)strnlen(out, out_len);
+            size_t result_len = (int) strnlen(out, out_len);
             if (result_len >= out_len) {
-                return -1; // should never happen
+                return -1;  // should never happen
             }
-            addr_len = (int)result_len;
+            addr_len = (int) result_len;
             break;
         }
         default:

@@ -340,7 +340,7 @@ bool buffer_skip_data(buffer_t *buffer, const uint8_t *data, size_t n);
  *
  */
 static inline buffer_t buffer_create(void *ptr, size_t size) {
-    return (buffer_t){.ptr = ptr, .size = size, .offset = 0};
+    return (buffer_t) {.ptr = ptr, .size = size, .offset = 0};
 }
 
 /**

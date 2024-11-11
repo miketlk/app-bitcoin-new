@@ -28,7 +28,7 @@ void handler_get_master_fingerprint(dispatcher_context_t *dc, uint8_t protocol_v
     (void) protocol_version;
 
     uint8_t master_pubkey[33];
-    if (!crypto_get_compressed_pubkey_at_path((uint32_t[]){}, 0, master_pubkey, NULL)) {
+    if (!crypto_get_compressed_pubkey_at_path((uint32_t[]) {}, 0, master_pubkey, NULL)) {
         SEND_SW(dc, SW_BAD_STATE);  // should never happen
         return;
     }

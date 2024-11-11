@@ -16,11 +16,11 @@
 
 bool pset_test_key(buffer_t *buffer, const uint8_t *ref_key) {
     // Offsets within proprietary key byte array, assuming length and types are single-byte.
-    enum {OFF_KEYTYPE = 0, OFF_ID_LEN, OFF_ID };
+    enum { OFF_KEYTYPE = 0, OFF_ID_LEN, OFF_ID };
 
     // Sanity check
-    if(!buffer || !ref_key || ref_key[OFF_KEYTYPE] != 0xfc ||
-       ref_key[OFF_ID_LEN] > PSBT_PROPRIETARY_ID_MAX_LENGTH) {
+    if (!buffer || !ref_key || ref_key[OFF_KEYTYPE] != 0xfc ||
+        ref_key[OFF_ID_LEN] > PSBT_PROPRIETARY_ID_MAX_LENGTH) {
         return false;
     }
 
@@ -35,7 +35,7 @@ bool pset_test_key(buffer_t *buffer, const uint8_t *ref_key) {
         const uint8_t *p_ref_key = ref_key + OFF_ID;
         // Compare all bytes of identifier + all bytes of sub-keytype
         for (int i = 0; i < id_len + subkeytype_len; ++i, p_ref_key++) {
-            if(!buffer_read_u8(buffer, &curr_byte) || curr_byte != *p_ref_key) {
+            if (!buffer_read_u8(buffer, &curr_byte) || curr_byte != *p_ref_key) {
                 result = false;
                 break;
             }
@@ -59,8 +59,8 @@ bool pset_get_asset_tag(dispatcher_context_t *dc,
 
     asset->is_blinded = false;
 
-    if ( sizeof(asset->tag) ==
-         call_get_merkleized_map_value(dc, map, key, key_len, asset->tag, sizeof(asset->tag)) ) {
+    if (sizeof(asset->tag) ==
+        call_get_merkleized_map_value(dc, map, key, key_len, asset->tag, sizeof(asset->tag))) {
         reverse_inplace(asset->tag, sizeof(asset->tag));
         return true;
     }
@@ -86,7 +86,6 @@ int pset_hash_output(dispatcher_context_t *dc,
                      int output_index,
                      cx_hash_t *hash_context,
                      cx_hash_t *rangeproof_hash_context) {
-
     merkleized_map_commitment_t ith_map;
     uint32_t key_presence = 0;
 
@@ -120,13 +119,12 @@ int pset_hash_output(dispatcher_context_t *dc,
             crypto_hash_update(hash_context, commitment, sizeof(commitment));
         } else if (key_presence & HAS_ASSET) {
             uint8_t asset[32];
-            if (sizeof(asset) !=
-                call_get_merkleized_map_value(dc,
-                                              &ith_map,
-                                              PSBT_ELEMENTS_OUT_ASSET,
-                                              sizeof(PSBT_ELEMENTS_OUT_ASSET),
-                                              asset,
-                                              sizeof(asset))) {
+            if (sizeof(asset) != call_get_merkleized_map_value(dc,
+                                                               &ith_map,
+                                                               PSBT_ELEMENTS_OUT_ASSET,
+                                                               sizeof(PSBT_ELEMENTS_OUT_ASSET),
+                                                               asset,
+                                                               sizeof(asset))) {
                 return -1;
             }
             crypto_hash_update_u8(hash_context, 0x01);
@@ -151,17 +149,16 @@ int pset_hash_output(dispatcher_context_t *dc,
             crypto_hash_update(hash_context, commitment, sizeof(commitment));
         } else if (key_presence & HAS_VALUE) {
             uint8_t value_raw[8];
-            if (sizeof(value_raw) !=
-                call_get_merkleized_map_value(dc,
-                                              &ith_map,
-                                              (uint8_t[]){PSBT_OUT_AMOUNT},
-                                              1,
-                                              value_raw,
-                                              sizeof(value_raw))) {
+            if (sizeof(value_raw) != call_get_merkleized_map_value(dc,
+                                                                   &ith_map,
+                                                                   (uint8_t[]) {PSBT_OUT_AMOUNT},
+                                                                   1,
+                                                                   value_raw,
+                                                                   sizeof(value_raw))) {
                 return -1;
             }
             crypto_hash_update_u8(hash_context, 0x01);
-            for(int i = 7; i >= 0; --i) {
+            for (int i = 7; i >= 0; --i) {
                 // Value is serialized as big endian
                 crypto_hash_update_u8(hash_context, value_raw[i]);
             }
@@ -192,7 +189,7 @@ int pset_hash_output(dispatcher_context_t *dc,
             uint8_t out_script[MAX_OUTPUT_SCRIPTPUBKEY_LEN];
             int out_script_len = call_get_merkleized_map_value(dc,
                                                                &ith_map,
-                                                               (uint8_t[]){PSBT_OUT_SCRIPT},
+                                                               (uint8_t[]) {PSBT_OUT_SCRIPT},
                                                                1,
                                                                out_script,
                                                                sizeof(out_script));
@@ -206,7 +203,7 @@ int pset_hash_output(dispatcher_context_t *dc,
 
     if (rangeproof_hash_context) {
         static const uint32_t witness_mask = HAS_VALUE_RANGEPROOF | HAS_ASSET_SURJECTION_PROOF;
-        if ((key_presence & witness_mask) == witness_mask) { // Output has witness
+        if ((key_presence & witness_mask) == witness_mask) {  // Output has witness
             // update hash with range proof
             res = update_hashes_with_map_value(dc,
                                                &ith_map,
@@ -230,9 +227,9 @@ int pset_hash_output(dispatcher_context_t *dc,
                 PRINTF("Error fetching surjection proof\n");
                 return -1;
             }
-        } else if ((key_presence & witness_mask) == 0) { // No output witness
+        } else if ((key_presence & witness_mask) == 0) {  // No output witness
             crypto_hash_update_zeros(rangeproof_hash_context, 2);
-        } else { // Incomplete witness
+        } else {  // Incomplete witness
             PRINTF("Unsupported output witness configuration\n");
             return -1;
         }
@@ -248,14 +245,13 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
     // Hash nonce
     if (key_presence & HAS_ISSUANCE_BLINDING_NONCE) {
         uint8_t nonce[32];
-        if (sizeof(nonce) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE),
-                nonce,
-                sizeof(nonce)
-            )) {
+        if (sizeof(nonce) !=
+            call_get_merkleized_map_value(dc,
+                                          map,
+                                          PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE,
+                                          sizeof(PSBT_ELEMENTS_IN_ISSUANCE_BLINDING_NONCE),
+                                          nonce,
+                                          sizeof(nonce))) {
             PRINTF("Error fetching issuance blinding nonce\n");
             return false;
         }
@@ -268,14 +264,13 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
     // Hash entropy
     if (key_presence & HAS_ISSUANCE_ASSET_ENTROPY) {
         uint8_t entropy[32];
-        if (sizeof(entropy) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY),
-                entropy,
-                sizeof(entropy)
-            )) {
+        if (sizeof(entropy) !=
+            call_get_merkleized_map_value(dc,
+                                          map,
+                                          PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY,
+                                          sizeof(PSBT_ELEMENTS_IN_ISSUANCE_ASSET_ENTROPY),
+                                          entropy,
+                                          sizeof(entropy))) {
             PRINTF("Error fetching issuance asset entropy\n");
             return false;
         }
@@ -288,28 +283,25 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
     // Hash amount commitment
     if (key_presence & HAS_ISSUANCE_VALUE_COMMITMENT) {
         uint8_t commitment[33];
-        if (sizeof(commitment) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT),
-                commitment,
-                sizeof(commitment)
-            )) {
+        if (sizeof(commitment) !=
+            call_get_merkleized_map_value(dc,
+                                          map,
+                                          PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT,
+                                          sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE_COMMITMENT),
+                                          commitment,
+                                          sizeof(commitment))) {
             PRINTF("Error fetching issuance value commitment\n");
             return false;
         }
         crypto_hash_update(hash_context, commitment, sizeof(commitment));
     } else if (key_presence & HAS_ISSUANCE_VALUE) {
         uint8_t value[8];
-        if (sizeof(value) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_VALUE,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE),
-                value,
-                sizeof(value)
-            )) {
+        if (sizeof(value) != call_get_merkleized_map_value(dc,
+                                                           map,
+                                                           PSBT_ELEMENTS_IN_ISSUANCE_VALUE,
+                                                           sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE),
+                                                           value,
+                                                           sizeof(value))) {
             PRINTF("Error fetching issuance value\n");
             return false;
         }
@@ -324,27 +316,25 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
     if (key_presence & HAS_ISSUANCE_INFLATION_KEYS_COMMITMENT) {
         uint8_t commitment[33];
         if (sizeof(commitment) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
-                commitment,
-                sizeof(commitment)
-            )) {
+                                      dc,
+                                      map,
+                                      PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT,
+                                      sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_COMMITMENT),
+                                      commitment,
+                                      sizeof(commitment))) {
             PRINTF("Error fetching issuance inflation keys commitment\n");
             return false;
         }
         crypto_hash_update(hash_context, commitment, sizeof(commitment));
     } else if (key_presence & HAS_ISSUANCE_INFLATION_KEYS_AMOUNT) {
         uint8_t value[8];
-        if (sizeof(value) != call_get_merkleized_map_value(
-                dc,
-                map,
-                PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT,
-                sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
-                value,
-                sizeof(value)
-            )) {
+        if (sizeof(value) !=
+            call_get_merkleized_map_value(dc,
+                                          map,
+                                          PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT,
+                                          sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
+                                          value,
+                                          sizeof(value))) {
             PRINTF("Error fetching issuance inflation keys amount\n");
             return false;
         }
@@ -358,7 +348,7 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
     return true;
 }
 
-const char* pset_get_tx_type_by_flags(uint32_t flags) {
+const char *pset_get_tx_type_by_flags(uint32_t flags) {
     switch (flags) {
         case TX_TYPE_ISSUANCE:
             return "issuance";
@@ -471,4 +461,4 @@ void pset_detect_output_key(buffer_t *data, uint32_t *p_key_presence) {
     }
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

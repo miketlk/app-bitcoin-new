@@ -121,7 +121,7 @@ typedef struct {
         /// Descriptor template
         char descriptor_template[MAX_DESCRIPTOR_TEMPLATE_LENGTH_V1];  // used in V1
         /// Hash of descriptor template
-        uint8_t descriptor_template_sha256[32];                       // used in V2
+        uint8_t descriptor_template_sha256[32];  // used in V2
     };
     /// Number of public keys
     size_t n_keys;
@@ -142,17 +142,17 @@ typedef enum {
     TOKEN_SORTEDMULTI,
     TOKEN_SORTEDMULTI_A,
     TOKEN_TR,
-    // TOKEN_ADDR,     // unsupported
-    // TOKEN_RAW,      // unsupported
+// TOKEN_ADDR,     // unsupported
+// TOKEN_RAW,      // unsupported
 
 #ifdef HAVE_LIQUID
-    TOKEN_CT,          ///< ELIP 150: confidential transaction top-level wrapper
-    TOKEN_SLIP77,      ///< ELIP 150: SLIP-0077-derived master private blinding key
-    TOKEN_HEX_PUB,     ///< ELIP 150: compressed public key, parsed from 66 hex string
-    TOKEN_HEX_PRV,     ///< ELIP 150: private key, parsed from 64 hex string
-    TOKEN_XPUB,        ///< ELIP 150: compressed public key, parsed from xpub
-    TOKEN_XPRV,        ///< ELIP 150: private key, parsed from xprv
-    TOKEN_ELIP151,     ///< ELIP 151: elip151 tag indicating ELIP 151 blinding key derivation
+    TOKEN_CT,       ///< ELIP 150: confidential transaction top-level wrapper
+    TOKEN_SLIP77,   ///< ELIP 150: SLIP-0077-derived master private blinding key
+    TOKEN_HEX_PUB,  ///< ELIP 150: compressed public key, parsed from 66 hex string
+    TOKEN_HEX_PRV,  ///< ELIP 150: private key, parsed from 64 hex string
+    TOKEN_XPUB,     ///< ELIP 150: compressed public key, parsed from xpub
+    TOKEN_XPRV,     ///< ELIP 150: private key, parsed from xprv
+    TOKEN_ELIP151,  ///< ELIP 151: elip151 tag indicating ELIP 151 blinding key derivation
 #endif
 
     /* miniscript tokens */
@@ -554,7 +554,7 @@ static inline void policy_set_key_placeholder_empty(policy_node_key_placeholder_
 }
 
 #include "../liquid/liquid_wallet.h"
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 /**
  * Unwraps wallet policy from outer tags that are not used for script generation.
@@ -564,7 +564,7 @@ static inline void policy_set_key_placeholder_empty(policy_node_key_placeholder_
  *
  * @return pointer to the inner policy node, or to the root node if the policy is not wrapped.
  */
-static inline const policy_node_t* policy_unwrap(const policy_node_t *policy) {
+static inline const policy_node_t *policy_unwrap(const policy_node_t *policy) {
 #ifdef HAVE_LIQUID
     if (policy && TOKEN_CT == policy->type) {
         return r_policy_node(&((const policy_node_ct_t *) policy)->script);

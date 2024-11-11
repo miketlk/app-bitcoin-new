@@ -700,6 +700,6 @@ void ui_display_validate_asset_flow(void) {
 #error Not implemented
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #endif  // HAVE_NBGL
