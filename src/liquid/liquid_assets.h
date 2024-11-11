@@ -146,10 +146,10 @@ static inline asset_cache_t asset_cache_create(void *ptr, size_t size) {
     _Static_assert(LIQUID_ASSET_TAG_LEN == (1 << 5), "Unsupported asset tag size");
     LEDGER_ASSERT((size >> 5) > 0 && (size >> 5) <= UINT8_MAX, "Invalid size of asset cache");
 
-    return (asset_cache_t) {.buffer = (uint8_t *) ptr,
-                            .capacity = (size >> 5),
-                            .asset_n = 0,
-                            .write_idx = 0};
+    return (asset_cache_t){.buffer = (uint8_t *) ptr,
+                           .capacity = (size >> 5),
+                           .asset_n = 0,
+                           .write_idx = 0};
 }
 
 /**

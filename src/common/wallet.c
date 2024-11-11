@@ -2247,8 +2247,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 1;
 
-            out->ops = (miniscript_ops_t) {0, -1, 0};
-            out->ss = (miniscript_stacksize_t) {-1, 0};
+            out->ops = (miniscript_ops_t){0, -1, 0};
+            out->ss = (miniscript_stacksize_t){-1, 0};
 
             return 0;
         case TOKEN_1:
@@ -2256,8 +2256,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 1;
 
-            out->ops = (miniscript_ops_t) {0, 0, -1};
-            out->ss = (miniscript_stacksize_t) {0, -1};
+            out->ops = (miniscript_ops_t){0, 0, -1};
+            out->ss = (miniscript_stacksize_t){0, -1};
 
             return 0;
         case TOKEN_PK_K:
@@ -2266,8 +2266,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = (ctx == MINISCRIPT_CONTEXT_TAPSCRIPT ? 33 : 34);
 
-            out->ops = (miniscript_ops_t) {0, 0, 0};
-            out->ss = (miniscript_stacksize_t) {1, 1};
+            out->ops = (miniscript_ops_t){0, 0, 0};
+            out->ss = (miniscript_stacksize_t){1, 1};
 
             return 0;
         case TOKEN_PK_H:
@@ -2276,8 +2276,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 3 + 21;
 
-            out->ops = (miniscript_ops_t) {3, 0, 0};
-            out->ss = (miniscript_stacksize_t) {2, 2};
+            out->ops = (miniscript_ops_t){3, 0, 0};
+            out->ss = (miniscript_stacksize_t){2, 2};
 
             return 0;
         case TOKEN_PK:  // pk(key) = c:pk_k(key)
@@ -2288,8 +2288,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = (ctx == MINISCRIPT_CONTEXT_TAPSCRIPT ? 34 : 35);
 
-            out->ops = (miniscript_ops_t) {1, 0, 0};
-            out->ss = (miniscript_stacksize_t) {1, 1};
+            out->ops = (miniscript_ops_t){1, 0, 0};
+            out->ss = (miniscript_stacksize_t){1, 1};
 
             return 0;
         case TOKEN_PKH:  // pkh(key) = c:pk_h(key)
@@ -2300,8 +2300,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 3 + 21 + 1;
 
-            out->ops = (miniscript_ops_t) {4, 0, 0};
-            out->ss = (miniscript_stacksize_t) {2, 2};
+            out->ops = (miniscript_ops_t){4, 0, 0};
+            out->ss = (miniscript_stacksize_t){2, 2};
 
             return 0;
         case TOKEN_MULTI: {
@@ -2315,8 +2315,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
             out->script_size = (uint16_t) (1 + get_push_script_size(node->k) +
                                            get_push_script_size(node->n) + 34 * node->n);
 
-            out->ops = (miniscript_ops_t) {1, node->n, node->n};
-            out->ss = (miniscript_stacksize_t) {node->k + 1, node->k + 1};
+            out->ops = (miniscript_ops_t){1, node->n, node->n};
+            out->ss = (miniscript_stacksize_t){node->k + 1, node->k + 1};
 
             return 0;
         }
@@ -2330,8 +2330,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = (uint16_t) (1 + get_push_script_size(node->k) + 34 * node->n);
 
-            out->ops = (miniscript_ops_t) {node->n + 1, 0, 0};
-            out->ss = (miniscript_stacksize_t) {node->n, node->n};
+            out->ops = (miniscript_ops_t){node->n + 1, 0, 0};
+            out->ss = (miniscript_stacksize_t){node->n, node->n};
 
             return 0;
         }
@@ -2348,8 +2348,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = (uint16_t) (1 + get_push_script_size(node->n));
 
-            out->ops = (miniscript_ops_t) {1, 0, -1};
-            out->ss = (miniscript_stacksize_t) {0, -1};
+            out->ops = (miniscript_ops_t){1, 0, -1};
+            out->ss = (miniscript_stacksize_t){0, -1};
 
             return 0;
         }
@@ -2366,8 +2366,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = (uint16_t) (1 + get_push_script_size(node->n));
 
-            out->ops = (miniscript_ops_t) {1, 0, -1};
-            out->ss = (miniscript_stacksize_t) {0, -1};
+            out->ops = (miniscript_ops_t){1, 0, -1};
+            out->ss = (miniscript_stacksize_t){0, -1};
 
             return 0;
         }
@@ -2377,8 +2377,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 4 + 2 + 33;
 
-            out->ops = (miniscript_ops_t) {4, 0, -1};
-            out->ss = (miniscript_stacksize_t) {1, -1};
+            out->ops = (miniscript_ops_t){4, 0, -1};
+            out->ss = (miniscript_stacksize_t){1, -1};
 
             return 0;
         case TOKEN_RIPEMD160:
@@ -2387,8 +2387,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 4 + 2 + 21;
 
-            out->ops = (miniscript_ops_t) {4, 0, -1};
-            out->ss = (miniscript_stacksize_t) {1, -1};
+            out->ops = (miniscript_ops_t){4, 0, -1};
+            out->ss = (miniscript_stacksize_t){1, -1};
 
             return 0;
         case TOKEN_ANDOR: {
@@ -2422,11 +2422,11 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 3 + x.script_size + y.script_size + z.script_size;
 
-            out->ops = (miniscript_ops_t) {
+            out->ops = (miniscript_ops_t){
                 3 + x.ops.count + y.ops.count + z.ops.count,
                 maxcheck(sumcheck(y.ops.sat, x.ops.sat), sumcheck(y.ops.dsat, z.ops.sat)),
                 sumcheck(x.ops.dsat, z.ops.dsat)};
-            out->ss = (miniscript_stacksize_t) {
+            out->ss = (miniscript_stacksize_t){
                 maxcheck(sumcheck(x.ss.sat, y.ss.sat), sumcheck(x.ss.dsat, z.ss.sat)),
                 sumcheck(x.ss.dsat, z.ss.dsat)};
 
@@ -2462,8 +2462,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
             out->script_size = x.script_size + y.script_size;
 
             out->ops =
-                (miniscript_ops_t) {x.ops.count + y.ops.count, sumcheck(x.ops.sat, y.ops.sat), -1};
-            out->ss = (miniscript_stacksize_t) {sumcheck(x.ss.sat, y.ss.sat), -1};
+                (miniscript_ops_t){x.ops.count + y.ops.count, sumcheck(x.ops.sat, y.ops.sat), -1};
+            out->ss = (miniscript_stacksize_t){sumcheck(x.ss.sat, y.ss.sat), -1};
             return 0;
         }
         case TOKEN_AND_B: {
@@ -2494,11 +2494,11 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 1 + x.script_size + y.script_size;
 
-            out->ops = (miniscript_ops_t) {1 + x.ops.count + y.ops.count,
-                                           sumcheck(x.ops.sat, y.ops.sat),
-                                           sumcheck(x.ops.dsat, y.ops.dsat)};
-            out->ss = (miniscript_stacksize_t) {sumcheck(x.ss.sat, y.ss.sat),
-                                                sumcheck(x.ss.dsat, y.ss.dsat)};
+            out->ops = (miniscript_ops_t){1 + x.ops.count + y.ops.count,
+                                          sumcheck(x.ops.sat, y.ops.sat),
+                                          sumcheck(x.ops.dsat, y.ops.dsat)};
+            out->ss = (miniscript_stacksize_t){sumcheck(x.ss.sat, y.ss.sat),
+                                               sumcheck(x.ss.dsat, y.ss.dsat)};
 
             return 0;
         }
@@ -2529,10 +2529,10 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 4 + x.script_size + y.script_size;
 
-            out->ops = (miniscript_ops_t) {3 + x.ops.count + y.ops.count,
-                                           maxcheck(sumcheck(y.ops.sat, x.ops.sat), y.ops.dsat),
-                                           x.ops.dsat};
-            out->ss = (miniscript_stacksize_t) {sumcheck(x.ss.sat, y.ss.sat), x.ss.dsat};
+            out->ops = (miniscript_ops_t){3 + x.ops.count + y.ops.count,
+                                          maxcheck(sumcheck(y.ops.sat, x.ops.sat), y.ops.dsat),
+                                          x.ops.dsat};
+            out->ss = (miniscript_stacksize_t){sumcheck(x.ss.sat, y.ss.sat), x.ss.dsat};
             return 0;
         }
         case TOKEN_OR_B: {
@@ -2560,11 +2560,11 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 1 + x.script_size + z.script_size;
 
-            out->ops = (miniscript_ops_t) {
+            out->ops = (miniscript_ops_t){
                 1 + x.ops.count + z.ops.count,
                 maxcheck(sumcheck(x.ops.sat, z.ops.dsat), sumcheck(z.ops.sat, x.ops.dsat)),
                 sumcheck(x.ops.dsat, z.ops.dsat)};
-            out->ss = (miniscript_stacksize_t) {
+            out->ss = (miniscript_stacksize_t){
                 maxcheck(sumcheck(x.ss.dsat, z.ss.sat), sumcheck(x.ss.sat, z.ss.dsat)),
                 sumcheck(x.ss.dsat, z.ss.dsat)};
             return 0;
@@ -2594,11 +2594,11 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 2 + x.script_size + z.script_size;
 
-            out->ops = (miniscript_ops_t) {2 + x.ops.count + z.ops.count,
-                                           maxcheck(x.ops.sat, sumcheck(z.ops.sat, x.ops.dsat)),
-                                           -1};
+            out->ops = (miniscript_ops_t){2 + x.ops.count + z.ops.count,
+                                          maxcheck(x.ops.sat, sumcheck(z.ops.sat, x.ops.dsat)),
+                                          -1};
             out->ss =
-                (miniscript_stacksize_t) {maxcheck(x.ss.sat, sumcheck(x.ss.dsat, z.ss.sat)), -1};
+                (miniscript_stacksize_t){maxcheck(x.ss.sat, sumcheck(x.ss.dsat, z.ss.sat)), -1};
             return 0;
         }
         case TOKEN_OR_D: {
@@ -2627,11 +2627,11 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 3 + x.script_size + z.script_size;
 
-            out->ops = (miniscript_ops_t) {3 + x.ops.count + z.ops.count,
-                                           maxcheck(x.ops.sat, sumcheck(z.ops.sat, x.ops.dsat)),
-                                           sumcheck(x.ops.dsat, z.ops.dsat)};
-            out->ss = (miniscript_stacksize_t) {maxcheck(x.ss.sat, sumcheck(x.ss.dsat, z.ss.sat)),
-                                                sumcheck(x.ss.dsat, z.ss.dsat)};
+            out->ops = (miniscript_ops_t){3 + x.ops.count + z.ops.count,
+                                          maxcheck(x.ops.sat, sumcheck(z.ops.sat, x.ops.dsat)),
+                                          sumcheck(x.ops.dsat, z.ops.dsat)};
+            out->ss = (miniscript_stacksize_t){maxcheck(x.ss.sat, sumcheck(x.ss.dsat, z.ss.sat)),
+                                               sumcheck(x.ss.dsat, z.ss.dsat)};
             return 0;
         }
         case TOKEN_OR_I: {
@@ -2660,12 +2660,12 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = 3 + x.script_size + z.script_size;
 
-            out->ops = (miniscript_ops_t) {3 + x.ops.count + z.ops.count,
-                                           maxcheck(x.ops.sat, z.ops.sat),
-                                           maxcheck(x.ops.dsat, z.ops.dsat)};
+            out->ops = (miniscript_ops_t){3 + x.ops.count + z.ops.count,
+                                          maxcheck(x.ops.sat, z.ops.sat),
+                                          maxcheck(x.ops.dsat, z.ops.dsat)};
             out->ss =
-                (miniscript_stacksize_t) {maxcheck(sumcheck(x.ss.sat, 1), sumcheck(z.ss.sat, 1)),
-                                          maxcheck(sumcheck(x.ss.dsat, 1), sumcheck(z.ss.dsat, 1))};
+                (miniscript_stacksize_t){maxcheck(sumcheck(x.ss.sat, 1), sumcheck(z.ss.sat, 1)),
+                                         maxcheck(sumcheck(x.ss.dsat, 1), sumcheck(z.ss.dsat, 1))};
 
             return 0;
         }
@@ -2751,7 +2751,7 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 2;
 
-            out->ops = (miniscript_ops_t) {2 + x.ops.count, x.ops.sat, x.ops.dsat};
+            out->ops = (miniscript_ops_t){2 + x.ops.count, x.ops.sat, x.ops.dsat};
             out->ss = x.ss;
 
             return 0;
@@ -2780,7 +2780,7 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 1;
 
-            out->ops = (miniscript_ops_t) {1 + x.ops.count, x.ops.sat, x.ops.dsat};
+            out->ops = (miniscript_ops_t){1 + x.ops.count, x.ops.sat, x.ops.dsat};
             out->ss = x.ss;
 
             return 0;
@@ -2810,7 +2810,7 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->x = 0;
 
-            out->ops = (miniscript_ops_t) {1 + x.ops.count, x.ops.sat, x.ops.dsat};
+            out->ops = (miniscript_ops_t){1 + x.ops.count, x.ops.sat, x.ops.dsat};
             out->ss = x.ss;
 
             return 0;
@@ -2835,8 +2835,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 3;
 
-            out->ops = (miniscript_ops_t) {3 + x.ops.count, x.ops.sat, 0};
-            out->ss = (miniscript_stacksize_t) {sumcheck(1, x.ss.sat), 1};
+            out->ops = (miniscript_ops_t){3 + x.ops.count, x.ops.sat, 0};
+            out->ss = (miniscript_stacksize_t){sumcheck(1, x.ss.sat), 1};
 
             return 0;
         }
@@ -2860,9 +2860,9 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 1;
 
-            out->ops = (miniscript_ops_t) {x.ops.count, x.ops.sat, -1};
+            out->ops = (miniscript_ops_t){x.ops.count, x.ops.sat, -1};
 
-            out->ss = (miniscript_stacksize_t) {x.ss.sat, -1};
+            out->ss = (miniscript_stacksize_t){x.ss.sat, -1};
 
             return 0;
         }
@@ -2886,8 +2886,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + x.x;
 
-            out->ops = (miniscript_ops_t) {x.ops.count + x.x, x.ops.sat, -1};
-            out->ss = (miniscript_stacksize_t) {x.ss.sat, -1};
+            out->ops = (miniscript_ops_t){x.ops.count + x.x, x.ops.sat, -1};
+            out->ss = (miniscript_stacksize_t){x.ss.sat, -1};
 
             return 0;
         }
@@ -2911,8 +2911,8 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 4;
 
-            out->ops = (miniscript_ops_t) {4 + x.ops.count, x.ops.sat, 0};
-            out->ss = (miniscript_stacksize_t) {x.ss.sat, 1};
+            out->ops = (miniscript_ops_t){4 + x.ops.count, x.ops.sat, 0};
+            out->ss = (miniscript_stacksize_t){x.ss.sat, 1};
 
             return 0;
         }
@@ -2938,9 +2938,9 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
 
             out->script_size = x.script_size + 4;
 
-            out->ops = (miniscript_ops_t) {3 + x.ops.count, x.ops.sat, x.ops.dsat};
-            out->ss = (miniscript_stacksize_t) {sumcheck(x.ss.sat, 1),
-                                                maxcheck(1, sumcheck(x.ss.dsat, 1))};
+            out->ops = (miniscript_ops_t){3 + x.ops.count, x.ops.sat, x.ops.dsat};
+            out->ss = (miniscript_stacksize_t){sumcheck(x.ss.sat, 1),
+                                               maxcheck(1, sumcheck(x.ss.dsat, 1))};
 
             return 0;
         }

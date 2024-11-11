@@ -28,15 +28,43 @@
 #include "tests.h"
 
 /// Unpacks a constant into an array of 32 bytes
-#define SECP256K1_FE_CONST(d7, d6, d5, d4, d3, d2, d1, d0)                      \
-    {.n = {(d7) >> 24 & 0xff, (d7) >> 16 & 0xff, (d7) >> 8 & 0xff, (d7) & 0xff, \
-           (d6) >> 24 & 0xff, (d6) >> 16 & 0xff, (d6) >> 8 & 0xff, (d6) & 0xff, \
-           (d5) >> 24 & 0xff, (d5) >> 16 & 0xff, (d5) >> 8 & 0xff, (d5) & 0xff, \
-           (d4) >> 24 & 0xff, (d4) >> 16 & 0xff, (d4) >> 8 & 0xff, (d4) & 0xff, \
-           (d3) >> 24 & 0xff, (d3) >> 16 & 0xff, (d3) >> 8 & 0xff, (d3) & 0xff, \
-           (d2) >> 24 & 0xff, (d2) >> 16 & 0xff, (d2) >> 8 & 0xff, (d2) & 0xff, \
-           (d1) >> 24 & 0xff, (d1) >> 16 & 0xff, (d1) >> 8 & 0xff, (d1) & 0xff, \
-           (d0) >> 24 & 0xff, (d0) >> 16 & 0xff, (d0) >> 8 & 0xff, (d0) & 0xff}}
+#define SECP256K1_FE_CONST(d7, d6, d5, d4, d3, d2, d1, d0) \
+    {                                                      \
+        .n = {                                             \
+            (d7) >> 24 & 0xff,                             \
+            (d7) >> 16 & 0xff,                             \
+            (d7) >> 8 & 0xff,                              \
+            (d7) &0xff,                                    \
+            (d6) >> 24 & 0xff,                             \
+            (d6) >> 16 & 0xff,                             \
+            (d6) >> 8 & 0xff,                              \
+            (d6) &0xff,                                    \
+            (d5) >> 24 & 0xff,                             \
+            (d5) >> 16 & 0xff,                             \
+            (d5) >> 8 & 0xff,                              \
+            (d5) &0xff,                                    \
+            (d4) >> 24 & 0xff,                             \
+            (d4) >> 16 & 0xff,                             \
+            (d4) >> 8 & 0xff,                              \
+            (d4) &0xff,                                    \
+            (d3) >> 24 & 0xff,                             \
+            (d3) >> 16 & 0xff,                             \
+            (d3) >> 8 & 0xff,                              \
+            (d3) &0xff,                                    \
+            (d2) >> 24 & 0xff,                             \
+            (d2) >> 16 & 0xff,                             \
+            (d2) >> 8 & 0xff,                              \
+            (d2) &0xff,                                    \
+            (d1) >> 24 & 0xff,                             \
+            (d1) >> 16 & 0xff,                             \
+            (d1) >> 8 & 0xff,                              \
+            (d1) &0xff,                                    \
+            (d0) >> 24 & 0xff,                             \
+            (d0) >> 16 & 0xff,                             \
+            (d0) >> 8 & 0xff,                              \
+            (d0) &0xff                                     \
+        }                                                  \
+    }
 
 /// Offsets withing 65-byte curve point
 typedef enum {

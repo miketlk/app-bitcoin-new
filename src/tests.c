@@ -11,7 +11,8 @@
 extern void io_seproxyhal_se_reset(void);
 
 /// Defines a test suite
-#define TEST_SUITE(suite) {.fn = suite, .name = #suite}
+#define TEST_SUITE(suite) \
+    { .fn = suite, .name = #suite }
 
 /// One entry in test suite table
 typedef struct {
@@ -37,7 +38,7 @@ static const test_suite_t test_suites[] = {
 static const size_t n_suites = sizeof(test_suites) / sizeof(test_suites[0]);
 
 void run_on_device_tests(void) {
-    test_ctx_t test_ctx = (test_ctx_t) {0};
+    test_ctx_t test_ctx = (test_ctx_t){0};
 
     PRINTF("\nRunning tests...\n");
 
@@ -62,7 +63,8 @@ void run_on_device_tests(void) {
 
     // Send "SE_POWER_OFF" signal to exit Speculos
     io_seproxyhal_se_reset();
-    while (1);  // Never returns
+    while (1)
+        ;  // Never returns
 }
 
 void test_run_internal(test_ctx_t *test_ctx, test_fn_t test_fn, const char *test_name) {

@@ -113,13 +113,13 @@ int call_psbt_parse_rawtx_ex(dispatcher_context_t *dispatcher_context,
  *
  * @return 0 if success, a negative number on failure.
  */
-static inline int __attribute__((always_inline)) call_psbt_parse_rawtx(
-    dispatcher_context_t *dispatcher_context,
-    const merkleized_map_commitment_t *map,
-    const uint8_t *key,
-    int key_len,
-    int output_index,
-    txid_parser_outputs_t *outputs) {
+static inline int __attribute__((always_inline))
+call_psbt_parse_rawtx(dispatcher_context_t *dispatcher_context,
+                      const merkleized_map_commitment_t *map,
+                      const uint8_t *key,
+                      int key_len,
+                      int output_index,
+                      txid_parser_outputs_t *outputs) {
     return call_psbt_parse_rawtx_ex(dispatcher_context,
                                     map,
                                     key,

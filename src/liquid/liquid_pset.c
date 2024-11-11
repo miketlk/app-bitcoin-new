@@ -151,7 +151,7 @@ int pset_hash_output(dispatcher_context_t *dc,
             uint8_t value_raw[8];
             if (sizeof(value_raw) != call_get_merkleized_map_value(dc,
                                                                    &ith_map,
-                                                                   (uint8_t[]) {PSBT_OUT_AMOUNT},
+                                                                   (uint8_t[]){PSBT_OUT_AMOUNT},
                                                                    1,
                                                                    value_raw,
                                                                    sizeof(value_raw))) {
@@ -189,7 +189,7 @@ int pset_hash_output(dispatcher_context_t *dc,
             uint8_t out_script[MAX_OUTPUT_SCRIPTPUBKEY_LEN];
             int out_script_len = call_get_merkleized_map_value(dc,
                                                                &ith_map,
-                                                               (uint8_t[]) {PSBT_OUT_SCRIPT},
+                                                               (uint8_t[]){PSBT_OUT_SCRIPT},
                                                                1,
                                                                out_script,
                                                                sizeof(out_script));

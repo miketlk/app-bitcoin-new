@@ -84,16 +84,15 @@ static bool get_script_callback(void *state_in,
 
     get_script_callback_state_t *state = (get_script_callback_state_t *) state_in;
 
-    int script_len =
-        get_wallet_script(state->dc,
-                          state->policy,
-                          &(wallet_derivation_info_t) {
-                              .wallet_version = state->wallet_header->version,
-                              .keys_merkle_root = state->wallet_header->keys_info_merkle_root,
-                              .n_keys = state->wallet_header->n_keys,
-                              .change = !!descriptor_idx,
-                              .address_index = bip44_address_index},
-                          buffer_get_cur(out_buffer));
+    int script_len = get_wallet_script(
+        state->dc,
+        state->policy,
+        &(wallet_derivation_info_t){.wallet_version = state->wallet_header->version,
+                                    .keys_merkle_root = state->wallet_header->keys_info_merkle_root,
+                                    .n_keys = state->wallet_header->n_keys,
+                                    .change = !!descriptor_idx,
+                                    .address_index = bip44_address_index},
+        buffer_get_cur(out_buffer));
 
     return script_len > 0 && buffer_seek_cur(out_buffer, script_len);
 }
@@ -254,11 +253,11 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
         int script_len = get_wallet_script(
             dc,
             &wallet_policy_map.parsed,
-            &(wallet_derivation_info_t) {.wallet_version = wallet_header.version,
-                                         .keys_merkle_root = wallet_header.keys_info_merkle_root,
-                                         .n_keys = wallet_header.n_keys,
-                                         .change = is_change,
-                                         .address_index = address_index},
+            &(wallet_derivation_info_t){.wallet_version = wallet_header.version,
+                                        .keys_merkle_root = wallet_header.keys_info_merkle_root,
+                                        .n_keys = wallet_header.n_keys,
+                                        .change = is_change,
+                                        .address_index = address_index},
             script);
         if (script_len < 0) {
             PRINTF("Couldn't produce wallet script\n");

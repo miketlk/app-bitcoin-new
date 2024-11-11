@@ -79,11 +79,11 @@ bool liquid_get_blinding_key(const uint8_t mbk[static 32],
  *
  * @return true on success, false in case of error.
  */
-static bool __attribute__((noinline)) elip150_derive_public_key(
-    const uint8_t bare_pubkey[static 33],
-    const uint8_t *script,
-    size_t script_length,
-    uint8_t out_pubkey[static 33]) {
+static bool __attribute__((noinline))
+elip150_derive_public_key(const uint8_t bare_pubkey[static 33],
+                          const uint8_t *script,
+                          size_t script_length,
+                          uint8_t out_pubkey[static 33]) {
     if (!bare_pubkey || !script || !out_pubkey ||
         !(0x02 == bare_pubkey[0] || 0x03 == bare_pubkey[0])) {
         return false;
@@ -158,11 +158,11 @@ static bool __attribute__((noinline)) elip150_derive_public_key(
  *
  * @return true on success, false in case of error.
  */
-static bool __attribute__((noinline)) elip151_derive_private_key(
-    uint32_t n_descriptors,
-    liquid_get_script_callback_t get_script_callback,
-    void *get_script_callback_state,
-    uint8_t out_privkey[static 32]) {
+static bool __attribute__((noinline))
+elip151_derive_private_key(uint32_t n_descriptors,
+                           liquid_get_script_callback_t get_script_callback,
+                           void *get_script_callback_state,
+                           uint8_t out_privkey[static 32]) {
     if (!get_script_callback || !out_privkey || !n_descriptors) {
         return false;
     }
