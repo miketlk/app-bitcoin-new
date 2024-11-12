@@ -13,22 +13,9 @@
 // about half of the memory would be needed
 #define MAX_POLICY_MAP_MEMORY_SIZE 512
 
-// Version bytes of Liquid regtest xpub
-#define LIQUID_REGTEST_XPUB 0x043587CF
-// Version bytes of Liquid regtest xprv
-#define LIQUID_REGTEST_XPRV 0x04358394
-// Version bytes of Liquid main network (liquidv1) xpub
-#define LIQUID_MAIN_XPUB 0x0488B21E
-// Version bytes of Liquid main network (liquidv1) xprv
-#define LIQUID_MAIN_XPRV 0x0488ADE4
-
 #if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
 #error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
 #endif
-
-// Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
-uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
-uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
 
 const liquid_network_config_t config_elementsregtest = {.p2pkh_version = 0x6F,
                                                         .p2sh_version = 0x4B,

@@ -10,15 +10,6 @@
 #include "common/buffer.h"
 #include "liquid/contract_parser.h"
 
-// Version bytes of Liquid regtest xpub
-#define LIQUID_REGTEST_XPUB 0x043587CF
-// Version bytes of Liquid regtest xprv
-#define LIQUID_REGTEST_XPRV 0x04358394
-
-// Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
-uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
-uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
-
 typedef struct {
     const char *contract_str;
     uint8_t hash[SHA256_LEN];

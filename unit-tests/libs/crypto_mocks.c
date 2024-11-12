@@ -4,6 +4,11 @@
 #include "cx.h"
 #include "util.h"
 
+#ifdef HAVE_LIQUID
+uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
+uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
+#endif  // HAVE_LIQUID
+
 __attribute__((weak)) void crypto_get_checksum(const uint8_t *in,
                                                uint16_t in_len,
                                                uint8_t out[static 4]) {

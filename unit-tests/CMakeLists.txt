@@ -126,6 +126,7 @@ add_library(write ${LIB_TYPE} ../src/common/write.c)
 add_library(crypto ${LIB_TYPE} ../src/crypto.c)
 
 if(HAVE_LIQUID)
+  add_definitions(-include "crypto_mocks.h")
   add_library(liquid ${LIB_TYPE} ../src/liquid/liquid.c ../src/liquid/liquid_addr.c ../src/liquid/blech32.c ../src/liquid/liquid_assets.c ../src/liquid/contract_parser.c ../src/liquid/liquid_asset_metadata.c ../src/liquid/liquid_wallet.c)
   set(LIQUID_LIB "liquid")
 else()
