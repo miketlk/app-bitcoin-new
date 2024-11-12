@@ -27,6 +27,10 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-legacy:latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
       - name: Clone
