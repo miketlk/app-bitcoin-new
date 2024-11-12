@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "os.h" // Needed for the MAX() macro
+
 /**
  * Fall-through between switch labels as Clang C attribute
  */
