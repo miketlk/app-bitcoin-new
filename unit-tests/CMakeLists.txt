@@ -153,7 +153,7 @@ if(HAVE_LIQUID)
   target_link_libraries(test_liquid_addr PUBLIC cmocka ${GCOV_LIB} liquid buffer varint bip32 base58 read write crypto_mocks)
   target_link_libraries(test_liquid PUBLIC cmocka ${GCOV_LIB} liquid wallet script buffer varint bip32 base58 read write crypto crypto_mocks)
   target_link_libraries(test_liquid_assets PUBLIC cmocka ${GCOV_LIB} liquid write crypto_mocks)
-  target_link_libraries(test_contract_parser PUBLIC cmocka ${GCOV_LIB} liquid wallet script buffer varint read write bip32 base58 crypto_mocks)
+  target_link_libraries(test_contract_parser PUBLIC cmocka ${GCOV_LIB} liquid wallet script buffer varint read write bip32 base58 crypto crypto_mocks)
   target_link_libraries(test_asset_metadata PUBLIC cmocka ${GCOV_LIB} liquid buffer varint read write bip32 crypto_mocks)
 endif()
 
