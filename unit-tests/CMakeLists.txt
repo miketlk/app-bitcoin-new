@@ -150,6 +150,8 @@ target_link_libraries(test_wallet PUBLIC cmocka ${GCOV_LIB} ${LIQUID_LIB} wallet
 target_link_libraries(test_write PUBLIC cmocka ${GCOV_LIB} write)
 target_link_libraries(test_crypto PUBLIC cmocka ${GCOV_LIB} crypto read base58 crypto_mocks)
 
+message("${BoldMagenta}** test_wallet params: cmocka ${GCOV_LIB} ${LIQUID_LIB} wallet script buffer varint read write bip32 base58 crypto crypto_mocks **${ColourReset}") # !!!!
+
 if(HAVE_LIQUID)
   set(LIQUID_ALL_LIBS "${GCOV_LIB};liquid;wallet;script;buffer;varint;read;write;bip32;base58;crypto;crypto_mocks")
   target_link_libraries(test_liquid_addr PUBLIC cmocka ${LIQUID_ALL_LIBS})
