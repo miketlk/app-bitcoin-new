@@ -121,15 +121,16 @@ add_library(parser ${LIB_TYPE} ../src/common/parser.c)
 add_library(read ${LIB_TYPE} ../src/common/read.c)
 add_library(script ${LIB_TYPE} ../src/common/script.c)
 add_library(varint ${LIB_TYPE} ../src/common/varint.c)
-add_library(wallet ${LIB_TYPE} ../src/common/wallet.c)
 add_library(write ${LIB_TYPE} ../src/common/write.c)
 add_library(crypto ${LIB_TYPE} ../src/crypto.c)
 
 if(HAVE_LIQUID)
   add_definitions(-include "crypto_mocks.h")
+  add_library(wallet ${LIB_TYPE} ../src/common/wallet.c ../src/liquid/liquid_wallet.c)
   add_library(liquid ${LIB_TYPE} ../src/liquid/liquid.c ../src/liquid/liquid_addr.c ../src/liquid/blech32.c ../src/liquid/liquid_assets.c ../src/liquid/contract_parser.c ../src/liquid/liquid_asset_metadata.c ../src/liquid/liquid_wallet.c)
   set(LIQUID_LIB "liquid")
 else()
+  add_library(wallet ${LIB_TYPE} ../src/common/wallet.c)
   set(LIQUID_LIB "")
 endif()
 
@@ -149,8 +150,6 @@ target_link_libraries(test_script PUBLIC cmocka ${GCOV_LIB} script buffer varint
 target_link_libraries(test_wallet PUBLIC cmocka ${GCOV_LIB} ${LIQUID_LIB} wallet script buffer varint read write bip32 base58 crypto crypto_mocks)
 target_link_libraries(test_write PUBLIC cmocka ${GCOV_LIB} write)
 target_link_libraries(test_crypto PUBLIC cmocka ${GCOV_LIB} crypto read base58 crypto_mocks)
-
-message("${BoldMagenta}** test_wallet params: cmocka ${GCOV_LIB} ${LIQUID_LIB} wallet script buffer varint read write bip32 base58 crypto crypto_mocks **${ColourReset}") # !!!!
 
 if(HAVE_LIQUID)
   set(LIQUID_ALL_LIBS "${GCOV_LIB};liquid;wallet;script;buffer;varint;read;write;bip32;base58;crypto;crypto_mocks")
