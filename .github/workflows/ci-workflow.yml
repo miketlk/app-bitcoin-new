@@ -154,7 +154,7 @@ jobs:
 
       - name: Run tests
         run: |
-          cd tests_mainnet
+          cd tests_liquid_main
           pip install -r requirements.txt
           PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=${{ matrix.model }} --timeout=300
 
