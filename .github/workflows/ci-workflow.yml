@@ -208,7 +208,7 @@ jobs:
       - name: Download Liquid app binary for perftests
         uses: actions/download-artifact@v4
         with:
-          name: liquid-testnet-perftest-app-nanosp
+          name: liquid-regtest-perftest-app-nanosp
           path: bin
 
       - name: Run tests
