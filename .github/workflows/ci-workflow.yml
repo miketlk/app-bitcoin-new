@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build
         run: |
@@ -42,13 +42,13 @@ jobs:
           make clean
           make DEBUG=0 COIN=liquid_regtest BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-regtest-bin/
       - name: Upload Liquid app binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: liquid-app-${{ matrix.model }}
           path: liquid-bin
 
       - name: Upload Liquid Regtest app binary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: liquid-regtest-app-${{ matrix.model }}
           path: liquid-regtest-bin
@@ -63,7 +63,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build unit tests
         run: |
@@ -77,7 +77,7 @@ jobs:
           lcov --directory . -b "$(realpath build/)" --add-tracefile coverage.base --add-tracefile coverage.capture -o coverage.info && \
           lcov --directory . -b "$(realpath build/)" --remove coverage.info '*/unit-tests/*' -o coverage.info && \
           genhtml coverage.info -o coverage
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: code-coverage
           path: unit-tests/coverage
@@ -95,7 +95,7 @@ jobs:
       - name: HTML documentation
         run: doxygen .doxygen/Doxyfile
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: doc/html
@@ -125,10 +125,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Download Liquid app binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: liquid-app-${{matrix.model}}
           path: bin
@@ -157,7 +157,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run tests
         run: |
@@ -184,10 +184,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
 
@@ -196,7 +196,7 @@ jobs:
           npm install -g yarn
 
       - name: Download Liquid Regtest app binary
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: liquid-regtest-app-nanosp
           path: bin
@@ -218,7 +218,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run tests
         run: |
