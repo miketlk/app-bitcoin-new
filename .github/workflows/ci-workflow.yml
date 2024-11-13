@@ -15,11 +15,13 @@ on:
 
 jobs:
   job_build:
-    name: Compilation for X, S+
+    name: Compilation for NanoS, X, and S+
 
     strategy:
       matrix:
         include:
+          - model: nanos
+            SDK: "$NANOS_SDK"
           - model: nanox
             SDK: "$NANOX_SDK"
           - model: nanosp
@@ -32,7 +34,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Build
         run: |
@@ -40,38 +42,16 @@ jobs:
           make clean
           make DEBUG=0 COIN=liquid_regtest BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-regtest-bin/
       - name: Upload Liquid app binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         with:
           name: liquid-app-${{ matrix.model }}
           path: liquid-bin
 
       - name: Upload Liquid Regtest app binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v2
         with:
           name: liquid-regtest-app-${{ matrix.model }}
           path: liquid-regtest-bin
-
-  job_build_app_perftest:
-    name: Compile the UX-less version of the app on Nano S+ for performance tests
-
-    runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder:latest
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Build
-        run: |
-          make DEBUG=0 COIN=liquid_regtest BOLOS_SDK="$NANOSP_SDK" AUTOAPPROVE_FOR_PERF_TESTS=1
-
-      - name: Upload Liquid Testnet app binary
-        uses: actions/upload-artifact@v4
-        with:
-          name: liquid-regtest-perftest-app-nanosp
-          path: bin
 
   job_unit_test:
     name: Unit test
@@ -83,7 +63,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Build unit tests
         run: |
@@ -97,7 +77,7 @@ jobs:
           lcov --directory . -b "$(realpath build/)" --add-tracefile coverage.base --add-tracefile coverage.capture -o coverage.info && \
           lcov --directory . -b "$(realpath build/)" --remove coverage.info '*/unit-tests/*' -o coverage.info && \
           genhtml coverage.info -o coverage
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v2
         with:
           name: code-coverage
           path: unit-tests/coverage
@@ -115,7 +95,7 @@ jobs:
       - name: HTML documentation
         run: doxygen .doxygen/Doxyfile
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v2
         with:
           name: documentation
           path: doc/html
@@ -125,6 +105,7 @@ jobs:
     strategy:
       matrix:
         include:
+          - model: nanos
           - model: nanox
           - model: nanosp
 
@@ -144,10 +125,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Download Liquid app binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v2
         with:
           name: liquid-app-${{matrix.model}}
           path: bin
@@ -176,7 +157,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Run tests
         run: |
@@ -184,43 +165,6 @@ jobs:
           pip install -r requirements.txt
           PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --timeout=300 --model=nanos
 
-  job_perftests:
-    name: Performance report
-
-    needs: job_build_app_perftest
-    runs-on: ubuntu-latest
-
-    container:
-      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
-      ports:
-        - 1234:1234
-        - 9999:9999
-        - 40000:40000
-        - 41000:41000
-        - 42000:42000
-        - 43000:43000
-      options: --entrypoint /bin/bash
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Download Liquid app binary for perftests
-        uses: actions/download-artifact@v4
-        with:
-          name: liquid-regtest-perftest-app-nanosp
-          path: bin
-
-      - name: Run tests
-        run: |
-          cd tests_perf
-          pip install -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=nanosp --benchmark-json=benchmarks.json
-      - name: Upload benchmarks summary
-        uses: actions/upload-artifact@v4
-        with:
-          name: benchmarks-log
-          path: tests_perf/benchmarks.json
 
   job_test_js_lib:
     name: Tests with the JS library
@@ -240,19 +184,19 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Install node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v2
         with:
-          node-version: 20
+          node-version: '16'
 
       - name: Install yarn
         run: |
           npm install -g yarn
 
       - name: Download Liquid Regtest app binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v2
         with:
           name: liquid-regtest-app-nanosp
           path: bin
@@ -274,7 +218,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
 
       - name: Run tests
         run: |
