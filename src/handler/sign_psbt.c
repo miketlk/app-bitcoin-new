@@ -1108,14 +1108,14 @@ init_global_state(dispatcher_context_t *dc,
     // If it's not a default wallet policy, ask the user for confirmation, and abort if they deny
     if (!st->is_wallet_default && !ui_authorize_wallet_spend(dc, wallet_header.name)) {
         SEND_SW(dc, SW_DENY);
-        ui_post_processing_confirm_wallet_spend(dc, false);
+        (void)ui_post_processing_confirm_wallet_spend(dc, false);
         return false;
     }
 
     st->master_key_fingerprint = crypto_get_master_key_fingerprint();
 
     if (!st->is_wallet_default) {
-        ui_post_processing_confirm_wallet_spend(dc, true);
+        (void)ui_post_processing_confirm_wallet_spend(dc, true);
     }
 
 #ifdef HAVE_LIQUID
