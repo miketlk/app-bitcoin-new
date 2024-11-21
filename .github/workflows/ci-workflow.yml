@@ -125,8 +125,8 @@ jobs:
       matrix:
         include:
           - model: nanos
-          - model: nanox
-          - model: nanosp
+#!!!          - model: nanox
+#!!!          - model: nanosp
 
     needs: job_build
     runs-on: ubuntu-22.04 # !!! ubuntu-latest
