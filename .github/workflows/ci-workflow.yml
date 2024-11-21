@@ -156,7 +156,7 @@ jobs:
         run: |
           cd tests_liquid_main
           pip install --prefer-binary -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --tb=short -v --device=${{matrix.model}}
+          PYTHONPATH=$PYTHONPATH:/speculos pytest --tb=short -v --device=${{matrix.model}} --speculos_api_port 5000
 
   job_test_python_lib_legacyapp:
     name: Tests with the Python library and legacy Bitcoin app
