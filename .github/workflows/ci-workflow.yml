@@ -131,16 +131,16 @@ jobs:
     needs: job_build
     runs-on: ubuntu-22.04 # !!! ubuntu-latest
 
-    container:
-      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
-      ports:
-        - 1234:1234
-        - 9999:9999
-        - 40000:40000
-        - 41000:41000
-        - 42000:42000
-        - 43000:43000
-      options: --entrypoint /bin/bash
+#!!!    container:
+#!!!      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
+#!!!      ports:
+#!!!        - 1234:1234
+#!!!        - 9999:9999
+#!!!        - 40000:40000
+#!!!        - 41000:41000
+#!!!        - 42000:42000
+#!!!        - 43000:43000
+#!!!      options: --entrypoint /bin/bash
 
     steps:
       - name: Clone
