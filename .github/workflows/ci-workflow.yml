@@ -100,9 +100,27 @@ jobs:
           name: documentation
           path: doc/html
 
-# !!!
+  job_merge_test_artifacts:
+    name: Merge build artifacts
+    needs: job_build
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/upload-artifact/merge@v4
+        with:
+          name: liquid-app-merged
+          pattern: liquid-app-*
+          delete-merged: false
+
+  job_test_mainnet:
+    name: Tests on Liquid main network
+    needs: job_merge_test_artifacts
+    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_ragger_tests.yml@v1
+    with:
+      download_app_binaries_artifact: liquid-app-merged
+      test_dir: "tests_liquid_main"
+
 #   job_test_mainnet:
-#     name: Tests on Liquid main network
+#     name: Tests on mainnet
 #     strategy:
 #       matrix:
 #         include:
@@ -111,54 +129,37 @@ jobs:
 #           - model: nanosp
 #
 #     needs: job_build
-#     uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_ragger_tests.yml@v1
-#     with:
-#       download_app_binaries_artifact: liquid-app-${{matrix.model}}
-#       test_dir: "tests_liquid_main"
-#       run_for_devices: "[\"${{matrix.model}}\"]"
-# !!!
-
-  job_test_mainnet:
-    name: Tests on mainnet
-    strategy:
-      matrix:
-        include:
-          - model: nanos
-          - model: nanox
-          - model: nanosp
-
-    needs: job_build
-    runs-on: ubuntu-22.04 # !!! ubuntu-latest
-
-    container:
-      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
-      ports:
-        - 1234:1234
-        - 9999:9999
-        - 40000:40000
-        - 41000:41000
-        - 42000:42000
-        - 43000:43000
-      options: --entrypoint /bin/bash
-
-    steps:
-      - name: Clone
-        uses: actions/checkout@v4
-
-      - name: Download Liquid app binary
-        uses: actions/download-artifact@v4
-        with:
-          name: liquid-app-${{matrix.model}}
-          path: bin
-
-      - name: Run tests
-        run: |
-          cd tests_liquid_main
-          pip install --upgrade wheel
-          pip install --upgrade setuptools
-          python -m pip install --upgrade pip
-          pip install --prefer-binary -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=${{ matrix.model }} --timeout=300
+#     runs-on: ubuntu-22.04 # !!! ubuntu-latest
+#
+#     container:
+#       image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
+#       ports:
+#         - 1234:1234
+#         - 9999:9999
+#         - 40000:40000
+#         - 41000:41000
+#         - 42000:42000
+#         - 43000:43000
+#       options: --entrypoint /bin/bash
+#
+#     steps:
+#       - name: Clone
+#         uses: actions/checkout@v4
+#
+#       - name: Download Liquid app binary
+#         uses: actions/download-artifact@v4
+#         with:
+#           name: liquid-app-${{matrix.model}}
+#           path: bin
+#
+#       - name: Run tests
+#         run: |
+#           cd tests_liquid_main
+#           pip install --upgrade wheel
+#           pip install --upgrade setuptools
+#           python -m pip install --upgrade pip
+#           pip install --prefer-binary -r requirements.txt
+#           PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=${{ matrix.model }} --timeout=300
 
   job_test_python_lib_legacyapp:
     name: Tests with the Python library and legacy Bitcoin app
