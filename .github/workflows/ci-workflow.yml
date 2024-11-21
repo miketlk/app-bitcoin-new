@@ -150,7 +150,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: liquid-app-${{matrix.model}}
-          path: bin
+          path: build/${{matrix.model}}/bin
 
       - name: Run tests
         run: |
