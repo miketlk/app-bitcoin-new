@@ -152,6 +152,11 @@ jobs:
           name: liquid-app-${{matrix.model}}
           path: build/${{matrix.model}}/bin
 
+      - name: Install tests dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y qemu-user-static tesseract-ocr libtesseract-dev
+          pip install -U pip setuptools
+
       - name: Run tests
         run: |
           cd tests_liquid_main
