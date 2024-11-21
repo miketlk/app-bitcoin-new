@@ -155,11 +155,11 @@ jobs:
       - name: Run tests
         run: |
           cd tests_liquid_main
-          pip install --upgrade wheel
-          pip install --upgrade setuptools
-          python -m pip install --upgrade pip
+#!!!          pip install --upgrade wheel
+#!!!          pip install --upgrade setuptools
+#!!!          python -m pip install --upgrade pip
           pip install --prefer-binary -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=${{ matrix.model }} --timeout=300
+          PYTHONPATH=$PYTHONPATH:/speculos pytest --tb=short -v --device=${{matrix.model}}
 
   job_test_python_lib_legacyapp:
     name: Tests with the Python library and legacy Bitcoin app
