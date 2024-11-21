@@ -114,7 +114,7 @@ jobs:
     with:
       download_app_binaries_artifact: liquid-app-${{matrix.model}}
       test_dir: "tests_liquid_main"
-      run_for_devices: ${{matrix.model}}
+      run_for_devices: "[\"${{matrix.model}}\"]"
 
 #   job_test_mainnet:
 #     name: Tests on mainnet
