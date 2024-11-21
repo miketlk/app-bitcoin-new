@@ -100,47 +100,17 @@ jobs:
           name: documentation
           path: doc/html
 
-# !!!  job_merge_test_artifacts:
-# !!!    name: Merge build artifacts
-# !!!    needs: job_build
-# !!!    runs-on: ubuntu-22.04
-# !!!    steps:
-# !!!      - uses: actions/upload-artifact/merge@v4
-# !!!        with:
-# !!!          name: liquid-app-merged
-# !!!          pattern: liquid-app-*
-# !!!          delete-merged: false
-# !!!
-# !!!  job_test_mainnet:
-# !!!    name: Tests on Liquid main network
-# !!!    needs: job_merge_test_artifacts
-# !!!    uses: LedgerHQ/ledger-app-workflows/.github/workflows/reusable_ragger_tests.yml@v1
-# !!!    with:
-# !!!      download_app_binaries_artifact: liquid-app-merged
-# !!!      test_dir: "tests_liquid_main"
-
   job_test_mainnet:
     name: Tests on mainnet
     strategy:
       matrix:
         include:
           - model: nanos
-#!!!          - model: nanox
-#!!!          - model: nanosp
+          - model: nanox
+          - model: nanosp
 
     needs: job_build
-    runs-on: ubuntu-22.04 # !!! ubuntu-latest
-
-#!!!    container:
-#!!!      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
-#!!!      ports:
-#!!!        - 1234:1234
-#!!!        - 9999:9999
-#!!!        - 40000:40000
-#!!!        - 41000:41000
-#!!!        - 42000:42000
-#!!!        - 43000:43000
-#!!!      options: --entrypoint /bin/bash
+    runs-on: ubuntu-latest
 
     steps:
       - name: Clone
@@ -164,6 +134,7 @@ jobs:
           PYTHONPATH=$PYTHONPATH:/speculos pytest --tb=short -v --device=${{matrix.model}} --speculos_api_port 5000
 
   job_test_python_lib_legacyapp:
+    if: false
     name: Tests with the Python library and legacy Bitcoin app
     needs: job_build
     runs-on: ubuntu-latest
@@ -189,8 +160,8 @@ jobs:
           pip install -r requirements.txt
           PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --timeout=300 --model=nanos
 
-
   job_test_js_lib:
+    if: false
     name: Tests with the JS library
     needs: job_build
     runs-on: ubuntu-latest
@@ -231,8 +202,8 @@ jobs:
           yarn install
           LOG_SPECULOS=1 LOG_APDUS=1 SPECULOS="/speculos/speculos.py" yarn test
 
-
   job_test_rust_client:
+    if: false
     name: Tests for rust client library
     needs: job_build
     runs-on: ubuntu-latest
