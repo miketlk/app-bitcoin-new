@@ -158,9 +158,12 @@ int format_opscript_script(const uint8_t script[],
             return -1;  // unsupported
         }
 
+        // In the code below, a cast to volatile value is used to calm the static analyzer.
+        // Otherwise, we must assume that OP_0 is the same as 0.
+
         if (opcode == OP_0) {
             out[out_ctr++] = '0';
-        } else if (opcode >= 1 && opcode <= 75) {
+        } else if ((volatile uint8_t) opcode >= 1 && opcode <= 75) {
             // opcodes between 1 and 75 indicate a data push of the corresponding length
             hex_length = opcode;
         } else if (opcode == OP_PUSHDATA1) {
@@ -175,7 +178,7 @@ int format_opscript_script(const uint8_t script[],
         } else if (opcode == OP_1NEGATE) {
             out[out_ctr++] = '-';
             out[out_ctr++] = '1';
-        } else if (opcode >= OP_1 && opcode <= OP_16) {
+        } else if (opcode >= OP_1 && (volatile uint8_t) opcode <= OP_16) {
             uint8_t num = opcode - 0x50;
             // num is a number between 1 and 16 (included)
             if (num >= 10) {

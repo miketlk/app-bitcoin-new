@@ -9,7 +9,7 @@ int call_get_merkle_leaf_element(dispatcher_context_t *dispatcher_context,
                                  uint32_t leaf_index,
                                  uint8_t *out_ptr,
                                  size_t out_ptr_len) {
-    // LOG_PROCESSOR();
+    // disabled: LOG_PROCESSOR();
 
     uint8_t leaf_hash[32];
 

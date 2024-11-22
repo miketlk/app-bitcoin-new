@@ -9,7 +9,7 @@ int call_get_merkle_leaf_index(dispatcher_context_t *dispatcher_context,
                                size_t size,
                                const uint8_t root[static 32],
                                const uint8_t leaf_hash[static 32]) {
-    // LOG_PROCESSOR();
+    // disabled: LOG_PROCESSOR();
 
     {  // free memory as soon as possible
         uint8_t request[1 + 32 + 32];

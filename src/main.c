@@ -116,7 +116,7 @@ void app_main() {
 
         // Receive command bytes in G_io_apdu_buffer
 
-        input_len = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
+        input_len = (int) io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
 
         if (input_len < 0) {
             PRINTF("=> io_exchange error\n");
@@ -262,6 +262,43 @@ void coin_main() {
     app_exit();
 }
 
+/**
+ * Handle the library command SIGN_TRANSACTION doing a copy of transaction parameters and
+ * transferring control to app_main().
+ */
+static inline void __attribute__((always_inline))
+swap_handle_sign_transaction(create_transaction_parameters_t *args) {
+    // copying arguments (pointing to globals) to context *before*
+    // calling `initialize_app_globals` as it could override them
+    const bool args_are_copied = copy_transaction_parameters(args);
+    initialize_app_globals();
+    if (args_are_copied) {
+        // never returns
+
+        G_swap_state.called_from_swap = 1;
+
+        io_seproxyhal_init();
+        UX_INIT();
+#ifdef HAVE_BAGL
+        ux_stack_push();
+#elif defined(HAVE_NBGL)
+        nbgl_useCaseSpinner("Signing");
+#endif  // HAVE_BAGL
+
+        USB_power(0);
+        USB_power(1);
+        // earlier here was a call to: ui_idle();
+        PRINTF("USB power ON/OFF\n");
+#ifdef HAVE_BLE
+        // grab the current plane mode setting
+        G_io_app.plane_mode = os_setting_get(OS_SETTING_PLANEMODE, NULL, 0);
+        BLE_power(0, NULL);
+        BLE_power(1, NULL);
+#endif  // HAVE_BLE
+        app_main();
+    }
+}
+
 static void swap_library_main_helper(libargs_t *args) {
     PRINTF("Inside a library \n");
     switch (args->command) {
@@ -270,38 +307,9 @@ static void swap_library_main_helper(libargs_t *args) {
             args->check_address->result = 0;
             args->check_address->result = handle_check_address(args->check_address);
             break;
-        case SIGN_TRANSACTION: {
-            // copying arguments (pointing to globals) to context *before*
-            // calling `initialize_app_globals` as it could override them
-            const bool args_are_copied = copy_transaction_parameters(args->create_transaction);
-            initialize_app_globals();
-            if (args_are_copied) {
-                // never returns
-
-                G_swap_state.called_from_swap = 1;
-
-                io_seproxyhal_init();
-                UX_INIT();
-#ifdef HAVE_BAGL
-                ux_stack_push();
-#elif defined(HAVE_NBGL)
-                nbgl_useCaseSpinner("Signing");
-#endif  // HAVE_BAGL
-
-                USB_power(0);
-                USB_power(1);
-                // ui_idle();
-                PRINTF("USB power ON/OFF\n");
-#ifdef HAVE_BLE
-                // grab the current plane mode setting
-                G_io_app.plane_mode = os_setting_get(OS_SETTING_PLANEMODE, NULL, 0);
-                BLE_power(0, NULL);
-                BLE_power(1, NULL);
-#endif  // HAVE_BLE
-                app_main();
-            }
+        case SIGN_TRANSACTION:
+            swap_handle_sign_transaction(args->create_transaction);
             break;
-        }
         case GET_PRINTABLE_AMOUNT:
             // ensure result is zero if an exception is thrown (compatibility breaking, disabled
             // until LL is ready)
