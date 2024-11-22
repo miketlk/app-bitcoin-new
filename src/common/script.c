@@ -163,7 +163,7 @@ int format_opscript_script(const uint8_t script[],
 
         if (opcode == OP_0) {
             out[out_ctr++] = '0';
-        } else if ((volatile uint8_t) opcode >= 1 && opcode <= 75) {
+        } else if (((volatile uint8_t) opcode) >= 1 && opcode <= 75) {
             // opcodes between 1 and 75 indicate a data push of the corresponding length
             hex_length = opcode;
         } else if (opcode == OP_PUSHDATA1) {
