@@ -107,7 +107,7 @@ const command_descriptor_t COMMAND_DESCRIPTORS[] = {
 void app_main() {
     for (;;) {
         // Length of APDU command received in G_io_apdu_buffer
-        int input_len = 0;
+        unsigned short input_len = 0;
         // Structured APDU command
         command_t cmd;
 
@@ -118,16 +118,15 @@ void app_main() {
 
         input_len = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
 
-        {
-            // This workaround keeps static analysis tools calm while allowing while allowing
-            // io_exchange() to return error codes as negative values in future versions of the SDK.
-            volatile int input_len_check = input_len;
-            input_len_check = input_len_check;
-            if (input_len_check < 0) {
-                PRINTF("=> io_exchange error\n");
-                return;
-            }
-        }
+        /*
+         * The following check was removed because in the current SDK io_exchange() has stopped
+         * returning the error codes as negative values.
+         *
+         *  if (input_len < 0) {
+         *      PRINTF("=> io_exchange error\n");
+         *      return;
+         *  }
+         */
 
         // Reset structured APDU command
         memset(&cmd, 0, sizeof(cmd));
