@@ -116,11 +116,16 @@ void app_main() {
 
         // Receive command bytes in G_io_apdu_buffer
 
-        input_len = (int) io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
+        input_len = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
 
-        if (input_len < 0) {
-            PRINTF("=> io_exchange error\n");
-            return;
+        {
+            // This workaround keeps static analysis tools calm while allowing SDK API change
+            // giving io_exchange() ability to return error codes as negative values.
+            volatile int input_len_check = input_len;
+            if (input_len_check < 0) {
+                PRINTF("=> io_exchange error\n");
+                return;
+            }
         }
 
         // Reset structured APDU command
@@ -287,7 +292,7 @@ swap_handle_sign_transaction(create_transaction_parameters_t *args) {
 
         USB_power(0);
         USB_power(1);
-        // earlier here was a call to: ui_idle();
+        // earlier here was a call to: `ui_idle();`
         PRINTF("USB power ON/OFF\n");
 #ifdef HAVE_BLE
         // grab the current plane mode setting

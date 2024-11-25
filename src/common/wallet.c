@@ -644,6 +644,27 @@ static int parse_child_scripts(buffer_t *in_buf,
 // forward-declaration, since it's used in parse_script
 static int parse_tree(buffer_t *in_buf, buffer_t *out_buf, int version, size_t depth);
 
+#ifdef HAVE_LIQUID
+/**
+ * @brief Create a ct() node instance in the output buffer filling the type and fags fields.
+ *
+ * @param[out] out_buf
+ *   Output buffer where the node is allocated.
+ *
+ * @return pointer to the newly allocated policy node or NULL in case of failure.
+ */
+static policy_node_t *__attribute__((always_inline)) create_ct_node(buffer_t *out_buf) {
+    policy_node_ct_t *node =
+        (policy_node_ct_t *) buffer_alloc(out_buf, sizeof(policy_node_ct_t), true);
+
+    if (node != NULL) {
+        node->base.type = TOKEN_CT;
+        node->base.flags.is_miniscript = 0;
+    }
+    return (policy_node_t *) node;
+}
+#endif  // HAVE_LIQUID
+
 /**
  * Parses a SCRIPT expression from the in_buf buffer, allocating the nodes and variables in out_buf.
  * The initial pointer in out_buf will contain the root node of the SCRIPT.
@@ -789,38 +810,29 @@ static int parse_script(buffer_t *in_buf,
                 return WITH_ERROR(-1, "ct can only be a top-level function");
             }
 
-            policy_node_ct_t *node =
-                (policy_node_ct_t *) buffer_alloc(out_buf, sizeof(policy_node_ct_t), true);
-            if (node == NULL) {
+            parsed_node = create_ct_node(out_buf);
+            if (parsed_node == NULL) {
                 return WITH_ERROR(-1, "Out of memory");
             }
-            parsed_node = (policy_node_t *) node;
-            node->base.type = token;
-            node->base.flags.is_miniscript = 0;
 
-            // the blinding key script is parsed (if successful) in the current location
-            // of the output buffer
+            // Blinding key script is parsed in the current location of the output buffer.
             buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
-            i_policy_node(&node->mbk_script, buffer_get_cur(out_buf));
+            i_policy_node(&((policy_node_ct_t *) parsed_node)->mbk_script, buffer_get_cur(out_buf));
             if (0 > liquid_parse_blinding_key_script(in_buf, out_buf)) {
-                // failed while parsing internal script
-                return -1;
+                return WITH_ERROR(-1, "Failed while parsing internal script");
             }
 
-            // consume comma separator
             if (!consume_character(in_buf, ',')) {
                 return WITH_ERROR(-1, "Expected ','");
             }
 
-            // The internal script is recursively parsed (if successful) in the current location
-            // of the output buffer. We do not increase the depth to not break the normal processing
-            // of the inner scripts.
+            // Internal script is recursively parsed in the current location of the output buffer.
+            // We do not increase the depth to not break the normal processing of the inner scripts.
             buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
-            i_policy_node(&node->script, buffer_get_cur(out_buf));
+            i_policy_node(&((policy_node_ct_t *) parsed_node)->script, buffer_get_cur(out_buf));
             if (0 >
                 parse_script(in_buf, out_buf, version, depth, context_flags | CONTEXT_WITHIN_CT)) {
-                // failed while parsing internal script
-                return -1;
+                return WITH_ERROR(-1, "Failed while parsing internal script");
             }
             break;
         }
