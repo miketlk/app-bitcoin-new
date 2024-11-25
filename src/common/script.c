@@ -132,7 +132,7 @@ int get_script_address(const uint8_t script[], size_t script_len, char *out, siz
 static inline bool is_opcode_formatable(uint8_t opcode) {
     if (opcode > OP_16 || opcode == OP_RESERVED || opcode == OP_PUSHDATA2 ||
         opcode == OP_PUSHDATA4) {
-        false;
+        return false;
     }
     return true;
 }
