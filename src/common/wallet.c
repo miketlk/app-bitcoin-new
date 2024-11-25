@@ -809,9 +809,7 @@ static int parse_script(buffer_t *in_buf,
             if (depth != 0) {
                 return WITH_ERROR(-1, "ct can only be a top-level function");
             }
-
-            parsed_node = create_ct_node(out_buf);
-            if (parsed_node == NULL) {
+            if (NULL == (parsed_node = create_ct_node(out_buf))) {
                 return WITH_ERROR(-1, "Out of memory");
             }
 
@@ -827,7 +825,6 @@ static int parse_script(buffer_t *in_buf,
             }
 
             // Internal script is recursively parsed in the current location of the output buffer.
-            // We do not increase the depth to not break the normal processing of the inner scripts.
             buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
             i_policy_node(&((policy_node_ct_t *) parsed_node)->script, buffer_get_cur(out_buf));
             if (0 >
