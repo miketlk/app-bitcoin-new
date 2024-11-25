@@ -119,9 +119,10 @@ void app_main() {
         input_len = io_exchange(CHANNEL_APDU | IO_ASYNCH_REPLY, 0);
 
         {
-            // This workaround keeps static analysis tools calm while allowing SDK API change
-            // giving io_exchange() ability to return error codes as negative values.
+            // This workaround keeps static analysis tools calm while allowing while allowing
+            // io_exchange() to return error codes as negative values in future versions of the SDK.
             volatile int input_len_check = input_len;
+            (void) input_len_check;
             if (input_len_check < 0) {
                 PRINTF("=> io_exchange error\n");
                 return;
