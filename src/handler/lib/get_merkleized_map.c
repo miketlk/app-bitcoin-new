@@ -14,7 +14,7 @@ int call_get_merkleized_map_with_callback(dispatcher_context_t *dispatcher_conte
                                           int index,
                                           merkle_tree_elements_callback_t callback,
                                           merkleized_map_commitment_t *out_ptr) {
-    // disabled: LOG_PROCESSOR();
+    // disabled: `LOG_PROCESSOR();`
 
     uint8_t raw_output[9 + 2 * 32];  // maximum size of serialized result (9 bytes for the varint,
                                      // and the 2 Merkle roots)

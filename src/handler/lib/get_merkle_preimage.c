@@ -17,7 +17,7 @@ int call_get_merkle_preimage(dispatcher_context_t *dispatcher_context,
                              const uint8_t hash[static 32],
                              uint8_t *out_ptr,
                              size_t out_ptr_len) {
-    // disabled: LOG_PROCESSOR();
+    // disabled: `LOG_PROCESSOR();`
 
     PRINT_STACK_POINTER();
 

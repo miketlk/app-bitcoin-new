@@ -10,7 +10,7 @@ int call_get_merkleized_map_value_hash(dispatcher_context_t *dispatcher_context,
                                        const uint8_t *key,
                                        int key_len,
                                        uint8_t out[static 32]) {
-    // disabled: LOG_PROCESSOR();
+    // disabled: `LOG_PROCESSOR();`
 
     uint8_t key_merkle_hash[32];
     merkle_compute_element_hash(key, key_len, key_merkle_hash);

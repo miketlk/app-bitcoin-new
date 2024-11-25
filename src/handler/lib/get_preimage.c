@@ -10,7 +10,7 @@ int call_get_preimage(dispatcher_context_t *dispatcher_context,
                       const uint8_t hash[static 32],
                       uint8_t *out,
                       size_t out_len) {
-    // disabled: LOG_PROCESSOR();
+    // disabled: `LOG_PROCESSOR();`
 
     uint8_t cmd = CCMD_GET_PREIMAGE;
     dispatcher_context->add_to_response(&cmd, 1);

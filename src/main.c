@@ -122,7 +122,7 @@ void app_main() {
             // This workaround keeps static analysis tools calm while allowing while allowing
             // io_exchange() to return error codes as negative values in future versions of the SDK.
             volatile int input_len_check = input_len;
-            (void) input_len_check;
+            input_len_check = input_len_check;
             if (input_len_check < 0) {
                 PRINTF("=> io_exchange error\n");
                 return;
