@@ -72,7 +72,7 @@ static int process_interruption(dispatcher_context_t *dc) {
     io_start_interruption_timeout();
 
     // Receive command bytes in G_io_apdu_buffer
-    if ((int) (input_len = io_exchange(CHANNEL_APDU, G_output_len)) < 0) {
+    if ((volatile int) (input_len = io_exchange(CHANNEL_APDU, G_output_len)) < 0) {
         return -1;
     }
 
