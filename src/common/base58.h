@@ -51,7 +51,6 @@ int base58_decode(const char *in, size_t in_len, uint8_t *out, size_t out_len);
  */
 int base58_encode(const uint8_t *in, size_t in_len, char *out, size_t out_len);
 
-
 /**
  * Calculate "double-SHA256" checksum used for Base58Check encoding.
  *

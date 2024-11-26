@@ -13,5 +13,5 @@ typedef enum {
 #ifdef HAVE_LIQUID
     LIQUID_GET_MASTER_BLINDING_KEY = 0xE1,
     LIQUID_GET_BLINDING_KEY = 0xE3,
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 } command_e;

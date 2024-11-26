@@ -11,29 +11,29 @@
 
 /// States of the parser state machine
 typedef enum {
-    STATE_START = 0,     ///< Initial state, looking for opening '{'
-    STATE_KEY,           ///< Decoding key of a key-value pair
-    STATE_COLON,         ///< Looking for ':' symbol separating key and value
-    STATE_VALUE,         ///< Decoding value of a key-value pair
-    STATE_SKIP_OBJECT,   ///< Skipping nested object(s) (they are not supported currently)
-    STATE_SKIP_ARRAY,    ///< Skipping array(s) (they are not supported currently)
-    STATE_SEPARATOR,     ///< Looking for ',' separator or closing '}'
-    STATE_FINISH,        ///< Processing is finished, remaining data ignored
-    STATE_ERROR,         ///< Error ocurred during processing
+    STATE_START = 0,    ///< Initial state, looking for opening '{'
+    STATE_KEY,          ///< Decoding key of a key-value pair
+    STATE_COLON,        ///< Looking for ':' symbol separating key and value
+    STATE_VALUE,        ///< Decoding value of a key-value pair
+    STATE_SKIP_OBJECT,  ///< Skipping nested object(s) (they are not supported currently)
+    STATE_SKIP_ARRAY,   ///< Skipping array(s) (they are not supported currently)
+    STATE_SEPARATOR,    ///< Looking for ',' separator or closing '}'
+    STATE_FINISH,       ///< Processing is finished, remaining data ignored
+    STATE_ERROR,        ///< Error ocurred during processing
 } parser_state_t;
 
 /// Bit flags indicating presence of the supported contract fields
 typedef enum {
-    HAS_TICKER = (1 << 0),    ///< "ticker" field is present
-    HAS_PRECISION = (1 << 1), ///< "precision" field is present
-    HAS_NAME = (1 << 2),      ///< "name" field is present
-    HAS_DOMAIN = (1 << 3)     ///< "name" field is present
+    HAS_TICKER = (1 << 0),     ///< "ticker" field is present
+    HAS_PRECISION = (1 << 1),  ///< "precision" field is present
+    HAS_NAME = (1 << 2),       ///< "name" field is present
+    HAS_DOMAIN = (1 << 3)      ///< "name" field is present
 } field_presence_flags_t;
 
 /// Flag indicating presence of quotes for a JSON value
 typedef enum {
-    NO_QUOTES = false, ///< Value is not in quotes
-    IN_QUOTES = true   ///< Value is in quotes
+    NO_QUOTES = false,  ///< Value is not in quotes
+    IN_QUOTES = true    ///< Value is in quotes
 } quote_status_t;
 
 /**
@@ -92,7 +92,7 @@ typedef struct {
 static bool is_alphanum_strn(const char *str, size_t len) {
     for (size_t i = 0; i < len; ++i) {
         // Check if there are non-alphanumeric characters, including unexpected null
-        if (!isalnum((int)str[i])) {
+        if (!isalnum((int) str[i])) {
             return false;
         }
     }
@@ -121,7 +121,7 @@ static bool is_alphanum_strn_with_delimiter(const char *str, size_t len, char de
         }
 
         // Check if there are non-alphanumeric characters, including unexpected null
-        if (!isalnum((int)str[i])) {
+        if (!isalnum((int) str[i])) {
             return false;
         }
         ++nondelim;
@@ -150,7 +150,7 @@ static bool parse_json_integer(const char *str, size_t len, int64_t *p_num) {
 
         *p_num = 0;
         for (size_t i = 0; i < numeric_len; ++i) {
-            if (!isdigit((int)str[i])) {
+            if (!isdigit((int) str[i])) {
                 return false;
             }
             *p_num = 10 * *p_num + p_str[i] - '0';
@@ -181,9 +181,9 @@ bool handle_ticker(const char *value,
                    size_t value_len,
                    asset_info_t *asset_info,
                    asset_info_ext_t *ext_info) {
-    (void)ext_info;
+    (void) ext_info;
 
-    if (is_alphanum_strn(value, value_len) && value_len <= MAX_ASSET_TICKER_LENGTH ) {
+    if (is_alphanum_strn(value, value_len) && value_len <= MAX_ASSET_TICKER_LENGTH) {
         strlcpy(asset_info->ticker, value, sizeof(asset_info->ticker));
         return true;
     }
@@ -208,13 +208,12 @@ bool handle_precision(const char *value,
                       size_t value_len,
                       asset_info_t *asset_info,
                       asset_info_ext_t *ext_info) {
-    (void)ext_info;
+    (void) ext_info;
 
     int64_t value_num;
-    if ( parse_json_integer(value, value_len, &value_num) &&
-         value_num >= LIQUID_ASSET_DECIMALS_MIN &&
-         value_num <= LIQUID_ASSET_DECIMALS_MAX ) {
-        asset_info->decimals = (uint8_t)value_num;
+    if (parse_json_integer(value, value_len, &value_num) &&
+        value_num >= LIQUID_ASSET_DECIMALS_MIN && value_num <= LIQUID_ASSET_DECIMALS_MAX) {
+        asset_info->decimals = (uint8_t) value_num;
         return true;
     }
     return false;
@@ -238,11 +237,11 @@ bool handle_name(const char *value,
                  size_t value_len,
                  asset_info_t *asset_info,
                  asset_info_ext_t *ext_info) {
-    (void)asset_info;
+    (void) asset_info;
 
     if (ext_info) {
-        if( is_alphanum_strn_with_delimiter(value, value_len, ' ') &&
-            value_len <= MAX_ASSET_NAME_LENGTH ) {
+        if (is_alphanum_strn_with_delimiter(value, value_len, ' ') &&
+            value_len <= MAX_ASSET_NAME_LENGTH) {
             strlcpy(ext_info->name, value, sizeof(ext_info->name));
             return true;
         }
@@ -269,11 +268,11 @@ bool handle_entity_domain(const char *value,
                           size_t value_len,
                           asset_info_t *asset_info,
                           asset_info_ext_t *ext_info) {
-    (void)asset_info;
+    (void) asset_info;
 
     if (ext_info) {
-        if( is_alphanum_strn_with_delimiter(value, value_len, '.') &&
-            value_len <= MAX_ASSET_DOMAIN_LENGTH ) {
+        if (is_alphanum_strn_with_delimiter(value, value_len, '.') &&
+            value_len <= MAX_ASSET_DOMAIN_LENGTH) {
             strlcpy(ext_info->domain, value, sizeof(ext_info->domain));
             return true;
         }
@@ -284,14 +283,12 @@ bool handle_entity_domain(const char *value,
 
 /// Table containing all supported descriptors of JSON key-value pairs
 static const key_descriptor_t key_descriptors[] = {
-    { { { "ticker" } }, IN_QUOTES, handle_ticker, HAS_TICKER },
-    { { { "precision" } }, NO_QUOTES, handle_precision, HAS_PRECISION },
-    { { { "name" } }, IN_QUOTES, handle_name, HAS_NAME },
-    { { { "entity", "domain" } }, IN_QUOTES, handle_entity_domain, HAS_DOMAIN }
-};
+    {{{"ticker"}}, IN_QUOTES, handle_ticker, HAS_TICKER},
+    {{{"precision"}}, NO_QUOTES, handle_precision, HAS_PRECISION},
+    {{{"name"}}, IN_QUOTES, handle_name, HAS_NAME},
+    {{{"entity", "domain"}}, IN_QUOTES, handle_entity_domain, HAS_DOMAIN}};
 /// Number of key descriptors in table
-static const size_t n_key_descriptors =
-    sizeof(key_descriptors) / sizeof(key_descriptors[0]);
+static const size_t n_key_descriptors = sizeof(key_descriptors) / sizeof(key_descriptors[0]);
 
 /**
  * Tests two composite keys for equality.
@@ -331,15 +328,15 @@ static bool handle_key_value(contract_parser_context_t *ctx, bool in_quotes) {
     if (ctx->key_len > 0 && ctx->value_len > 0) {
         ctx->key.k[ctx->nesting_level][ctx->key_len] = '\0';
         ctx->value[ctx->value_len] = '\0';
-        asset_info_ext_t *ext_info = ctx->parse_ext_info ?
-            (asset_info_ext_t*)ctx->asset_info : NULL;
+        asset_info_ext_t *ext_info =
+            ctx->parse_ext_info ? (asset_info_ext_t *) ctx->asset_info : NULL;
 
         const key_descriptor_t *descriptor = key_descriptors;
         for (size_t i = 0; i < n_key_descriptors; ++i, ++descriptor) {
             if (composite_key_eq(&descriptor->key, &ctx->key)) {
-                if ( !(ctx->field_presence_flags & descriptor->flag) &&
+                if (!(ctx->field_presence_flags & descriptor->flag) &&
                     !!in_quotes == !!descriptor->expected_in_quotes) {
-                    value_handler_t handler = (value_handler_t)PIC(descriptor->handler);
+                    value_handler_t handler = (value_handler_t) PIC(descriptor->handler);
                     if (handler(ctx->value, ctx->value_len, ctx->asset_info, ext_info)) {
                         ctx->field_presence_flags |= descriptor->flag;
                         return true;
@@ -363,7 +360,7 @@ static bool handle_key_value(contract_parser_context_t *ctx, bool in_quotes) {
  * @return new FSM state.
  */
 static parser_state_t state_start(contract_parser_context_t *ctx, buffer_t *data) {
-    (void)ctx;
+    (void) ctx;
 
     uint8_t byte = 0;
     if (!buffer_read_u8(data, &byte) || byte != '{') {
@@ -396,13 +393,13 @@ static parser_state_t state_key(contract_parser_context_t *ctx, buffer_t *data) 
             }
             ctx->has_opening_quotes = true;
         } else if (ctx->key_len != -1) {
-            if (!ctx->has_opening_quotes) { // key must be always in quotes
+            if (!ctx->has_opening_quotes) {  // key must be always in quotes
                 return STATE_ERROR;
             }
             if (ctx->key_len < CONTRACT_MAX_KEY_LEN) {
                 ctx->key.k[ctx->nesting_level][ctx->key_len++] = byte;
             } else {
-                ctx->key_len = -1; // skip this key
+                ctx->key_len = -1;  // skip this key
             }
         }
         ctx->escape = false;
@@ -421,7 +418,7 @@ static parser_state_t state_key(contract_parser_context_t *ctx, buffer_t *data) 
  * @return new FSM state.
  */
 static parser_state_t state_colon(contract_parser_context_t *ctx, buffer_t *data) {
-    (void)ctx;
+    (void) ctx;
     uint8_t byte = 0;
     if (!buffer_read_u8(data, &byte) || byte != ':') {
         return STATE_ERROR;
@@ -479,7 +476,7 @@ static parser_state_t state_value(contract_parser_context_t *ctx, buffer_t *data
             if (ctx->value_len < CONTRACT_MAX_VALUE_LEN) {
                 ctx->value[ctx->value_len++] = byte;
             } else {
-                ctx->value_len = -1; // skip this value
+                ctx->value_len = -1;  // skip this value
             }
         }
         ctx->escape = false;
@@ -574,7 +571,7 @@ static parser_state_t state_skip_array(contract_parser_context_t *ctx, buffer_t 
  * @return new FSM state.
  */
 static parser_state_t state_separator(contract_parser_context_t *ctx, buffer_t *data) {
-    (void)ctx;
+    (void) ctx;
     uint8_t byte = 0;
     if (!buffer_read_u8(data, &byte)) {
         return STATE_ERROR;
@@ -609,16 +606,17 @@ static const size_t state_table_size = sizeof(state_table) / sizeof(state_table[
 bool contract_parser_init(contract_parser_context_t *ctx,
                           asset_info_t *asset_info,
                           asset_info_ext_t *ext_asset_info) {
-    if ( !ctx || (!asset_info && !ext_asset_info) ||
-         (ext_asset_info && asset_info && (void*)asset_info != (void*)ext_asset_info) ) {
+    if (!ctx || (!asset_info && !ext_asset_info) ||
+        (ext_asset_info && asset_info && (void *) asset_info != (void *) ext_asset_info)) {
         return false;
     }
 
     memset(ctx, 0, sizeof(contract_parser_context_t));
     ctx->parse_ext_info = ext_asset_info != NULL;
-    ctx->asset_info = ctx->parse_ext_info ? (asset_info_t*)ext_asset_info : asset_info;
-    memset(ctx->asset_info, 0, ctx->parse_ext_info ?
-        sizeof(asset_info_ext_t) : sizeof(asset_info_t));
+    ctx->asset_info = ctx->parse_ext_info ? (asset_info_t *) ext_asset_info : asset_info;
+    memset(ctx->asset_info,
+           0,
+           ctx->parse_ext_info ? sizeof(asset_info_ext_t) : sizeof(asset_info_t));
     return hash_init_sha256(&ctx->sha256_context);
 }
 
@@ -635,7 +633,7 @@ void contract_parser_process(contract_parser_context_t *ctx, buffer_t *data) {
     buffer_restore(data, snapshot);
 
     // Process all bytes of JSON running state machine until we reach STATE_FINISH or STATE_ERROR
-    while (buffer_can_read(data, 1) && ctx->state < (int)state_table_size) {
+    while (buffer_can_read(data, 1) && ctx->state < (int) state_table_size) {
         if (state_table[ctx->state]) {
             const parser_state_fn_t state_fn = PIC(state_table[ctx->state]);
             parser_state_t new_state = state_fn(ctx, data);
@@ -651,19 +649,18 @@ void contract_parser_process(contract_parser_context_t *ctx, buffer_t *data) {
                 ctx->state = new_state;
             }
         } else {
-            ctx->state = STATE_ERROR; // "Hole" in state table, should never happen
+            ctx->state = STATE_ERROR;  // "Hole" in state table, should never happen
         }
     }
 }
 
-bool contract_parser_finalize(contract_parser_context_t *ctx,
-                              uint8_t hash[static SHA256_LEN]) {
+bool contract_parser_finalize(contract_parser_context_t *ctx, uint8_t hash[static SHA256_LEN]) {
     _Static_assert(SHA256_LEN >= 1, "Wrong hash size");
 
     // Check if processing is complete and all required values obtained
     if (STATE_FINISH == ctx->state) {
         uint32_t flags = ctx->field_presence_flags;
-        if ( !(flags & HAS_PRECISION) || !(flags & HAS_NAME) ) {
+        if (!(flags & HAS_PRECISION) || !(flags & HAS_NAME)) {
             return false;
         }
         if (!(flags & HAS_TICKER)) {
@@ -678,4 +675,4 @@ bool contract_parser_finalize(contract_parser_context_t *ctx,
     return false;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

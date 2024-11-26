@@ -1173,6 +1173,7 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
     cx_hash_t *hash_context) {
     policy = policy_unwrap(policy);
 
+    // Find a suitable fragment whitelist for the given script expression
     const uint8_t *whitelist;
     size_t whitelist_len;
     switch (script_type) {
@@ -1197,6 +1198,7 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
             return -1;
     }
 
+    // Initialize the state of script parser
     policy_parser_state_t state = {.dispatcher_context = dispatcher_context,
                                    .wdi = wdi,
                                    .is_taproot = (script_type == WRAPPED_SCRIPT_TYPE_TAPSCRIPT),
@@ -1206,6 +1208,7 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
     state.nodes[0] =
         (policy_parser_node_state_t){.length = 0, .flags = 0, .step = 0, .policy_node = policy};
 
+    // Parse policy nodes
     int ret;
     do {
         const policy_parser_node_state_t *node = &state.nodes[state.node_stack_eos];
@@ -1230,114 +1233,117 @@ __attribute__((noinline)) int get_wallet_internal_script_hash(
             return -1;
         }
 
+        // Handle both miniscript and non-miniscript tokens
         switch (node->policy_node->type) {
-            case TOKEN_0:
+            case TOKEN_0:  // handle 0 constant
                 ret = execute_processor(&state, process_generic_node, commands_0);
                 break;
-            case TOKEN_1:
+            case TOKEN_1:  // handle 1 constant
                 ret = execute_processor(&state, process_generic_node, commands_1);
                 break;
-            case TOKEN_PK_K:
+            case TOKEN_PK_K:  // handle pk_k(KEY)
                 ret = execute_processor(&state, process_generic_node, commands_pk_k);
                 break;
-            case TOKEN_PK_H:
+            case TOKEN_PK_H:  // handle pk_h(KEY)
                 ret = execute_processor(&state, process_generic_node, commands_pk_h);
                 break;
-            case TOKEN_PK:
+            case TOKEN_PK:  // handle pk(KEY)
                 ret = execute_processor(&state, process_generic_node, commands_pk);
                 break;
-            case TOKEN_PKH:
-            case TOKEN_WPKH:
+            case TOKEN_PKH:   // handle pkh(KEY)
+            case TOKEN_WPKH:  // handle wpkh(KEY)
                 ret = execute_processor(&state, process_pkh_wpkh_node, NULL);
                 break;
-            case TOKEN_OLDER:
+            case TOKEN_OLDER:  // handle older(n)
                 ret = execute_processor(&state, process_generic_node, commands_older);
                 break;
-            case TOKEN_AFTER:
+            case TOKEN_AFTER:  // handle after(n)
                 ret = execute_processor(&state, process_generic_node, commands_after);
                 break;
 
-            case TOKEN_SHA256:
+            case TOKEN_SHA256:  // handle sha256(h)
                 ret = execute_processor(&state, process_generic_node, commands_sha256);
                 break;
-            case TOKEN_HASH256:
+            case TOKEN_HASH256:  // handle hash256(h)
                 ret = execute_processor(&state, process_generic_node, commands_hash256);
                 break;
-            case TOKEN_RIPEMD160:
+            case TOKEN_RIPEMD160:  // handle ripemd160(h)
                 ret = execute_processor(&state, process_generic_node, commands_ripemd160);
                 break;
-            case TOKEN_HASH160:
+            case TOKEN_HASH160:  // handle hash160(h)
                 ret = execute_processor(&state, process_generic_node, commands_hash160);
                 break;
 
-            case TOKEN_ANDOR:
+            case TOKEN_ANDOR:  // handle andor(X,Y,Z)
                 ret = execute_processor(&state, process_generic_node, commands_andor);
                 break;
-            case TOKEN_AND_V:
+            case TOKEN_AND_V:  // handle and_v(X,Y)
                 ret = execute_processor(&state, process_generic_node, commands_and_v);
                 break;
-            case TOKEN_AND_B:
+            case TOKEN_AND_B:  // handle and_b(X,Y)
                 ret = execute_processor(&state, process_generic_node, commands_and_b);
                 break;
-            case TOKEN_AND_N:
+            case TOKEN_AND_N:  // handle and_n(X,Y)
                 ret = execute_processor(&state, process_generic_node, commands_and_n);
                 break;
 
-            case TOKEN_OR_B:
+            case TOKEN_OR_B:  // handle or_b(X,Z)
                 ret = execute_processor(&state, process_generic_node, commands_or_b);
                 break;
-            case TOKEN_OR_C:
+            case TOKEN_OR_C:  // handle or_c(X,Z)
                 ret = execute_processor(&state, process_generic_node, commands_or_c);
                 break;
-            case TOKEN_OR_D:
+            case TOKEN_OR_D:  // handle or_d(X,Z)
                 ret = execute_processor(&state, process_generic_node, commands_or_d);
                 break;
-            case TOKEN_OR_I:
+            case TOKEN_OR_I:  // handle or_i(X,Z)
                 ret = execute_processor(&state, process_generic_node, commands_or_i);
                 break;
 
-            case TOKEN_THRESH:
+            case TOKEN_THRESH:  // handle thresh(k,X1,...,Xn)
                 ret = execute_processor(&state, process_thresh_node, NULL);
                 break;
 
-            case TOKEN_MULTI:
-            case TOKEN_SORTEDMULTI:
+            case TOKEN_MULTI:        // handle multi(k,KEY_1,...,KEY_N)
+            case TOKEN_SORTEDMULTI:  // handle multi(k,KEY_1,...,KEY_N)
                 ret = execute_processor(&state, process_multi_sortedmulti_node, NULL);
                 break;
-            case TOKEN_MULTI_A:
-            case TOKEN_SORTEDMULTI_A:
+            case TOKEN_MULTI_A:        // handle multi_a(k,KEY_1,...,KEY_1)
+            case TOKEN_SORTEDMULTI_A:  // handle sortedmulti_a(k,KEY_1,...,KEY_1)
                 ret = execute_processor(&state, process_multi_a_sortedmulti_a_node, NULL);
                 break;
-            case TOKEN_A:
+            case TOKEN_A:  // handle a:X
                 ret = execute_processor(&state, process_generic_node, commands_a);
                 break;
-            case TOKEN_S:
+            case TOKEN_S:  // handle s:X
                 ret = execute_processor(&state, process_generic_node, commands_s);
                 break;
-            case TOKEN_C:
+            case TOKEN_C:  // handle c:X
                 ret = execute_processor(&state, process_generic_node, commands_c);
                 break;
-            case TOKEN_T:
+            case TOKEN_T:  // handle t:X == and_v(X,1)
                 ret = execute_processor(&state, process_generic_node, commands_t);
                 break;
-            case TOKEN_D:
+            case TOKEN_D:  // handle d:X
                 ret = execute_processor(&state, process_generic_node, commands_d);
                 break;
-            case TOKEN_V:
+            case TOKEN_V:  // handle v:X
                 ret = execute_processor(&state, process_generic_node, commands_v);
                 break;
-            case TOKEN_J:
+            case TOKEN_J:  // handle j:X
                 ret = execute_processor(&state, process_generic_node, commands_j);
                 break;
-            case TOKEN_N:
+            case TOKEN_N:  // handle n:X
                 ret = execute_processor(&state, process_generic_node, commands_n);
                 break;
-            case TOKEN_L:
+            case TOKEN_L:  // handle l:X == or_i(0,X)
                 ret = execute_processor(&state, process_generic_node, commands_l);
                 break;
-            case TOKEN_U:
+            case TOKEN_U:  // handle u:X == or_i(X,0)
                 ret = execute_processor(&state, process_generic_node, commands_u);
                 break;
+
+            // Check if we have encountered a token that is not encoded in script
             case TOKEN_TR:
             case TOKEN_SH:
             case TOKEN_WSH:

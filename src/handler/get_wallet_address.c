@@ -77,13 +77,12 @@ static bool get_script_callback(void *state_in,
                                 uint32_t descriptor_idx,
                                 uint32_t bip44_address_index,
                                 buffer_t *out_buffer) {
-
     if (!state_in || descriptor_idx > 1 || !out_buffer ||
         buffer_remaining(out_buffer) < MAX_SCRIPT_LEN) {
         return false;
     }
 
-    get_script_callback_state_t *state = (get_script_callback_state_t *)state_in;
+    get_script_callback_state_t *state = (get_script_callback_state_t *) state_in;
 
     int script_len = get_wallet_script(
         state->dc,
@@ -192,9 +191,7 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
     if (hmac_or == 0) {
         // No hmac, verify that the policy is indeed a default one
 
-        if (!is_wallet_policy_standard(dc,
-                                       &wallet_header,
-                                       &wallet_policy_map.parsed)) {
+        if (!is_wallet_policy_standard(dc, &wallet_header, &wallet_policy_map.parsed)) {
             SEND_SW(dc, SW_INCORRECT_DATA);
             return;
         }
@@ -275,17 +272,15 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
         if (liquid_policy_is_blinded(&wallet_policy_map.parsed)) {
             // Derive blinding public key from script
             uint8_t blinding_pubkey[33];
-            get_script_callback_state_t callback_state = {
-                .dc = dc,
-                .policy = &wallet_policy_map.parsed,
-                .wallet_header = &wallet_header
-            };
-            if(!liquid_get_blinding_public_key(&wallet_policy_map.parsed,
-                                               script,
-                                               script_len,
-                                               get_script_callback,
-                                               &callback_state,
-                                               blinding_pubkey)) {
+            get_script_callback_state_t callback_state = {.dc = dc,
+                                                          .policy = &wallet_policy_map.parsed,
+                                                          .wallet_header = &wallet_header};
+            if (!liquid_get_blinding_public_key(&wallet_policy_map.parsed,
+                                                script,
+                                                script_len,
+                                                get_script_callback,
+                                                &callback_state,
+                                                blinding_pubkey)) {
                 explicit_bzero(blinding_pubkey, sizeof(blinding_pubkey));
                 PRINTF("Error getting blinding public key\n");
                 SEND_SW(dc, SW_BAD_STATE);  // unexpected

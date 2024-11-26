@@ -16,10 +16,10 @@
 #endif
 
 #ifdef SKIP_FOR_CMOCKA
-    #define STATIC_NO_TEST
+#define STATIC_NO_TEST
 #else
-    /// Declares symbol as static in non-test build
-    #define STATIC_NO_TEST static
+/// Declares symbol as static in non-test build
+#define STATIC_NO_TEST static
 #endif
 
 /// Number of bytes in prevoutIndex field (32-bit little endian uint)
@@ -27,12 +27,12 @@
 
 /// States of the parser state machine
 typedef enum {
-    STATE_CONTRACT_LEN,  ///< Parsing contractLen
-    STATE_CONTRACT,      ///< Parsing contract
-    STATE_PREVOUT_TXID,  ///< Parsing prevoutTxid
-    STATE_PREVOUT_INDEX, ///< Parsing prevoutIndex
-    STATE_FINISH,        ///< Processing is finished, remaining data ignored
-    STATE_ERROR          ///< Error ocurred during processing
+    STATE_CONTRACT_LEN,   ///< Parsing contractLen
+    STATE_CONTRACT,       ///< Parsing contract
+    STATE_PREVOUT_TXID,   ///< Parsing prevoutTxid
+    STATE_PREVOUT_INDEX,  ///< Parsing prevoutIndex
+    STATE_FINISH,         ///< Processing is finished, remaining data ignored
+    STATE_ERROR           ///< Error ocurred during processing
 } parser_state_t;
 
 /**
@@ -142,7 +142,7 @@ parser_state_t state_prevout_txid(asset_metadata_parser_context_t *ctx, buffer_t
 parser_state_t state_prevout_index(asset_metadata_parser_context_t *ctx, buffer_t *data) {
     uint8_t byte;
     while (buffer_read_u8(data, &byte)) {
-        ctx->prevout_index |= ((uint32_t)byte) << (8 * ctx->read_idx);
+        ctx->prevout_index |= ((uint32_t) byte) << (8 * ctx->read_idx);
         if (PREVOUT_INDEX_N_BYTES == ++ctx->read_idx) {
             return STATE_FINISH;
         }
@@ -198,7 +198,7 @@ STATIC_NO_TEST bool asset_metadata_parser_init(asset_metadata_parser_context_t *
  */
 STATIC_NO_TEST void asset_metadata_parser_process(asset_metadata_parser_context_t *ctx,
                                                   buffer_t *data) {
-    while (buffer_can_read(data, 1) && ctx->state < (int)state_table_size) {
+    while (buffer_can_read(data, 1) && ctx->state < (int) state_table_size) {
         if (state_table[ctx->state]) {
             const parser_state_fn_t state_fn = PIC(state_table[ctx->state]);
             parser_state_t new_state = state_fn(ctx, data);
@@ -209,7 +209,7 @@ STATIC_NO_TEST void asset_metadata_parser_process(asset_metadata_parser_context_
                 ctx->state = new_state;
             }
         } else {
-            ctx->state = STATE_ERROR; // "Hole" in state table, should never happen
+            ctx->state = STATE_ERROR;  // "Hole" in state table, should never happen
         }
     }
 }
@@ -230,7 +230,6 @@ STATIC_NO_TEST bool asset_metadata_parser_finalize(
     asset_metadata_parser_context_t *ctx,
     const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
     asset_class_t asset_class) {
-
     uint8_t contract_hash[SHA256_LEN];
     uint8_t computed_asset_tag[LIQUID_ASSET_TAG_LEN];
 
@@ -265,7 +264,7 @@ static const uint8_t pset_reissuance_token_key[] = PSBT_ELEMENTS_HWW_GLOBAL_REIS
  *   User-provided callback state.
  */
 static void cb_process_data(buffer_t *data, void *cb_state) {
-    asset_metadata_parser_process((asset_metadata_parser_context_t*)cb_state, data);
+    asset_metadata_parser_process((asset_metadata_parser_context_t *) cb_state, data);
 }
 
 asset_metadata_status_t liquid_get_asset_metadata(
@@ -311,8 +310,9 @@ asset_metadata_status_t liquid_get_asset_metadata(
                                                &context);
 
     if (len > 0) {
-        return asset_metadata_parser_finalize(&context, asset_tag, ACLASS_ASSET) ?
-            ASSET_METADATA_READY : ASSET_METADATA_ERROR;
+        return asset_metadata_parser_finalize(&context, asset_tag, ACLASS_ASSET)
+                   ? ASSET_METADATA_READY
+                   : ASSET_METADATA_ERROR;
     } else if (!search_reissuance_token) {
         return ASSET_METADATA_ABSENT;
     }
@@ -354,12 +354,13 @@ asset_metadata_status_t liquid_get_asset_metadata(
         return ASSET_METADATA_ABSENT;
     }
 
-    return asset_metadata_parser_finalize(
-        &context,
-        asset_tag,
-        issuance_blinded ?
-            ACLASS_REISSUANCE_TOKEN_CONFIDENTIAL : ACLASS_REISSUANCE_TOKEN_NON_CONFIDENTIAL
-    ) ? ASSET_METADATA_TOKEN_READY : ASSET_METADATA_ERROR;
+    return asset_metadata_parser_finalize(&context,
+                                          asset_tag,
+                                          issuance_blinded
+                                              ? ACLASS_REISSUANCE_TOKEN_CONFIDENTIAL
+                                              : ACLASS_REISSUANCE_TOKEN_NON_CONFIDENTIAL)
+               ? ASSET_METADATA_TOKEN_READY
+               : ASSET_METADATA_ERROR;
 }
 
 asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
@@ -381,7 +382,7 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
     uint8_t key[sizeof(pset_metadata_key) + LIQUID_ASSET_TAG_LEN];
     int key_len = call_get_merkle_leaf_element(dispatcher_context,
                                                global_map->keys_root,
-                                               (uint32_t)global_map->size,
+                                               (uint32_t) global_map->size,
                                                leaf_index,
                                                key,
                                                sizeof(key));
@@ -393,7 +394,7 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
         return ASSET_METADATA_ERROR;
     }
 
-    if ((size_t)key_len != sizeof(key) ||
+    if ((size_t) key_len != sizeof(key) ||
         !memeq(key, pset_metadata_key, sizeof(pset_metadata_key))) {
         return ASSET_METADATA_WRONG_KEY;
     }
@@ -403,7 +404,7 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
 
     int len = call_stream_merkle_leaf_element(dispatcher_context,
                                               global_map->values_root,
-                                              (uint32_t)global_map->size,
+                                              (uint32_t) global_map->size,
                                               leaf_index,
                                               /* len_callback= */ NULL,
                                               cb_process_data,
@@ -413,9 +414,9 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
         return ASSET_METADATA_ABSENT;
     }
 
-    return asset_metadata_parser_finalize(&context, asset_tag, ACLASS_ASSET) ?
-        ASSET_METADATA_READY : ASSET_METADATA_ERROR;
+    return asset_metadata_parser_finalize(&context, asset_tag, ACLASS_ASSET) ? ASSET_METADATA_READY
+                                                                             : ASSET_METADATA_ERROR;
 }
 
-#endif // SKIP_FOR_CMOCKA
-#endif // HAVE_LIQUID
+#endif  // SKIP_FOR_CMOCKA
+#endif  // HAVE_LIQUID

@@ -64,7 +64,9 @@ static void set_ui_dirty() {
 // TODO: refactor code in common with the main apdu loop
 static int process_interruption(dispatcher_context_t *dc) {
     command_t cmd;
-    int input_len;
+    // We declare `input_len` as volatile to keep static analysis tools calm while allowing
+    // io_exchange() to return error codes as negative values in future versions of the SDK.
+    unsigned short input_len;
 
     // Reset structured APDU command
     memset(&cmd, 0, sizeof(cmd));
@@ -72,9 +74,16 @@ static int process_interruption(dispatcher_context_t *dc) {
     io_start_interruption_timeout();
 
     // Receive command bytes in G_io_apdu_buffer
-    if ((input_len = io_exchange(CHANNEL_APDU, G_output_len)) < 0) {
-        return -1;
-    }
+    input_len = io_exchange(CHANNEL_APDU, G_output_len);
+
+    /*
+     * The following check was removed because in the current SDK io_exchange() has stopped
+     * returning the error codes as negative values.
+     *
+     * if (input_len) < 0) {
+     *     return -1;
+     * }
+     */
 
     io_clear_interruption_timeout();
 
@@ -182,9 +191,7 @@ void apdu_dispatcher(command_descriptor_t const cmd_descriptors[],
 #ifdef HAVE_LOG_PROCESSOR
 // Print current filename, line number and function name.
 // Indents according to the nesting depth for subprocessors.
-void print_dispatcher_info(const char *file,
-                           int line,
-                           const char *func) {
+void print_dispatcher_info(const char *file, int line, const char *func) {
     // PRINTF() replaced with low-level functions to reduce stack usage (~ 40 vs 500 bytes)
 
     debug_write("->");
@@ -211,7 +218,7 @@ void print_dispatcher_info(const char *file,
 
 #define CCMD_DEBUG 0xEE
 
-int ccmd_printf(dispatcher_context_t *dc, const char *format, ... ) {
+int ccmd_printf(dispatcher_context_t *dc, const char *format, ...) {
     char buf[1 + 128 + 1];
 
     va_list args;
@@ -229,10 +236,10 @@ int ccmd_printf(dispatcher_context_t *dc, const char *format, ... ) {
 
     return 0;
 }
-#endif // HAVE_CCMD_PRINTF
+#endif  // HAVE_CCMD_PRINTF
 
 #ifdef HAVE_APDU_LOG
-void log_apdu(const command_t* cmd) {
+void log_apdu(const command_t *cmd) {
     debug_write("=> CLA=");
     debug_write_hex(cmd->cla, 1);
     debug_write(" | INS=");

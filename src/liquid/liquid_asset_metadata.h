@@ -72,13 +72,13 @@ typedef struct {
  * NOTE: this function does _not_ check that the keys are lexicographically sorted; the sanity check
  * needs to be done before.
  */
-WARN_UNUSED_RESULT asset_metadata_status_t liquid_get_asset_metadata(
-    dispatcher_context_t *dispatcher_context,
-    const merkleized_map_commitment_t *global_map,
-    const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
-    bool search_reissuance_token,
-    asset_info_t *asset_info,
-    asset_info_ext_t *ext_asset_info);
+WARN_UNUSED_RESULT asset_metadata_status_t
+liquid_get_asset_metadata(dispatcher_context_t *dispatcher_context,
+                          const merkleized_map_commitment_t *global_map,
+                          const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
+                          bool search_reissuance_token,
+                          asset_info_t *asset_info,
+                          asset_info_ext_t *ext_asset_info);
 
 /**
  * Reads and verifies asset metadata from a PSET map from the given Merkle tree leaf.
@@ -107,13 +107,13 @@ WARN_UNUSED_RESULT asset_metadata_status_t liquid_get_asset_metadata(
  * NOTE: this function does _not_ check that the keys are lexicographically sorted; the sanity check
  * needs to be done before.
  */
-WARN_UNUSED_RESULT asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
-    dispatcher_context_t *dispatcher_context,
-    const merkleized_map_commitment_t *global_map,
-    uint32_t leaf_index,
-    uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
-    asset_info_t *asset_info,
-    asset_info_ext_t *ext_asset_info);
+WARN_UNUSED_RESULT asset_metadata_status_t
+liquid_get_asset_metadata_by_leaf_index(dispatcher_context_t *dispatcher_context,
+                                        const merkleized_map_commitment_t *global_map,
+                                        uint32_t leaf_index,
+                                        uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
+                                        asset_info_t *asset_info,
+                                        asset_info_ext_t *ext_asset_info);
 
-#endif // SKIP_FOR_CMOCKA
-#endif // HAVE_LIQUID
+#endif  // SKIP_FOR_CMOCKA
+#endif  // HAVE_LIQUID

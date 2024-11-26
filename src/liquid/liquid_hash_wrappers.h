@@ -16,7 +16,7 @@
  *
  * @return true - OK, false - error
  */
-WARN_UNUSED_RESULT static inline bool hash_init_sha256(cx_sha256_t* sha256_context) {
+WARN_UNUSED_RESULT static inline bool hash_init_sha256(cx_sha256_t *sha256_context) {
     return CX_OK == cx_sha256_init_no_throw(sha256_context);
 }
 
@@ -32,7 +32,9 @@ WARN_UNUSED_RESULT static inline bool hash_init_sha256(cx_sha256_t* sha256_conte
  *
  * @return true - OK, false - error
  */
-WARN_UNUSED_RESULT static inline bool hash_update(cx_hash_t *hash_context, const void *in, size_t in_len) {
+WARN_UNUSED_RESULT static inline bool hash_update(cx_hash_t *hash_context,
+                                                  const void *in,
+                                                  size_t in_len) {
     return CX_OK == cx_hash_no_throw(hash_context, 0, in, in_len, NULL, 0);
 }
 
@@ -62,11 +64,13 @@ WARN_UNUSED_RESULT static inline bool hash_update_u8(cx_hash_t *hash_context, ui
  *
  * @return true - OK, false - error
  */
-WARN_UNUSED_RESULT static inline bool hash_update_reversed(cx_hash_t *hash_context, const void *in, size_t in_len) {
-    const uint8_t *p_in = (const uint8_t *)in + in_len - 1;
-    int res = (int)true;
+WARN_UNUSED_RESULT static inline bool hash_update_reversed(cx_hash_t *hash_context,
+                                                           const void *in,
+                                                           size_t in_len) {
+    const uint8_t *p_in = (const uint8_t *) in + in_len - 1;
+    int res = (int) true;
     for (size_t i = 0; i < in_len; ++i) {
-        res &= (int)hash_update_u8(hash_context, *p_in--);
+        res &= (int) hash_update_u8(hash_context, *p_in--);
     }
     return !!res;
 }
@@ -118,8 +122,10 @@ WARN_UNUSED_RESULT static inline bool hash_update_u32_le(cx_hash_t *hash_context
  *
  * @return true - OK, false - error
  */
-WARN_UNUSED_RESULT static inline bool hash_digest(cx_hash_t *hash_context, uint8_t *out, size_t out_len) {
+WARN_UNUSED_RESULT static inline bool hash_digest(cx_hash_t *hash_context,
+                                                  uint8_t *out,
+                                                  size_t out_len) {
     return CX_OK == cx_hash_no_throw(hash_context, CX_LAST, NULL, 0, out, out_len);
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

@@ -37,7 +37,7 @@ static const size_t N_KNOWN_SIGHASH_TYPES =
     sizeof(KNOWN_SIGHASH_TYPES) / sizeof(KNOWN_SIGHASH_TYPES[0]);
 
 // Constatnt name for an unknown sighash type.
-const sighash_name_t sighash_name_unknown = { 1, {"UNKNOWN"} };
+const sighash_name_t sighash_name_unknown = {1, {"UNKNOWN"}};
 
 // Division and modulus operators over uint64_t causes the inclusion of the __udivmoddi4 and other
 // library functions that occupy more than 400 bytes. Since performance is not critical and division
@@ -72,7 +72,7 @@ static uint64_t div_pow10(uint64_t n, uint8_t pow10) {
 
 static uint64_t mul_pow10(uint64_t n, uint8_t pow10) {
     uint64_t res = n;
-    for (int i = 0; i < pow10; i++) res = res * (uint8_t)10;
+    for (int i = 0; i < pow10; i++) res = res * (uint8_t) 10;
     return res;
 }
 
@@ -111,8 +111,8 @@ void format_amount(const char *coin_name,
     char *amount_str = out + coin_name_len + 1;
 
     // HACK: avoid __udivmoddi4
-    // uint64_t integral_part = amount / (10 ^ decimals);
-    // uint32_t fractional_part = (uint32_t) (amount % (10 ^ decimals));
+    // `uint64_t integral_part = amount / (10 ^ decimals);`
+    // `uint32_t fractional_part = (uint32_t) (amount % (10 ^ decimals));`
     uint64_t integral_part = div_pow10(amount, decimals);
     uint64_t fractional_part = amount - mul_pow10(integral_part, decimals);
 
@@ -120,8 +120,8 @@ void format_amount(const char *coin_name,
     size_t integral_part_digit_count = n_digits(integral_part);
     for (unsigned int i = 0; i < integral_part_digit_count; i++) {
         // HACK: avoid __udivmoddi4
-        // amount_str[integral_part_digit_count - 1 - i] = '0' + (integral_part % 10);
-        // integral_part /= 10;
+        // `amount_str[integral_part_digit_count - 1 - i] = '0' + (integral_part % 10);`
+        // `integral_part /= 10;`
 
         uint64_t tmp_quotient = div10(integral_part);
         char tmp_remainder = (char) (integral_part - 10 * tmp_quotient);
@@ -155,7 +155,7 @@ void format_amount(const char *coin_name,
     }
 }
 
-void sighash_get_name(sighash_name_t* name, uint32_t sighash_type) {
+void sighash_get_name(sighash_name_t *name, uint32_t sighash_type) {
     const sighash_descriptor_t *dsc = PIC(KNOWN_SIGHASH_TYPES);
     for (size_t i = 0; i < N_KNOWN_SIGHASH_TYPES; ++i, ++dsc) {
         if (sighash_type == dsc->sighash) {
@@ -163,5 +163,5 @@ void sighash_get_name(sighash_name_t* name, uint32_t sighash_type) {
             return;
         }
     }
-    *name = *((const sighash_name_t* ) PIC(&sighash_name_unknown));
+    *name = *((const sighash_name_t *) PIC(&sighash_name_unknown));
 }

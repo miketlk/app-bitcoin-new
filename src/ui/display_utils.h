@@ -38,7 +38,6 @@ void format_amount(const char *coin_name,
                    uint8_t decimals,
                    char out[static MAX_AMOUNT_LENGTH + 1]);
 
-
 /**
  * Converts a 64-bits unsigned integer into a decimal rapresentation, where the `amount` is a
  * multiple of 1/100_000_000th. Trailing decimal zeros are not appended (and no decimal point is
@@ -62,4 +61,4 @@ static inline void format_sats_amount(const char *coin_name,
  * @param[out] name pointer to structure instance, receiving components of sighash name.
  * @param[in] sighash_type sighash type: a combination of bit flags.
  */
-void sighash_get_name(sighash_name_t* name, uint32_t sighash_type);
+void sighash_get_name(sighash_name_t *name, uint32_t sighash_type);

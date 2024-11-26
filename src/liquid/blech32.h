@@ -56,4 +56,4 @@ WARN_UNUSED_RESULT int blech32_addr_decode(uint8_t *witver,
                                            const char *hrp,
                                            const char *addr);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

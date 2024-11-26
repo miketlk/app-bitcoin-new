@@ -98,18 +98,23 @@ int base58_decode(const char *in, size_t in_len, uint8_t *out, size_t out_len) {
         }
     }
 
-    // // original code for reference
-    // for (uint8_t i = 0; i < in_len; i++) {
-    //     if (in[i] >= sizeof(BASE58_TABLE)) {
-    //         return -1;
-    //     }
-
-    //     tmp[i] = BASE58_TABLE[(int) in[i]];
-
-    //     if (tmp[i] == 0xFF) {
-    //         return -1;
-    //     }
-    // }
+    /**************************************************************************
+     *  Original code for reference
+     *
+     *  ```
+     *   for (uint8_t i = 0; i < in_len; i++) {
+     *      if (in[i] >= sizeof(BASE58_TABLE)) {
+     *          return -1;
+     *      }
+     *
+     *      tmp[i] = BASE58_TABLE[(int) in[i]];
+     *
+     *      if (tmp[i] == 0xFF) {
+     *          return -1;
+     *      }
+     *  }
+     *  ```
+     *************************************************************************/
 
     while ((zero_count < in_len) && (tmp[zero_count] == 0)) {
         ++zero_count;
@@ -202,8 +207,6 @@ uint32_t base58_checksum(const uint8_t *in, size_t in_len) {
     uint8_t hash[32];
     cx_hash_sha256(in, in_len, hash, sizeof(hash));
     cx_hash_sha256(hash, sizeof(hash), hash, sizeof(hash));
-    return (uint32_t) hash[0] << 24 |
-           (uint32_t) hash[1] << 16 |
-           (uint32_t) hash[2] << 8  |
+    return (uint32_t) hash[0] << 24 | (uint32_t) hash[1] << 16 | (uint32_t) hash[2] << 8 |
            (uint32_t) hash[3];
 }

@@ -86,14 +86,14 @@ void print_dispatcher_info(const char *file, int line, const char *func);
 #endif
 
 #ifdef HAVE_CCMD_PRINTF
-extern int ccmd_printf(dispatcher_context_t *dc, const char *format, ... );
+extern int ccmd_printf(dispatcher_context_t *dc, const char *format, ...);
 #define CCMD_PRINTF ccmd_printf
 #else
 #define CCMD_PRINTF(...)
 #endif
 
 #ifdef HAVE_APDU_LOG
-extern void log_apdu(const command_t* cmd);
+extern void log_apdu(const command_t *cmd);
 #define LOG_APDU(cmd) log_apdu(cmd)
 #else
 #define LOG_APDU(cmd)

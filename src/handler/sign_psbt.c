@@ -50,9 +50,9 @@
 #include "../liquid/liquid_asset_metadata.h"
 #include "lib/pset_parse_rawtx.h"
 #ifdef HAVE_LIQUID
-    #include "../liquid/liquid_pset.h"
+#include "../liquid/liquid_pset.h"
 #else
-    #include "lib/psbt_parse_rawtx.h"
+#include "lib/psbt_parse_rawtx.h"
 #endif
 
 #include "handlers.h"
@@ -63,7 +63,6 @@
 
 #include "../swap/swap_globals.h"
 #include "../swap/handle_swap_sign_transaction.h"
-
 
 /// Maximum supported number of transaction outputs
 #define MAX_N_OUTPUTS (UINT32_MAX - 1)
@@ -118,7 +117,7 @@ typedef struct {
     /// Bit flags representing status of PSET fields: the ones which were read are set.
     /// A combination of *pset_in_out_key_presence_flags_t* bits.
     uint32_t key_read_status;
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 } in_out_info_t;
 
 typedef struct {
@@ -244,7 +243,7 @@ typedef struct {
     uint8_t global_key_presence;
     /// A set of flags reflecting transaction type: issuance, reissuance or burn
     uint8_t tx_type_flags;
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 } sign_psbt_state_t;
 
 /* BIP0341 tags for computing the tagged hashes when computing he sighash */
@@ -316,7 +315,7 @@ static int hash_output_n(dispatcher_context_t *dc,
     return 0;
 }
 
-#else // !defined(HAVE_LIQUID)
+#else  // !defined(HAVE_LIQUID)
 
 static inline int __attribute__((always_inline)) hash_output_n(dispatcher_context_t *dc,
                                                                sign_psbt_state_t *st,
@@ -335,14 +334,13 @@ static inline int __attribute__((always_inline)) hash_output_n(dispatcher_contex
                             rangeproof_hash_context);
 }
 
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
 // Updates the hash_context with the network serialization of all the outputs
 // returns -1 on error. 0 on success.
 static int hash_outputs(dispatcher_context_t *dc,
                         sign_psbt_state_t *st,
-                        cx_hash_t *hash_context
-                        LIQUID_PARAM(cx_hash_t *rangeproof_hash_context)) {
+                        cx_hash_t *hash_context LIQUID_PARAM(cx_hash_t *rangeproof_hash_context)) {
     for (unsigned int i = 0; i < st->n_outputs; i++) {
         if (hash_output_n(dc, st, hash_context, i LIQUID_PARAM(rangeproof_hash_context))) {
             return -1;
@@ -365,8 +363,7 @@ static int __attribute__((noinline)) get_amount_scriptpubkey_from_psbt_nonwitnes
     uint8_t *scriptPubKey,
     size_t *scriptPubKey_len,
     size_t scriptPubKey_max_size,
-    const uint8_t *expected_prevout_hash
-    LIQUID_PARAM(tx_asset_t *asset)) {
+    const uint8_t *expected_prevout_hash LIQUID_PARAM(tx_asset_t *asset)) {
     LOG_PROCESSOR();
     // If there is no witness-utxo, it must be the case that this is a legacy input.
     // In this case, we can only retrieve the prevout amount and scriptPubKey by parsing
@@ -417,7 +414,9 @@ static int __attribute__((noinline)) get_amount_scriptpubkey_from_psbt_nonwitnes
             return -1;
         }
         *scriptPubKey_len = parser_outputs.vout.scriptpubkey_len;
-        memcpy(scriptPubKey, parser_outputs.vout.scriptpubkey, parser_outputs.vout.scriptpubkey_len);
+        memcpy(scriptPubKey,
+               parser_outputs.vout.scriptpubkey,
+               parser_outputs.vout.scriptpubkey_len);
     }
 #else
     if (amount != NULL) {
@@ -429,7 +428,9 @@ static int __attribute__((noinline)) get_amount_scriptpubkey_from_psbt_nonwitnes
             return -1;
         }
         *scriptPubKey_len = parser_outputs.vout_scriptpubkey_len;
-        memcpy(scriptPubKey, parser_outputs.vout_scriptpubkey, parser_outputs.vout_scriptpubkey_len);
+        memcpy(scriptPubKey,
+               parser_outputs.vout_scriptpubkey,
+               parser_outputs.vout_scriptpubkey_len);
     }
 #endif
 
@@ -477,7 +478,7 @@ get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
         *amount = wit_utxo_prevout_amount;
     }
     if (scriptPubKey != NULL && scriptPubKey_len != NULL) {
-        if ((size_t)wit_utxo_scriptPubkey_len > scriptPubKey_max_size) {
+        if ((size_t) wit_utxo_scriptPubkey_len > scriptPubKey_max_size) {
             PRINTF("Fetched scriptpubkey is too long\n");
             return -1;
         }
@@ -487,7 +488,7 @@ get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
     return 0;
 }
 
-#else // !defined(HAVE_LIQUID)
+#else  // !defined(HAVE_LIQUID)
 
 static int __attribute__((noinline))
 get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
@@ -529,7 +530,7 @@ get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
     return 0;
 }
 
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
 /*
  Convenience function to get the amount and scriptpubkey of a certain input in a PSBTv2.
@@ -537,21 +538,19 @@ get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
  from the non-witness-utxo.
  Returns -1 on failure, 0 on success.
 */
-static int get_amount_scriptpubkey_from_psbt(
-    dispatcher_context_t *dc,
-    const merkleized_map_commitment_t *input_map,
-    tx_amount_t *amount,
-    uint8_t *scriptPubKey,
-    size_t *scriptPubKey_len,
-    size_t scriptPubKey_max_size
-    LIQUID_PARAM(tx_asset_t *asset)) {
+static int get_amount_scriptpubkey_from_psbt(dispatcher_context_t *dc,
+                                             const merkleized_map_commitment_t *input_map,
+                                             tx_amount_t *amount,
+                                             uint8_t *scriptPubKey,
+                                             size_t *scriptPubKey_len,
+                                             size_t scriptPubKey_max_size
+                                                 LIQUID_PARAM(tx_asset_t *asset)) {
     int ret = get_amount_scriptpubkey_from_psbt_witness(dc,
                                                         input_map,
                                                         amount,
                                                         scriptPubKey,
                                                         scriptPubKey_len,
-                                                        scriptPubKey_max_size
-                                                        LIQUID_PARAM(asset));
+                                                        scriptPubKey_max_size LIQUID_PARAM(asset));
     if (ret >= 0) {
         return ret;
     }
@@ -562,8 +561,7 @@ static int get_amount_scriptpubkey_from_psbt(
                                                         scriptPubKey,
                                                         scriptPubKey_len,
                                                         scriptPubKey_max_size,
-                                                        NULL
-                                                        LIQUID_PARAM(asset));
+                                                        NULL LIQUID_PARAM(asset));
 }
 
 // Convenience function to share common logic when processing all the
@@ -726,7 +724,7 @@ static void global_keys_callback(dispatcher_context_t *dc,
         }
     }
 }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #ifdef HAVE_LIQUID
 static bool validate_asset_metadata(dispatcher_context_t *dc,
@@ -743,14 +741,12 @@ static bool validate_asset_metadata(dispatcher_context_t *dc,
     }
 
     for (uint32_t key_index = 0; key_index < global_map->size; ++key_index) {
-        asset_metadata_status_t stat = liquid_get_asset_metadata_by_leaf_index(
-            dc,
-            global_map,
-            key_index,
-            asset_tag,
-            NULL,
-            &asset
-        );
+        asset_metadata_status_t stat = liquid_get_asset_metadata_by_leaf_index(dc,
+                                                                               global_map,
+                                                                               key_index,
+                                                                               asset_tag,
+                                                                               NULL,
+                                                                               &asset);
 
         if (ASSET_METADATA_READY == stat) {
             if (!ui_validate_asset(dc, asset_tag, &asset)) {
@@ -769,7 +765,7 @@ static bool validate_asset_metadata(dispatcher_context_t *dc,
 
     return true;
 }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #ifdef HAVE_LIQUID
 /**
@@ -783,23 +779,23 @@ static bool validate_asset_metadata(dispatcher_context_t *dc,
  * @return true on success, false on failure.
  */
 static bool set_in_out_amount(in_out_info_t *in_out_info, tx_amount_t *amount) {
-    if(!in_out_info || !amount) {
+    if (!in_out_info || !amount) {
         return false;
     }
 
-    if(!amount->is_blinded) {
-        if(!(in_out_info->key_read_status & HAS_PREVOUT_AMOUNT)) {
+    if (!amount->is_blinded) {
+        if (!(in_out_info->key_read_status & HAS_PREVOUT_AMOUNT)) {
             in_out_info->value = amount->value;
             in_out_info->key_read_status |= HAS_PREVOUT_AMOUNT;
-        } else if(amount->value != in_out_info->value) {
+        } else if (amount->value != in_out_info->value) {
             // new value does not match with the previous initialization
             return false;
         }
     } else {
-        if(in_out_info->key_read_status & HAS_VALUE_COMMITMENT) {
-            if(0 != memcmp(in_out_info->value_commitment,
-                           amount->commitment,
-                           sizeof(in_out_info->value_commitment))) {
+        if (in_out_info->key_read_status & HAS_VALUE_COMMITMENT) {
+            if (0 != memcmp(in_out_info->value_commitment,
+                            amount->commitment,
+                            sizeof(in_out_info->value_commitment))) {
                 return false;
             }
         } else {
@@ -812,7 +808,7 @@ static bool set_in_out_amount(in_out_info_t *in_out_info, tx_amount_t *amount) {
 
     return true;
 }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #ifdef HAVE_LIQUID
 /**
@@ -833,7 +829,7 @@ static bool set_in_out_asset(dispatcher_context_t *dc,
                              sign_psbt_state_t *state,
                              in_out_info_t *in_out_info,
                              const tx_asset_t *asset) {
-    if(!dc || !state || !in_out_info || !asset) {
+    if (!dc || !state || !in_out_info || !asset) {
         return false;
     }
 
@@ -870,14 +866,13 @@ static bool set_in_out_asset(dispatcher_context_t *dc,
                         asset->tag,
                         !!(state->global_key_presence & GLOBAL_HAS_REISSUANCE_TOKEN),
                         &in_out_info->asset_info,
-                        /* ext_asset_info= */ NULL
-                    );
+                        /* ext_asset_info= */ NULL);
                 }
                 if (ASSET_METADATA_ABSENT == stat) {
                     memset(&in_out_info->asset_info, 0, sizeof(in_out_info->asset_info));
-                } else if(ASSET_METADATA_TOKEN_READY == stat) {
+                } else if (ASSET_METADATA_TOKEN_READY == stat) {
                     in_out_info->asset_is_reissuance_token = true;
-                } else if(ASSET_METADATA_READY != stat) {
+                } else if (ASSET_METADATA_READY != stat) {
                     return false;
                 }
             }
@@ -887,15 +882,14 @@ static bool set_in_out_asset(dispatcher_context_t *dc,
     }
     return true;
 }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 static bool __attribute__((noinline))
 init_global_state(dispatcher_context_t *dc,
-                  sign_psbt_state_t *st
-                  LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                  sign_psbt_state_t *st LIQUID_PARAM(asset_cache_t *asset_cache)) {
     LOG_PROCESSOR();
 
-#ifdef HAVE_LIQUID // TODO: verify if really needed
+#ifdef HAVE_LIQUID  // TODO: verify if really needed
     // Device must be unlocked
     if (os_global_pin_is_validated() != BOLOS_UX_OK) {
         SEND_SW(dc, SW_SECURITY_STATUS_NOT_SATISFIED);
@@ -964,17 +958,17 @@ init_global_state(dispatcher_context_t *dc,
         // Check integrity of the global map
         if (call_check_merkle_tree_sorted_with_callback(
                 dc,
-                IF_LIQUID_ELSE((void*) st, NULL),
+                IF_LIQUID_ELSE((void *) st, NULL),
                 st->global_map.keys_root,
                 (size_t) st->global_map.size,
-                IF_LIQUID_ELSE((merkle_tree_elements_callback_t)global_keys_callback, NULL),
+                IF_LIQUID_ELSE((merkle_tree_elements_callback_t) global_keys_callback, NULL),
                 NULL) < 0) {
             PRINTF("Global keys are not sorted\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
 
-        IF_LIQUID( PRINTF("Global keys: 0x%02X\n", st->global_key_presence) );
+        IF_LIQUID(PRINTF("Global keys: 0x%02X\n", st->global_key_presence));
 
         uint8_t raw_result[9];  // max size for a varint
         int result_len;
@@ -1114,14 +1108,14 @@ init_global_state(dispatcher_context_t *dc,
     // If it's not a default wallet policy, ask the user for confirmation, and abort if they deny
     if (!st->is_wallet_default && !ui_authorize_wallet_spend(dc, wallet_header.name)) {
         SEND_SW(dc, SW_DENY);
-        ui_post_processing_confirm_wallet_spend(dc, false);
+        (void) ui_post_processing_confirm_wallet_spend(dc, false);
         return false;
     }
 
     st->master_key_fingerprint = crypto_get_master_key_fingerprint();
 
     if (!st->is_wallet_default) {
-        ui_post_processing_confirm_wallet_spend(dc, true);
+        (void) ui_post_processing_confirm_wallet_spend(dc, true);
     }
 
 #ifdef HAVE_LIQUID
@@ -1280,8 +1274,7 @@ static void input_keys_callback(dispatcher_context_t *dc,
 
 #ifdef HAVE_LIQUID
 
-static bool check_input_commitments(dispatcher_context_t *dc,
-                                    in_out_info_t *in_out_info) {
+static bool check_input_commitments(dispatcher_context_t *dc, in_out_info_t *in_out_info) {
     uint8_t blinded_asset_gen[LIQUID_GENERATOR_LEN];
     bool blinded_asset_gen_init = false;
 
@@ -1348,7 +1341,7 @@ static bool check_input_commitments(dispatcher_context_t *dc,
         }
 
         bool result = liquid_rangeproof_verify_exact(proof,
-                                                     (size_t)proof_len,
+                                                     (size_t) proof_len,
                                                      in_out_info->value,
                                                      in_out_info->value_commitment,
                                                      sizeof(in_out_info->value_commitment),
@@ -1364,10 +1357,9 @@ static bool check_input_commitments(dispatcher_context_t *dc,
     return true;
 }
 
-static bool __attribute__((noinline))
-confirm_asset_if_unknown(dispatcher_context_t *dc,
-                         in_out_info_t *in_out_info,
-                         asset_cache_t *asset_cache) {
+static bool __attribute__((noinline)) confirm_asset_if_unknown(dispatcher_context_t *dc,
+                                                               in_out_info_t *in_out_info,
+                                                               asset_cache_t *asset_cache) {
     if ('\0' == *in_out_info->asset_info.ticker &&
         !asset_cache_find(asset_cache, in_out_info->asset_tag)) {
         // Warn the user about unknown asset
@@ -1384,13 +1376,13 @@ confirm_asset_if_unknown(dispatcher_context_t *dc,
     return true;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
-static bool __attribute__((noinline))
-preprocess_inputs(dispatcher_context_t *dc,
-                  sign_psbt_state_t *st,
-                  uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)]
-                  LIQUID_PARAM(asset_cache_t *asset_cache)) {
+static bool __attribute__((noinline)) preprocess_inputs(
+    dispatcher_context_t *dc,
+    sign_psbt_state_t *st,
+    uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)] LIQUID_PARAM(
+        asset_cache_t *asset_cache)) {
     LOG_PROCESSOR();
 
     memset(internal_inputs, 0, BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN));
@@ -1433,10 +1425,10 @@ preprocess_inputs(dispatcher_context_t *dc,
         if (input.in_out.key_presence & HAS_ASSET) {
             tx_asset_t asset;
             if (pset_get_asset_tag(dc,
-                                &input.in_out.map,
-                                PSBT_ELEMENTS_IN_EXPLICIT_ASSET,
-                                sizeof(PSBT_ELEMENTS_IN_EXPLICIT_ASSET),
-                                &asset)) {
+                                   &input.in_out.map,
+                                   PSBT_ELEMENTS_IN_EXPLICIT_ASSET,
+                                   sizeof(PSBT_ELEMENTS_IN_EXPLICIT_ASSET),
+                                   &asset)) {
                 if (!set_in_out_asset(dc, st, &input.in_out, &asset)) {
                     PRINTF("Invalid asset for input %u\n", cur_input_index);
                     SEND_SW(dc, SW_INCORRECT_DATA);
@@ -1449,16 +1441,16 @@ preprocess_inputs(dispatcher_context_t *dc,
             }
         }
 
-        if(input.in_out.key_presence & HAS_VALUE) {
+        if (input.in_out.key_presence & HAS_VALUE) {
             tx_amount_t prevout_amount;
             prevout_amount.is_blinded = false;
 
             // Obtain input value from PSET field
             if (8 == call_get_merkleized_map_value_u64_le(dc,
-                                                        &input.in_out.map,
-                                                        PSBT_ELEMENTS_IN_EXPLICIT_VALUE,
-                                                        sizeof(PSBT_ELEMENTS_IN_EXPLICIT_VALUE),
-                                                        &prevout_amount.value) ) {
+                                                          &input.in_out.map,
+                                                          PSBT_ELEMENTS_IN_EXPLICIT_VALUE,
+                                                          sizeof(PSBT_ELEMENTS_IN_EXPLICIT_VALUE),
+                                                          &prevout_amount.value)) {
                 if (!set_in_out_amount(&input.in_out, &prevout_amount)) {
                     PRINTF("Invalid amount provided for input %u\n", cur_input_index);
                     SEND_SW(dc, SW_INCORRECT_DATA);
@@ -1471,7 +1463,7 @@ preprocess_inputs(dispatcher_context_t *dc,
             }
         }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
         // either witness utxo or non-witness utxo (or both) must be present.
         if (!input.has_nonWitnessUtxo && !input.has_witnessUtxo) {
@@ -1502,15 +1494,13 @@ preprocess_inputs(dispatcher_context_t *dc,
             IF_LIQUID(tx_asset_t asset);
             IF_LIQUID(tx_amount_t prevout_amount);
             if (0 > get_amount_scriptpubkey_from_psbt_nonwitness(
-                    dc,
-                    &input.in_out.map,
-                    IF_LIQUID_ELSE(&prevout_amount, &input.prevout_amount),
-                    input.in_out.scriptPubKey,
-                    &input.in_out.scriptPubKey_len,
-                    sizeof(input.in_out.scriptPubKey),
-                    prevout_hash
-                    LIQUID_PARAM(&asset)
-                )) {
+                        dc,
+                        &input.in_out.map,
+                        IF_LIQUID_ELSE(&prevout_amount, &input.prevout_amount),
+                        input.in_out.scriptPubKey,
+                        &input.in_out.scriptPubKey_len,
+                        sizeof(input.in_out.scriptPubKey),
+                        prevout_hash LIQUID_PARAM(&asset))) {
                 PRINTF("Error fetching amount and scriptpubkey from non-witness utxo\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -1545,7 +1535,7 @@ preprocess_inputs(dispatcher_context_t *dc,
                                                               wit_utxo_scriptPubkey,
                                                               &wit_utxo_scriptPubkey_len,
                                                               sizeof(wit_utxo_scriptPubkey)
-                                                              LIQUID_PARAM(&asset))) {
+                                                                  LIQUID_PARAM(&asset))) {
                 PRINTF("Error fetching amount and scriptpubkey from witness utxo\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -1577,10 +1567,10 @@ preprocess_inputs(dispatcher_context_t *dc,
                     memcmp(input.in_out.scriptPubKey,
                            wit_utxo_scriptPubkey,
                            wit_utxo_scriptPubkey_len) != 0
-#if !defined(HAVE_LIQUID) // For Liquid amount is validated inside set_in_out_amount()
+#if !defined(HAVE_LIQUID)  // For Liquid amount is validated inside set_in_out_amount()
                     || input.prevout_amount != wit_utxo_prevout_amount
 #endif
-                    ) {
+                ) {
                     PRINTF(
                         "scriptPubKey or amount in non-witness utxo doesn't match with witness "
                         "utxo\n");
@@ -1610,10 +1600,10 @@ preprocess_inputs(dispatcher_context_t *dc,
         if (input.in_out.key_presence & HAS_ISSUANCE_VALUE) {
             uint64_t issuance_value = 0;
             if (8 != call_get_merkleized_map_value_u64_le(dc,
-                                                        &input.in_out.map,
-                                                        PSBT_ELEMENTS_IN_ISSUANCE_VALUE,
-                                                        sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE),
-                                                        &issuance_value) ) {
+                                                          &input.in_out.map,
+                                                          PSBT_ELEMENTS_IN_ISSUANCE_VALUE,
+                                                          sizeof(PSBT_ELEMENTS_IN_ISSUANCE_VALUE),
+                                                          &issuance_value)) {
                 PRINTF("Failed to obtain issuance value for input %u\n", cur_input_index);
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -1624,13 +1614,11 @@ preprocess_inputs(dispatcher_context_t *dc,
         if (input.in_out.key_presence & HAS_ISSUANCE_INFLATION_KEYS_AMOUNT) {
             uint64_t token_amount = 0;
             if (8 != call_get_merkleized_map_value_u64_le(
-                        dc,
-                        &input.in_out.map,
-                        PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT,
-                        sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
-                        &token_amount
-                    )
-                ) {
+                         dc,
+                         &input.in_out.map,
+                         PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT,
+                         sizeof(PSBT_ELEMENTS_IN_ISSUANCE_INFLATION_KEYS_AMOUNT),
+                         &token_amount)) {
                 PRINTF("Failed to obtain issuance token amount for input %u\n", cur_input_index);
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -1638,7 +1626,7 @@ preprocess_inputs(dispatcher_context_t *dc,
             st->inputs_total_amount += token_amount;
         }
 
-        if ( !(input.in_out.key_read_status & HAS_ASSET) ) {
+        if (!(input.in_out.key_read_status & HAS_ASSET)) {
             PRINTF("Asset tag is not provided for input %u\n", cur_input_index);
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
@@ -1646,8 +1634,9 @@ preprocess_inputs(dispatcher_context_t *dc,
 
         if (pset_input_has_issuance(input.in_out.key_presence)) {
             // No blinding nonce for new asset issuance
-            st->tx_type_flags |= (input.in_out.key_presence & HAS_ISSUANCE_BLINDING_NONCE) ?
-                TX_TYPE_REISSUANCE : TX_TYPE_ISSUANCE;
+            st->tx_type_flags |= (input.in_out.key_presence & HAS_ISSUANCE_BLINDING_NONCE)
+                                     ? TX_TYPE_REISSUANCE
+                                     : TX_TYPE_ISSUANCE;
         }
 
         if (!confirm_asset_if_unknown(dc, &input.in_out, asset_cache)) {
@@ -1660,7 +1649,7 @@ preprocess_inputs(dispatcher_context_t *dc,
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
         }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
         // check if the input is internal; if not, continue
 
@@ -1729,18 +1718,21 @@ preprocess_inputs(dispatcher_context_t *dc,
         } else if ((segwit_version >= 0) &&
                    ((input.sighash_type == SIGHASH_NONE) ||
                     (input.sighash_type == SIGHASH_SINGLE) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_ALL)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_NONE)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_SINGLE))
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_ALL)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_NONE)) ||
+                    (input.sighash_type == (SIGHASH_ANYONECANPAY | SIGHASH_SINGLE))
 #ifdef HAVE_LIQUID
-                    || (input.sighash_type == (SIGHASH_ALL|SIGHASH_RANGEPROOF)) ||
-                    (input.sighash_type == (SIGHASH_NONE|SIGHASH_RANGEPROOF)) ||
-                    (input.sighash_type == (SIGHASH_SINGLE|SIGHASH_RANGEPROOF)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_ALL|SIGHASH_RANGEPROOF)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_NONE|SIGHASH_RANGEPROOF)) ||
-                    (input.sighash_type == (SIGHASH_ANYONECANPAY|SIGHASH_SINGLE|SIGHASH_RANGEPROOF))
+                    || (input.sighash_type == (SIGHASH_ALL | SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_NONE | SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type == (SIGHASH_SINGLE | SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type ==
+                     (SIGHASH_ANYONECANPAY | SIGHASH_ALL | SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type ==
+                     (SIGHASH_ANYONECANPAY | SIGHASH_NONE | SIGHASH_RANGEPROOF)) ||
+                    (input.sighash_type ==
+                     (SIGHASH_ANYONECANPAY | SIGHASH_SINGLE | SIGHASH_RANGEPROOF))
 #endif
-                   )) {
+                        )) {
             PRINTF("Sighash type is non-default, will show a warning.\n");
 #ifdef HAVE_LIQUID
             if (!ui_warn_nondefault_sighash(dc, cur_input_index, input.sighash_type)) {
@@ -1816,7 +1808,7 @@ show_alerts(dispatcher_context_t *dc,
         SEND_SW(dc, SW_DENY);
         return false;
     }
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
     return true;
 }
@@ -1876,7 +1868,7 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
     if (address_len < 0) {
         // script does not have an address; check if OP_RETURN
 #ifdef HAVE_LIQUID
-        if (cur_output_index >= 0 && (uint32_t)cur_output_index < st->fee_output_index &&
+        if (cur_output_index >= 0 && (uint32_t) cur_output_index < st->fee_output_index &&
             is_opreturn_burn(output->in_out.scriptPubKey, output->in_out.scriptPubKey_len)) {
             strlcpy(output_address, "BURN", sizeof(output_address));
             st->tx_type_flags |= TX_TYPE_BURN;
@@ -1916,7 +1908,7 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
         bool accepted = false;
 
 #ifdef HAVE_LIQUID
-        if('\0' != *output->in_out.asset_info.ticker) {
+        if ('\0' != *output->in_out.asset_info.ticker) {
             accepted = ui_validate_output(dc,
                                           external_outputs_count,
                                           st->outputs.n_external,
@@ -1927,7 +1919,7 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
                                           output->in_out.asset_tag,
                                           !output->in_out.built_in_asset, /* display_asset_tag */
                                           output->in_out.asset_is_reissuance_token);
-        } else { // Unknown asset
+        } else {  // Unknown asset
             accepted = ui_validate_output(dc,
                                           external_outputs_count,
                                           st->outputs.n_external,
@@ -1936,17 +1928,17 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
                                           output->in_out.value,
                                           UNKNOWN_ASSET_DECIMALS,
                                           output->in_out.asset_tag,
-                                          true, /* display_asset_tag */
+                                          true,   /* display_asset_tag */
                                           false); /* asset_is_reissuance_token */
         }
-#else // HAVE_LIQUID
+#else   // HAVE_LIQUID
         accepted = ui_validate_output(dc,
                                       external_outputs_count,
                                       st->outputs.n_external,
                                       output_address,
                                       COIN_COINID_SHORT,
                                       output->value);
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
         if (!accepted) {
             SEND_SW(dc, SW_DENY);
@@ -1957,11 +1949,10 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
 }
 
 #ifdef HAVE_LIQUID
-static bool __attribute__((noinline))
-process_output_asset_and_fee(dispatcher_context_t *dc,
-                             sign_psbt_state_t *st,
-                             in_out_info_t *in_out_info,
-                             unsigned int output_index) {
+static bool __attribute__((noinline)) process_output_asset_and_fee(dispatcher_context_t *dc,
+                                                                   sign_psbt_state_t *st,
+                                                                   in_out_info_t *in_out_info,
+                                                                   unsigned int output_index) {
     // Ensure non-blinded in_out_info->value is present and fetched
     if (!(in_out_info->key_read_status & HAS_PREVOUT_AMOUNT)) {
         PRINTF("Non-blinded amount is not provided\n");
@@ -1996,11 +1987,11 @@ process_output_asset_and_fee(dispatcher_context_t *dc,
 
     if (in_out_info->key_presence & HAS_ASSET) {
         tx_asset_t asset;
-        if ( pset_get_asset_tag(dc,
-                                &in_out_info->map,
-                                PSBT_ELEMENTS_OUT_ASSET,
-                                sizeof(PSBT_ELEMENTS_OUT_ASSET),
-                                &asset) ) {
+        if (pset_get_asset_tag(dc,
+                               &in_out_info->map,
+                               PSBT_ELEMENTS_OUT_ASSET,
+                               sizeof(PSBT_ELEMENTS_OUT_ASSET),
+                               &asset)) {
             if (!set_in_out_asset(dc, st, in_out_info, &asset)) {
                 PRINTF("Invalid asset for output %u\n", output_index);
                 return false;
@@ -2011,13 +2002,13 @@ process_output_asset_and_fee(dispatcher_context_t *dc,
         }
     }
 
-    if ( !(in_out_info->key_read_status & HAS_ASSET) ) {
+    if (!(in_out_info->key_read_status & HAS_ASSET)) {
         PRINTF("Asset tag is not provided for output %u\n", output_index);
         return false;
     }
 
-    if ( (output_index == st->fee_output_index) &&
-         !liquid_is_asset_bitcoin(in_out_info->asset_tag) ) {
+    if ((output_index == st->fee_output_index) &&
+        !liquid_is_asset_bitcoin(in_out_info->asset_tag)) {
         PRINTF("Fee output has non-Bitcoin asset\n");
         return false;
     }
@@ -2026,8 +2017,7 @@ process_output_asset_and_fee(dispatcher_context_t *dc,
 }
 
 static bool __attribute__((noinline))
-check_output_commitments(dispatcher_context_t *dc,
-                         in_out_info_t *in_out_info) {
+check_output_commitments(dispatcher_context_t *dc, in_out_info_t *in_out_info) {
     uint8_t blinded_asset_gen[LIQUID_GENERATOR_LEN];
     bool blinded_asset_gen_init = false;
 
@@ -2039,11 +2029,11 @@ check_output_commitments(dispatcher_context_t *dc,
 
             int commitment_len =
                 call_get_merkleized_map_value(dc,
-                                            &in_out_info->map,
-                                            PSBT_ELEMENTS_OUT_ASSET_COMMITMENT,
-                                            sizeof(PSBT_ELEMENTS_OUT_ASSET_COMMITMENT),
-                                            commitment,
-                                            sizeof(commitment));
+                                              &in_out_info->map,
+                                              PSBT_ELEMENTS_OUT_ASSET_COMMITMENT,
+                                              sizeof(PSBT_ELEMENTS_OUT_ASSET_COMMITMENT),
+                                              commitment,
+                                              sizeof(commitment));
             if (commitment_len != sizeof(commitment)) {
                 PRINTF("Error fetching asset commitment\n");
                 return false;
@@ -2113,22 +2103,21 @@ check_output_commitments(dispatcher_context_t *dc,
             return false;
         }
 
-        int proof_len =
-            call_get_merkleized_map_value(dc,
-                                          &in_out_info->map,
-                                          PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF,
-                                          sizeof(PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF),
-                                          proof,
-                                          sizeof(proof));
+        int proof_len = call_get_merkleized_map_value(dc,
+                                                      &in_out_info->map,
+                                                      PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF,
+                                                      sizeof(PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF),
+                                                      proof,
+                                                      sizeof(proof));
         if (proof_len <= 0) {
             PRINTF("Error fetching value proof\n");
             return false;
         }
         bool result = liquid_rangeproof_verify_exact(proof,
-                                                     (size_t)proof_len,
+                                                     (size_t) proof_len,
                                                      in_out_info->value,
                                                      commitment,
-                                                     (size_t)commitment_len,
+                                                     (size_t) commitment_len,
                                                      blinded_asset_gen);
         if (!result) {
             PRINTF("Invalid value commitment\n");
@@ -2139,13 +2128,12 @@ check_output_commitments(dispatcher_context_t *dc,
     return true;
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 static bool read_outputs(dispatcher_context_t *dc,
                          sign_psbt_state_t *st,
                          placeholder_info_t *placeholder_info,
-                         bool dry_run
-                         LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                         bool dry_run LIQUID_PARAM(asset_cache_t *asset_cache)) {
     // the counter used when showing outputs to the user, which ignores change outputs
     // (0-indexed here, although the UX starts with 1)
     int external_outputs_count = 0;
@@ -2177,7 +2165,8 @@ static bool read_outputs(dispatcher_context_t *dc,
             return false;
         }
 
-        IF_LIQUID( PRINTF("\nOutput[%u] keys: %08x\n", cur_output_index, output.in_out.key_presence) );
+        IF_LIQUID(
+            PRINTF("\nOutput[%u] keys: %08x\n", cur_output_index, output.in_out.key_presence));
 
         if (!dry_run) {
             // Read output amount
@@ -2199,16 +2188,16 @@ static bool read_outputs(dispatcher_context_t *dc,
 #if !defined(HAVE_LIQUID)
             output.value = value;
             st->outputs.total_amount += value;
-#else // !defined(HAVE_LIQUID)
+#else   // !defined(HAVE_LIQUID)
             {
-                tx_amount_t amount = { .is_blinded = false, .value = value };
+                tx_amount_t amount = {.is_blinded = false, .value = value};
                 if (!set_in_out_amount(&output.in_out, &amount)) {
                     PRINTF("Invalid amount for output %u\n", cur_output_index);
                     SEND_SW(dc, SW_INCORRECT_DATA);
                     return false;
                 }
             }
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
         }
 
         // Read the output's scriptPubKey
@@ -2229,10 +2218,7 @@ static bool read_outputs(dispatcher_context_t *dc,
 
 #ifdef HAVE_LIQUID
         if (!dry_run) {
-            if (!process_output_asset_and_fee(dc,
-                                              st,
-                                              &output.in_out,
-                                              cur_output_index)) {
+            if (!process_output_asset_and_fee(dc, st, &output.in_out, cur_output_index)) {
                 PRINTF("Invalid asset or fee of output %u\n", cur_output_index);
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -2280,8 +2266,7 @@ static bool read_outputs(dispatcher_context_t *dc,
 
 static bool __attribute__((noinline))
 process_outputs(dispatcher_context_t *dc,
-                sign_psbt_state_t *st
-                LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                sign_psbt_state_t *st LIQUID_PARAM(asset_cache_t *asset_cache)) {
     /** OUTPUTS VERIFICATION FLOW
      *
      *  For each output, check if it's a change address.
@@ -2333,7 +2318,7 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
     LOG_PROCESSOR();
 
 #ifdef HAVE_LIQUID
-    if (st->fee_value > UINT64_MAX - st->outputs_total_amount || // to avoid overflow
+    if (st->fee_value > UINT64_MAX - st->outputs_total_amount ||  // to avoid overflow
         st->inputs_total_amount != st->outputs_total_amount + st->fee_value) {
         PRINTF("Fee is invalid\n");
         PRINTF("  inputs=%llu\n", st->inputs_total_amount);
@@ -2361,7 +2346,8 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
         return false;
     }
 
-    uint64_t fee = IF_LIQUID_ELSE(st->fee_value, st->inputs_total_amount - st->outputs.total_amount);
+    uint64_t fee =
+        IF_LIQUID_ELSE(st->fee_value, st->inputs_total_amount - st->outputs.total_amount);
 
     if (G_swap_state.called_from_swap) {
         // Swap feature: there must be only one external output
@@ -2389,11 +2375,11 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
         if (10 * fee >= st->inputs_total_amount && st->inputs_total_amount > 10000) {
             if (!ui_warn_high_fee(dc)) {
                 SEND_SW(dc, SW_DENY);
-                ui_post_processing_confirm_transaction(dc, false);
+                (void) ui_post_processing_confirm_transaction(dc, false);
                 return false;
             }
         }
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
         // Show final user validation UI
 #ifdef HAVE_LIQUID
@@ -2403,11 +2389,10 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
         if (!ui_validate_transaction(dc,
                                      COIN_COINID_SHORT,
                                      fee,
-                                     is_self_transfer
-                                     LIQUID_PARAM(BITCOIN_DECIMALS)
-                                     LIQUID_PARAM(asset_op_type))) {
+                                     is_self_transfer LIQUID_PARAM(BITCOIN_DECIMALS)
+                                         LIQUID_PARAM(asset_op_type))) {
             SEND_SW(dc, SW_DENY);
-            ui_post_processing_confirm_transaction(dc, false);
+            (void) ui_post_processing_confirm_transaction(dc, false);
             return false;
         }
     }
@@ -2700,7 +2685,7 @@ static bool __attribute__((noinline)) compute_sighash_segwitv0(dispatcher_contex
                            witness_utxo,
                            8);  // only the first 8 bytes (amount)
     }
-#else // !defined(HAVE_LIQUID)
+#else  // !defined(HAVE_LIQUID)
     // amount or amount commitment
     {
         txid_parser_vout_t parser_output;
@@ -2716,7 +2701,7 @@ static bool __attribute__((noinline)) compute_sighash_segwitv0(dispatcher_contex
             return false;
         }
 
-        if(parser_output.amount.is_blinded) {
+        if (parser_output.amount.is_blinded) {
             crypto_hash_update(&sighash_context.header,
                                parser_output.amount.commitment,
                                sizeof(parser_output.amount.commitment));
@@ -2786,14 +2771,13 @@ static bool __attribute__((noinline)) compute_sighash_segwitv0(dispatcher_contex
                 return false;
             }
             cx_sha256_t sha_output_context;
-            IF_LIQUID( cx_sha256_t sha_rangeproof_context );
+            IF_LIQUID(cx_sha256_t sha_rangeproof_context);
             cx_sha256_init(&sha_output_context);
-            IF_LIQUID( cx_sha256_init(&sha_rangeproof_context) );
+            IF_LIQUID(cx_sha256_init(&sha_rangeproof_context));
             if (hash_output_n(dc,
-                            st,
-                            &sha_output_context.header,
-                            cur_input_index
-                            LIQUID_PARAM(&sha_rangeproof_context.header)) == -1) {
+                              st,
+                              &sha_output_context.header,
+                              cur_input_index LIQUID_PARAM(&sha_rangeproof_context.header)) == -1) {
                 PRINTF("Error hashing output correstonding to input %u\n", cur_input_index);
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -2811,12 +2795,11 @@ static bool __attribute__((noinline)) compute_sighash_segwitv0(dispatcher_contex
                 cx_hash_sha256(hashOutputs, 32, hashOutputs, 32);
                 crypto_hash_update(&sighash_context.header, hashOutputs, 32);
             }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
         } else {
             crypto_hash_update_zeros(
                 &sighash_context.header,
-                IF_LIQUID_ELSE(((sighash_byte & SIGHASH_RANGEPROOF) ? 64 : 32), 32)
-            );
+                IF_LIQUID_ELSE(((sighash_byte & SIGHASH_RANGEPROOF) ? 64 : 32), 32));
         }
     }
     PRINT_HASH("rangeproofs", &sighash_context);
@@ -2958,11 +2941,8 @@ static bool __attribute__((noinline)) compute_sighash_segwitv1(dispatcher_contex
         cx_sha256_t sha_output_context;
         cx_sha256_init(&sha_output_context);
 
-        if (hash_output_n(dc,
-                          st,
-                          &sha_output_context.header,
-                          cur_input_index
-                          LIQUID_PARAM(NULL)) == -1) {
+        if (hash_output_n(dc, st, &sha_output_context.header, cur_input_index LIQUID_PARAM(NULL)) ==
+            -1) {
             PRINTF("Error hashing output for input %u\n", cur_input_index);
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
@@ -3134,7 +3114,8 @@ sign_sighash_schnorr_and_yield(dispatcher_context_t *dc,
                 // tweak with the taptree hash, per BIP-341
                 // The taptree hash is computed in sign_transaction_input in order to
                 // reduce stack usage.
-                error = error || 0 != crypto_tr_tweak_seckey(seckey, input->taptree_hash, 32, seckey);
+                error =
+                    error || 0 != crypto_tr_tweak_seckey(seckey, input->taptree_hash, 32, seckey);
             }
             if (error) {
                 break;
@@ -3288,10 +3269,10 @@ compute_segwit_hashes(dispatcher_context_t *dc, sign_psbt_state_t *st, segwit_ha
         cx_sha256_init(&sha_rangeproofs_context);
 #endif
 
-        if (hash_outputs(dc,
-                         st,
-                         &sha_outputs_context.header
-                         LIQUID_PARAM(&sha_rangeproofs_context.header)) == -1) {
+        if (hash_outputs(
+                dc,
+                st,
+                &sha_outputs_context.header LIQUID_PARAM(&sha_rangeproofs_context.header)) == -1) {
             PRINTF("Error hashing outputs\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
@@ -3320,7 +3301,7 @@ compute_segwit_hashes(dispatcher_context_t *dc, sign_psbt_state_t *st, segwit_ha
         for (unsigned int i = 0; i < st->n_inputs; i++) {
             // get this input's map
             merkleized_map_commitment_t ith_map;
-            IF_LIQUID( uint32_t key_presence = 0 );
+            IF_LIQUID(uint32_t key_presence = 0);
 
             int res = call_get_merkleized_map_with_callback(
                 dc,
@@ -3346,14 +3327,14 @@ compute_segwit_hashes(dispatcher_context_t *dc, sign_psbt_state_t *st, segwit_ha
                                                       in_scriptPubKey,
                                                       &in_scriptPubKey_len,
                                                       sizeof(in_scriptPubKey)
-                                                      LIQUID_PARAM(NULL) /* asset */)) {
+                                                          LIQUID_PARAM(NULL) /* asset */)) {
                 PRINTF("Error fetching input's amount and scriptpubkey\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
             }
 
 #ifdef HAVE_LIQUID
-            if(in_amount.is_blinded) {
+            if (in_amount.is_blinded) {
                 crypto_hash_update(&sha_amounts_context.header,
                                    in_amount.commitment,
                                    sizeof(in_amount.commitment));
@@ -3362,11 +3343,11 @@ compute_segwit_hashes(dispatcher_context_t *dc, sign_psbt_state_t *st, segwit_ha
                 write_u64_le(in_amount_le, 0, in_amount.value);
                 crypto_hash_update(&sha_amounts_context.header, in_amount_le, 8);
             }
-#else // HAVE_LIQUID
+#else   // HAVE_LIQUID
             uint8_t in_amount_le[8];
             write_u64_le(in_amount_le, 0, in_amount);
             crypto_hash_update(&sha_amounts_context.header, in_amount_le, 8);
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
             crypto_hash_update_varint(&sha_scriptpubkeys_context.header, in_scriptPubKey_len);
             crypto_hash_update(&sha_scriptpubkeys_context.header,
@@ -3385,7 +3366,7 @@ compute_segwit_hashes(dispatcher_context_t *dc, sign_psbt_state_t *st, segwit_ha
             } else {
                 crypto_hash_update_u8(&sha_issuances_context.header, 0x00);
             }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
         }
 
         crypto_hash_digest(&sha_amounts_context.header, hashes->sha_amounts, 32);
@@ -3407,7 +3388,7 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
     LOG_PROCESSOR();
 
 #ifdef HAVE_LIQUID
-    if(input->in_out.key_presence & HAS_VALUE) {
+    if (input->in_out.key_presence & HAS_VALUE) {
         tx_amount_t prevout_amount;
         prevout_amount.is_blinded = false;
 
@@ -3416,7 +3397,7 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
                                                       &input->in_out.map,
                                                       PSBT_ELEMENTS_IN_EXPLICIT_VALUE,
                                                       sizeof(PSBT_ELEMENTS_IN_EXPLICIT_VALUE),
-                                                      &prevout_amount.value) ) {
+                                                      &prevout_amount.value)) {
             if (!set_in_out_amount(&input->in_out, &prevout_amount)) {
                 PRINTF("Amount is invalid\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
@@ -3459,7 +3440,7 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
                                                              &input->in_out.scriptPubKey_len,
                                                              sizeof(input->in_out.scriptPubKey),
                                                              NULL /* expected_prevout_hash */
-                                                             LIQUID_PARAM(NULL) /* asset */)) {
+                                                                 LIQUID_PARAM(NULL) /* asset */)) {
             PRINTF("Error fetching input's amount and scriptpubkey\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
             return false;
@@ -3488,7 +3469,7 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
                                                               input->in_out.scriptPubKey,
                                                               &input->in_out.scriptPubKey_len,
                                                               sizeof(input->in_out.scriptPubKey)
-                                                              LIQUID_PARAM(NULL) /* asset */)) {
+                                                                  LIQUID_PARAM(NULL) /* asset */)) {
                 PRINTF("Error fetching amount and scriptpubkey from witness utxo\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
@@ -3553,7 +3534,6 @@ static bool __attribute__((noinline)) sign_transaction_input(dispatcher_context_
                                               sighash))
                 return false;
         } else if (segwit_version == 1) {
-
             if (IS_LIQUID) {
                 PRINTF("SegWit version 1 is not supported yet for Liquid\n");
                 SEND_SW(dc, SW_NOT_SUPPORTED);
@@ -3687,7 +3667,7 @@ sign_transaction(dispatcher_context_t *dc,
         if (n_key_placeholders < 0) {
             SEND_SW(dc, SW_BAD_STATE);  // should never happen
             if (!G_swap_state.called_from_swap) {
-                ui_post_processing_confirm_transaction(dc, false);
+                (void) ui_post_processing_confirm_transaction(dc, false);
             }
             return false;
         }
@@ -3724,7 +3704,7 @@ sign_transaction(dispatcher_context_t *dc,
                         PRINTF("Error processing input keys\n");
                         SEND_SW(dc, SW_INCORRECT_DATA);
                         if (!G_swap_state.called_from_swap) {
-                            ui_post_processing_confirm_transaction(dc, false);
+                            (void) ui_post_processing_confirm_transaction(dc, false);
                         }
                         return false;
                     }
@@ -3738,7 +3718,7 @@ sign_transaction(dispatcher_context_t *dc,
 
                     if (!sign_transaction_input(dc, st, &hashes, &placeholder_info, &input, i)) {
                         if (!G_swap_state.called_from_swap) {
-                            ui_post_processing_confirm_transaction(dc, false);
+                            (void) ui_post_processing_confirm_transaction(dc, false);
                         }
 
                         // we do not send a status word, since sign_transaction_input
@@ -3752,15 +3732,15 @@ sign_transaction(dispatcher_context_t *dc,
     }
 
     if (!G_swap_state.called_from_swap) {
-        ui_post_processing_confirm_transaction(dc, true);
+        (void) ui_post_processing_confirm_transaction(dc, true);
     }
     return true;
 }
 
-static bool __attribute__((noinline))
-verify_inputs_and_outputs(dispatcher_context_t *dc,
-                          sign_psbt_state_t *st,
-                          uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)]) {
+static bool __attribute__((noinline)) verify_inputs_and_outputs(
+    dispatcher_context_t *dc,
+    sign_psbt_state_t *st,
+    uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)]) {
 #ifdef HAVE_LIQUID
     // Allocate temporary asset cache to not ask asset confirmation for every input/output
     uint8_t asset_cache_buf[ASSET_CACHE_SIZE * LIQUID_ASSET_TAG_LEN];

@@ -24,9 +24,11 @@
 static const char* const infoTypes[] = {"Version", "Developer", "Copyright"};
 static const char* const infoContents[] = {APPVERSION,
 #ifdef HAVE_LIQUID
-    "Blockstream", "(c) 2024 Blockstream"
+                                           "Blockstream",
+                                           "(c) 2024 Blockstream"
 #else
-    "Ledger", "(c) 2024 Ledger"
+                                           "Ledger",
+                                           "(c) 2024 Ledger"
 #endif
 };
 
@@ -59,7 +61,7 @@ void ui_menu_main_flow_bitcoin_testnet(void) {
     nbgl_useCaseHome(DISPLAYED_APPNAME,
                      &APP_MAIN_ICON_64PX,
 #ifdef HAVE_LIQUID
-                    "This app enables signing\ntransactions on the Liquid\ntest networks.",
+                     "This app enables signing\ntransactions on the Liquid\ntest networks.",
 #else
                      "This app enables signing\ntransactions on all the Bitcoin\ntest networks.",
 #endif

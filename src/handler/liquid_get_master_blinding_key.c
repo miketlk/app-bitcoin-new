@@ -29,4 +29,4 @@ void handler_liquid_get_master_blinding_key(dispatcher_context_t *dc, uint8_t pr
     explicit_bzero(mbk, sizeof(mbk));
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

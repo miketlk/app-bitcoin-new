@@ -249,7 +249,7 @@ static int parse_rawtxoutput_scriptpubkey(parse_rawtxoutput_state_t *state, buff
                 if (state->scriptpubkey_counter + data_len <=
                     sizeof(state->parent_state->parser_outputs->vout_scriptpubkey)) {
                     memcpy(state->parent_state->parser_outputs->vout_scriptpubkey +
-                           state->scriptpubkey_counter,
+                               state->scriptpubkey_counter,
                            data,
                            data_len);
                 } else {
@@ -566,4 +566,4 @@ int call_psbt_parse_rawtx(dispatcher_context_t *dispatcher_context,
     return 0;
 }
 
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)

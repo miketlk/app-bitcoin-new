@@ -109,43 +109,41 @@ static void test_validate_serialized_extended_pubkey(void **state) {
 
     // Testnet extended public key
     int ret = validate_serialized_extended_pubkey(
-        "tpubDE7NQymr4AFtcJXi9TaWZtrhAdy8QyKmT4U6b9qYByAxCzoyMJ8zw5d8xVLVpbTRAEqP8pVUxjLE2vDt1rSFjaiS8DSz1QcNZ8D1qxUMx1g",
-        (uint32_t[]){
-            48 | BIP32_FIRST_HARDENED_CHILD,
-            1  | BIP32_FIRST_HARDENED_CHILD,
-            0  | BIP32_FIRST_HARDENED_CHILD,
-            1  | BIP32_FIRST_HARDENED_CHILD
-        },
+        "tpubDE7NQymr4AFtcJXi9TaWZtrhAdy8QyKmT4U6b9qYByAxCzoyMJ8zw5d8xVLVpbTRAEqP8pVUxjLE2vDt1rSFja"
+        "iS8DSz1QcNZ8D1qxUMx1g",
+        (uint32_t[]){48 | BIP32_FIRST_HARDENED_CHILD,
+                     1 | BIP32_FIRST_HARDENED_CHILD,
+                     0 | BIP32_FIRST_HARDENED_CHILD,
+                     1 | BIP32_FIRST_HARDENED_CHILD},
         4,
-        0x043587cf
-    );
+        0x043587cf);
     assert_int_equal(ret, EXTENDED_PUBKEY_VALID);
 
     // Mainnet extended public key
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_VALID);
 
     // Validation without path checking
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
         NULL,
         -1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_VALID);
 
     // Master public key
     ret = validate_serialized_extended_pubkey(
-        "xpub661MyMwAqRbcEnKbXcCqD2GT1di5zQxVqoHPAgHNe8dv5JP8gWmDproS6kFHJnLZd23tWevhdn4urGJ6b264DfTGKr8zjmYDjyDTi9U7iyT",
+        "xpub661MyMwAqRbcEnKbXcCqD2GT1di5zQxVqoHPAgHNe8dv5JP8gWmDproS6kFHJnLZd23tWevhdn4urGJ6b264Df"
+        "TGKr8zjmYDjyDTi9U7iyT",
         NULL,
         0,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_VALID);
 }
 
@@ -153,108 +151,106 @@ static void test_validate_serialized_extended_pubkey_invalid(void **state) {
     (void) state;
 
     // Invalid argument: NULL as pubkey
-    int ret = validate_serialized_extended_pubkey(
-        NULL, (uint32_t[]){ 12345 },  1, 0x0488b21e
-    );
+    int ret = validate_serialized_extended_pubkey(NULL, (uint32_t[]){12345}, 1, 0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_ARGUMENT);
 
     // Invalid argument: path is too long
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){1, 2, 3, 4, 5, 6, 7, 8, 9},
         9,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_ARGUMENT);
 
     // Invalid argument: path is NULL
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
         NULL,
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_ARGUMENT);
 
     // Invalid argument: pubkey string is too long
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8aZZZ",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8aZZZ",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_ARGUMENT);
 
     // Invalid symbol in Base58 string
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1\x01TdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1\x01TdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXj"
+        "ugxqtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_BASE58_CODE);
 
     // Corrupted Base58 string, resulting in invalid checksum
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1ZTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1ZTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_CHECKSUM);
 
     // Invalid version
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e + 1
-    );
+        0x0488b21e + 1);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_VERSION);
 
     // Invalid depth
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345, 12345 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345, 12345},
         2,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_DEPTH);
 
     // Invalid child number
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugxqtKfz2QrGDpCRiq6Dxz8a",
-        (uint32_t[]){ 12345 + 1 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj5WXzFpdSQEN7mb5oZ2Ade3iHXjugx"
+        "qtKfz2QrGDpCRiq6Dxz8a",
+        (uint32_t[]){12345 + 1},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_CHILD_NUMBER);
 
     // Invalid pubkey prefix (0x04 instead of 0x03)
     ret = validate_serialized_extended_pubkey(
-        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj7THAVGfHpubFbAni8eAaxeVCeMdLfgm7K48ezx7orS7Kf927RD",
-        (uint32_t[]){ 12345 },
+        "xpub67ymn1YTdEC4wRwy5ghTuuHuVw8N3rA9a5fvoQaPam1ud9sPMPbiXoBgj7THAVGfHpubFbAni8eAaxeVCeMdLf"
+        "gm7K48ezx7orS7Kf927RD",
+        (uint32_t[]){12345},
         1,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_PREFIX);
 
     // Master public key with invalid child number (1 instead of 0)
     ret = validate_serialized_extended_pubkey(
-        "xpub661MyMwAqRbcHL9a4ZxvDZLQxPGcjJoDnLYGfD5sRV7HfNc32EkPCfWdNz6sHyrVFvRz4G7DYkhhtsFf3wDMQxbySGcpBwLGaXehDhe9yQ7",
+        "xpub661MyMwAqRbcHL9a4ZxvDZLQxPGcjJoDnLYGfD5sRV7HfNc32EkPCfWdNz6sHyrVFvRz4G7DYkhhtsFf3wDMQx"
+        "bySGcpBwLGaXehDhe9yQ7",
         NULL,
         0,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_CHILD_NUMBER);
 
     // Master public key with invalid parent's fingerprint (1 instead of 0)
     ret = validate_serialized_extended_pubkey(
-        "xpub661MyMwTWkfYbLu9LWUcdQVBEWceNbmdb7s91e4jSdrkh7isZFDVKhLysNT3Kr1TiLyoS3X3LMrn3WXs5pbh8uHD3EzACEUsZEvHUfUF5ro",
+        "xpub661MyMwTWkfYbLu9LWUcdQVBEWceNbmdb7s91e4jSdrkh7isZFDVKhLysNT3Kr1TiLyoS3X3LMrn3WXs5pbh8u"
+        "HD3EzACEUsZEvHUfUF5ro",
         NULL,
         0,
-        0x0488b21e
-    );
+        0x0488b21e);
     assert_int_equal(ret, EXTENDED_PUBKEY_INVALID_PARENT_FINGERPRINT);
 }
 
@@ -265,8 +261,7 @@ int main(void) {
         cmocka_unit_test(test_get_compressed_pubkey_in_place),
         cmocka_unit_test(test_get_compressed_pubkey_invalid),
         cmocka_unit_test(test_validate_serialized_extended_pubkey),
-        cmocka_unit_test(test_validate_serialized_extended_pubkey_invalid)
-    };
+        cmocka_unit_test(test_validate_serialized_extended_pubkey_invalid)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

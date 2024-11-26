@@ -397,6 +397,7 @@ static size_t _ftoa(out_fct_type out, char* buffer, size_t idx, size_t maxlen, d
     }
   }
   else if (diff < 0.5) {
+    // ignore smaller error than 0.5
   }
   else if ((frac == 0U) || (frac & 1U)) {
     // if halfway, round up if odd OR if last digit is 0

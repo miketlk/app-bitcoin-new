@@ -38,7 +38,7 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[], size_t b
         bip32_path[1] == (1112098098 ^ H)) {
         return true;
     }
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
     if (bip32_path_len < 3) {
         return false;
