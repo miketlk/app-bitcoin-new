@@ -5,6 +5,8 @@
  * Not to be included in normal way as a header!
  */
 
+// clang-format off
+
 static const value_proof_test_data_t value_proof_test_data[] = {
   { // This vector is taken from libsecp256k1 tests
     .value = UINT64_MAX,
@@ -1214,3 +1216,5 @@ static const generator_generate_test_data_t generator_generate_test_data[] = {
     }
   },
 };
+
+// clang-format on

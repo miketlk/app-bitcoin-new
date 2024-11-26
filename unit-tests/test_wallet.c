@@ -9,19 +9,19 @@
 #include <cmocka.h>
 
 #ifdef HAVE_LIQUID
-    // Version bytes of Liquid regtest xpub
-    #define LIQUID_REGTEST_XPUB 0x043587CF
-    // Version bytes of Liquid regtest xprv
-    #define LIQUID_REGTEST_XPRV 0x04358394
+// Version bytes of Liquid regtest xpub
+#define LIQUID_REGTEST_XPUB 0x043587CF
+// Version bytes of Liquid regtest xprv
+#define LIQUID_REGTEST_XPRV 0x04358394
 
-    #if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
-        #error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
-    #endif
+#if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
+#error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
+#endif
 
-    // Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
-    uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
-    uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
-#endif // HAVE_LIQUID
+// Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
+uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
+uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
+#endif  // HAVE_LIQUID
 
 // missing definitions to make it compile without the SDK
 unsigned int pic(unsigned int linked_address) {
@@ -134,7 +134,9 @@ static void test_parse_policy_map_multisig_placeholder_single_number(void **stat
 
     uint8_t out[MAX_WALLET_POLICY_MEMORY_SIZE];
 
-    int res = parse_policy("sortedmulti(2,@0/0/*,@1/1/*,@2/999/*,@3/1234567890/*,@4/2147483648/*)", out, sizeof(out));
+    int res = parse_policy("sortedmulti(2,@0/0/*,@1/1/*,@2/999/*,@3/1234567890/*,@4/2147483648/*)",
+                           out,
+                           sizeof(out));
 
     assert_true(res >= 0);
     policy_node_multisig_t *node_1 = (policy_node_multisig_t *) out;
@@ -144,9 +146,18 @@ static void test_parse_policy_map_multisig_placeholder_single_number(void **stat
     assert_int_equal(node_1->n, 5);
     check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[0], 0, 0, 0);
     check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[1], 1, 1, 1);
-    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[2], 2, 999, 999);
-    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[3], 3, 1234567890, 1234567890);
-    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[4], 4, 2147483648, 2147483648);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[2],
+                          2,
+                          999,
+                          999);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[3],
+                          3,
+                          1234567890,
+                          1234567890);
+    check_key_placeholder(&r_policy_node_key_placeholder(&node_1->key_placeholders)[4],
+                          4,
+                          2147483648,
+                          2147483648);
 }
 #endif
 

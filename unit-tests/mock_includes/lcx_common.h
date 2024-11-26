@@ -1,27 +1,27 @@
 
 /*******************************************************************************
-*   Ledger Nano S - Secure firmware
-*   (c) 2019 Ledger
-*
-*  Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-********************************************************************************/
+ *   Ledger Nano S - Secure firmware
+ *   (c) 2019 Ledger
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
 
 #ifndef LCX_COMMON_H
 #define LCX_COMMON_H
 
 #include <stdint.h>
 
-#ifndef NATIVE_64BITS // NO 64BITS
+#ifndef NATIVE_64BITS  // NO 64BITS
 /** 64bits types, native or by-hands, depending on target and/or compiler
  * support.
  * This type is defined here only because sha-3 struct used it INTENALLY.
@@ -29,11 +29,11 @@
  */
 struct uint64_s {
 #ifdef OS_LITTLE_ENDIAN
-  unsigned long int l;
-  unsigned long int h;
+    unsigned long int l;
+    unsigned long int h;
 #else
-  unsigned long int h;
-  unsigned long int l;
+    unsigned long int h;
+    unsigned long int l;
 #endif
 };
 typedef struct uint64_s uint64bits_t;
@@ -41,51 +41,45 @@ typedef struct uint64_s uint64bits_t;
 typedef uint64_t uint64bits_t;
 #endif
 
+// clang-format off
 /**
- * Some function take logical or of various flags. The follwing flags are
- * globally defined:
- * @rststar
+ * @brief   Cryptography flags
+ * @details Some functions take **logical or** of various flags.
+ *          The following flags are globally defined:
  *
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  | bit pos    |  H constant                |   meanings |
- *  +============+============================+==================================================================+
- *  |  0         | - CX_LAST                  | last block |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  2:1       | - CX_ENCRYPT               | | |            | - CX_DECRYPT |
- * | |            | - CX_SIGN                  | | |            | - CX_VERIFY |
- * |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  5:3       | - CX_PAD_NONE              | | |            | -
- * CX_PAD_ISO9797M1         | | |            | - CX_PAD_ISO9797M2         | | |
- * | - CX_PAD_PKCS1_1o5         | | |            | - CX_PAD_PKCS1_PSS         |
- * | |            | - CX_PAD_PKCS1_OAEP        | |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  8:6       | - CX_CHAIN_ECB             | | |            | - CX_CHAIN_CBC
- * |                                                                  | |  -DES
- * | - CX_CHAIN_CTR             | | |  -AES      | - CX_CHAIN_CFB             |
- * | |            | - CX_CHAIN_OFB             | |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  8:6       | - CX_NO_CANONICAL          | do not perform canonical sig |
- *  |            |                            | | | -ECDSA     | | | | -EDDSA |
- * |                                                                  | |
- * -ECSCHNORR |                            | |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  11:9      | - CX_RND_TRNG              | | |            | - CX_RND_PRNG
- * |                                                                  | | | -
- * CX_RND_RFC6979           | | |            | - CX_RND_PROVIDED          | |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  14:12     | - CX_ECDH_POINT            | share full point | | | -
- * CX_ECDH_X                | share only x coordinate | |            | -
- * CX_ECSCHNORR_BSI03111    | | |            | - CX_ECSCHNORR_ISO14888_XY | | |
- * | - CX_ECSCHNORR_ISO14888_X  | | |            |  -CX_ECSCHNORR_LIBSECP     |
- * | |            |  -CX_ECSCHNORR_Zfrai de port           | Zilliqa scheme |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *  |  15        | CX_NO_REINIT               | do not reinitialize context on
- * CX_LAST when supported            |
- *  +------------+----------------------------+------------------------------------------------------------------+
- *
- * @endrststar
+ * | Bits position  | Values            | Flags                         | Meaning                                    | Algorithms            |
+ * |----------------|-------------------|-------------------------------|--------------------------------------------|-----------------------|
+ * | 15             | 1000000000000000  | CX_NO_REINIT                  | Do not reinitialize the context on CX_LAST |                       |
+ * | 14:12          | 0111000000000000  | CX_ECSCHNORR_Z                | Zilliqa scheme                             | ECSCHNORR             |
+ * | 14:12          | 0110000000000000  | CX_ECSCHNORR_LIBSECP          | ECSCHNORR according to libsecp256k1        | ECSCHNORR             |
+ * | 14:12          | 0101000000000000  | CX_ECSCHNORR_BSI03111         | ECSCHNORR according to BSI TR-03111        | ECSCHNORR             |
+ * | 14:12          | 0100000000000000  | CX_ECSCHNORR_ISO14888_X       | ECSCHNORR according to ISO/IEC 14888-3     | ECSCHNORR             |
+ * | 14:12          | 0011000000000000  | CX_ECSCHNORR_ISO14888_XY      | ECSCHNORR according to ISO/IEC 14888-3     | ECSCHNORR             |
+ * | 14:12          | 0010000000000000  | CX_ECDH_X                     | ECDH with the x-coordinate of the point    | ECDH                  |
+ * | 14:12          | 0001000000000000  | CX_ECDH_POINT                 | ECDH with a point                          | ECDH                  |
+ * | 11:9           | 0000100000000000  | CX_RND_PROVIDED               | Provided random                            |                       |
+ * | 11:9           | 0000011000000000  | CX_RND_RFC6979                | Random from RFC6979                        |                       |
+ * | 11:9           | 0000010000000000  | CX_RND_TRNG                   | Random from a PRNG                         |                       |
+ * | 11:9           | 0000001000000000  | CX_RND_PRNG                   | Random from a TRNG                         |                       |
+ * | 8:6            | 0000000100000000  | CX_CHAIN_OFB                  | Output feedback mode                       | AES                   |
+ * | 8:6            | 0000000011000000  | CX_CHAIN_CFB                  | Cipher feedback mode                       | AES                   |
+ * | 8:6            | 0000000010000000  | CX_CHAIN_CTR                  | Counter mode                               | AES                   |
+ * | 8:6            | 0000000001000000  | CX_CHAIN_CBC                  | Cipher block chaining mode                 | AES                   |
+ * | 8:6            | 0000000001000000  | CX_NO_CANONICAL               | Do not compute a canonical signature       | ECDSA/EDDSA/ECSCHNORR |
+ * | 8:6            | 0000000000000000  | CX_CHAIN_ECB                  | Electronic codebook mode                   | AES                   |
+ * | 5:3            | 0000000010100000  | CX_PAD_PKCS1_OAEP             | PKCS1_OAEP padding                         |                       |
+ * | 5:3            | 0000000010000000  | CX_PAD_PKCS1_PSS              | PKCS1_PSS padding                          |                       |
+ * | 5:3            | 0000000001100000  | CX_PAD_PKCS1_1o5              | PKCS1-v1_5 padding                         |                       |
+ * | 5:3            | 0000000001000000  | CX_PAD_ISO9797M2              | ISO9797 padding, method 2                  |                       |
+ * | 5:3            | 0000000000100000  | CX_PAD_ISO9797M1              | ISO9797 padding, method 1                  |                       |
+ * | 5:3            | 0000000000000000  | CX_PAD_NONE                   | No padding                                 |                       |
+ * | 2:1            | 0000000000000110  | CX_SIGN                       | Signature                                  | AES                   |
+ * | 2:1            | 0000000000000100  | CX_ENCRYPT                    | Encryption                                 | AES                   |
+ * | 2:1            | 0000000000000010  | CX_VERIFY                     | Signature verification                     | AES                   |
+ * | 2:1            | 0000000000000000  | CX_DECRYPT                    | Decryption                                 | AES                   |
+ * | 0              | 0000000000000001  | CX_LAST                       | Last block                                 |                       |
  */
+// clang-format on
 #define CX_FLAG
 
 /*
@@ -102,58 +96,58 @@ typedef uint64_t uint64bits_t;
  * Bit 2:1
  */
 #define CX_MASK_SIGCRYPT (3 << 1)
-#define CX_ENCRYPT (2 << 1)
-#define CX_DECRYPT (0 << 1)
-#define CX_SIGN (CX_SIG_MODE | CX_ENCRYPT)
-#define CX_VERIFY (CX_SIG_MODE | CX_DECRYPT)
+#define CX_ENCRYPT       (2 << 1)
+#define CX_DECRYPT       (0 << 1)
+#define CX_SIGN          (CX_SIG_MODE | CX_ENCRYPT)
+#define CX_VERIFY        (CX_SIG_MODE | CX_DECRYPT)
 
 /*
  * Bit 5:3: padding
  */
-#define CX_MASK_PAD (7 << 3)
-#define CX_PAD_NONE (0 << 3)
-#define CX_PAD_ISO9797M1 (1 << 3)
-#define CX_PAD_ISO9797M2 (2 << 3)
-#define CX_PAD_PKCS1_1o5 (3 << 3)
-#define CX_PAD_PKCS1_PSS (4 << 3)
+#define CX_MASK_PAD       (7 << 3)
+#define CX_PAD_NONE       (0 << 3)
+#define CX_PAD_ISO9797M1  (1 << 3)
+#define CX_PAD_ISO9797M2  (2 << 3)
+#define CX_PAD_PKCS1_1o5  (3 << 3)
+#define CX_PAD_PKCS1_PSS  (4 << 3)
 #define CX_PAD_PKCS1_OAEP (5 << 3)
 
 /*
  * Bit 8:6 DES/AES chaining
  */
 #define CX_MASK_CHAIN (7 << 6)
-#define CX_CHAIN_ECB (0 << 6)
-#define CX_CHAIN_CBC (1 << 6)
-#define CX_CHAIN_CTR (2 << 6)
-#define CX_CHAIN_CFB (3 << 6)
-#define CX_CHAIN_OFB (4 << 6)
+#define CX_CHAIN_ECB  (0 << 6)
+#define CX_CHAIN_CBC  (1 << 6)
+#define CX_CHAIN_CTR  (2 << 6)
+#define CX_CHAIN_CFB  (3 << 6)
+#define CX_CHAIN_OFB  (4 << 6)
 
 /*
  * Bit 8:6 ECC variant
  */
 #define CX_MASK_ECC_VARIANT (7 << 6)
-#define CX_NO_CANONICAL (1 << 6)
+#define CX_NO_CANONICAL     (1 << 6)
 
 /*
  * Bit 11:9
  */
-#define CX_MASK_RND (7 << 9)
-#define CX_RND_PRNG (1 << 9)
-#define CX_RND_TRNG (2 << 9)
-#define CX_RND_RFC6979 (3 << 9)
+#define CX_MASK_RND     (7 << 9)
+#define CX_RND_PRNG     (1 << 9)
+#define CX_RND_TRNG     (2 << 9)
+#define CX_RND_RFC6979  (3 << 9)
 #define CX_RND_PROVIDED (4 << 9)
 
 /*
  * Bit 14:12
  */
-#define CX_MASK_EC (7 << 12)
-#define CX_ECDH_POINT (1 << 12)
-#define CX_ECDH_X (2 << 12)
+#define CX_MASK_EC               (7 << 12)
+#define CX_ECDH_POINT            (1 << 12)
+#define CX_ECDH_X                (2 << 12)
 #define CX_ECSCHNORR_ISO14888_XY (3 << 12)
-#define CX_ECSCHNORR_ISO14888_X (4 << 12)
-#define CX_ECSCHNORR_BSI03111 (5 << 12)
-#define CX_ECSCHNORR_LIBSECP (6 << 12)
-#define CX_ECSCHNORR_Z (7 << 12)
+#define CX_ECSCHNORR_ISO14888_X  (4 << 12)
+#define CX_ECSCHNORR_BSI03111    (5 << 12)
+#define CX_ECSCHNORR_LIBSECP     (6 << 12)
+#define CX_ECSCHNORR_Z           (7 << 12)
 /*
  * Bit 15
  */

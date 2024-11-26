@@ -21,6 +21,7 @@ typedef struct {
     asset_info_ext_t asset;
 } parser_outputs_t;
 
+// clang-format off
 static const contract_test_data_t contract_test_data[] = {
     // tether.to USDt (Tether USD)
     {
@@ -119,10 +120,11 @@ static const contract_test_data_t contract_test_data[] = {
         }
     },
 };
+// clang-format on
 
 static bool parse_contract(const char *contract, parser_outputs_t *outs) {
     contract_parser_context_t ctx;
-    buffer_t contract_buffer = buffer_create((void*)contract, strlen(contract));
+    buffer_t contract_buffer = buffer_create((void *) contract, strlen(contract));
 
     if (contract_parser_init(&ctx, NULL, &outs->asset)) {
         contract_parser_process(&ctx, &contract_buffer);
@@ -133,7 +135,7 @@ static bool parse_contract(const char *contract, parser_outputs_t *outs) {
 
 static bool parse_contract_basic_info(const char *contract, parser_outputs_t *outs) {
     contract_parser_context_t ctx;
-    buffer_t contract_buffer = buffer_create((void*)contract, strlen(contract));
+    buffer_t contract_buffer = buffer_create((void *) contract, strlen(contract));
 
     if (contract_parser_init(&ctx, &outs->asset.info, NULL)) {
         contract_parser_process(&ctx, &contract_buffer);
@@ -149,13 +151,13 @@ static void test_contract_parser_valid(void **state) {
     const contract_test_data_t *p_vect = contract_test_data;
     parser_outputs_t outs;
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         memset(&outs, 0xee, sizeof(outs));
         bool res = parse_contract(p_vect->contract_str, &outs);
         assert_true(res);
         assert_memory_equal(outs.hash, p_vect->hash, sizeof(outs.hash));
         assert_string_equal(outs.asset.info.ticker, p_vect->asset.info.ticker);
-        assert_int_equal((int)outs.asset.info.decimals, (int)p_vect->asset.info.decimals);
+        assert_int_equal((int) outs.asset.info.decimals, (int) p_vect->asset.info.decimals);
         assert_string_equal(outs.asset.name, p_vect->asset.name);
         assert_string_equal(outs.asset.domain, p_vect->asset.domain);
     }
@@ -168,18 +170,18 @@ static void test_contract_parser_basic_info_only(void **state) {
     const contract_test_data_t *p_vect = contract_test_data;
     parser_outputs_t outs;
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         memset(&outs, 0xee, sizeof(outs));
         bool res = parse_contract_basic_info(p_vect->contract_str, &outs);
         assert_true(res);
         assert_memory_equal(outs.hash, p_vect->hash, sizeof(outs.hash));
         assert_string_equal(outs.asset.info.ticker, p_vect->asset.info.ticker);
-        assert_int_equal((int)outs.asset.info.decimals, (int)p_vect->asset.info.decimals);
+        assert_int_equal((int) outs.asset.info.decimals, (int) p_vect->asset.info.decimals);
 
         // Check that remaining bytes of extended asset information are unchanged
-        const uint8_t *p_ext_byte = (const uint8_t*)&outs.asset + sizeof(outs.asset.info);
-        for (size_t j = 0; j <sizeof(outs.asset) - sizeof(outs.asset.info); ++j) {
-            assert_int_equal((int)*p_ext_byte, 0xee);
+        const uint8_t *p_ext_byte = (const uint8_t *) &outs.asset + sizeof(outs.asset.info);
+        for (size_t j = 0; j < sizeof(outs.asset) - sizeof(outs.asset.info); ++j) {
+            assert_int_equal((int) *p_ext_byte, 0xee);
             ++p_ext_byte;
         }
     }
@@ -188,25 +190,25 @@ static void test_contract_parser_basic_info_only(void **state) {
 static void test_contract_parser_missing_fields(void **state) {
     (void) state;
     static const char complete[] =
-        "{\"entity\":{\"domain\":\"tether.to\"},"\
-        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
-        "\"name\":\"Tether USD\","\
-        "\"precision\":8,"\
-        "\"ticker\":\"USDt\","\
+        "{\"entity\":{\"domain\":\"tether.to\"},"
+        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
+        "\"name\":\"Tether USD\","
+        "\"precision\":8,"
+        "\"ticker\":\"USDt\","
         "\"version\":0}";
 
     static const char missing_precision[] =
-        "{\"entity\":{\"domain\":\"tether.to\"},"\
-        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
-        "\"name\":\"Tether USD\","\
-        "\"ticker\":\"USDt\","\
+        "{\"entity\":{\"domain\":\"tether.to\"},"
+        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
+        "\"name\":\"Tether USD\","
+        "\"ticker\":\"USDt\","
         "\"version\":0}";
 
     static const char missing_name[] =
-        "{\"entity\":{\"domain\":\"tether.to\"},"\
-        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
-        "\"precision\":8,"\
-        "\"ticker\":\"USDt\","\
+        "{\"entity\":{\"domain\":\"tether.to\"},"
+        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
+        "\"precision\":8,"
+        "\"ticker\":\"USDt\","
         "\"version\":0}";
 
     parser_outputs_t outs;
@@ -219,18 +221,18 @@ static void test_contract_parser_skip_nested_arrays(void **state) {
     (void) state;
 
     static const char contract[] =
-        "{\"entity\":{\"domain\":\"liquid.beer\"},"\
-        "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","\
-        "\"name\":\"Atomic Swap Pint\","\
-        "\"arr\":[1,2,3,[\"a\",\"b\",[\"x\",\"y\",\"z\"],[],\"c\"],4,[]],"\
-        "\"precision\":2,"\
-        "\"ticker\":\"ASP\","\
+        "{\"entity\":{\"domain\":\"liquid.beer\"},"
+        "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","
+        "\"name\":\"Atomic Swap Pint\","
+        "\"arr\":[1,2,3,[\"a\",\"b\",[\"x\",\"y\",\"z\"],[],\"c\"],4,[]],"
+        "\"precision\":2,"
+        "\"ticker\":\"ASP\","
         "\"version\":0}";
 
     parser_outputs_t outs;
     assert_true(parse_contract(contract, &outs));
     assert_string_equal(outs.asset.info.ticker, "ASP");
-    assert_int_equal((int)outs.asset.info.decimals, 2);
+    assert_int_equal((int) outs.asset.info.decimals, 2);
     assert_string_equal(outs.asset.name, "Atomic Swap Pint");
     assert_string_equal(outs.asset.domain, "liquid.beer");
 }
@@ -239,18 +241,18 @@ static void test_contract_parser_skip_nested_objects(void **state) {
     (void) state;
 
     static const char contract[] =
-        "{\"entity\":{\"domain\":\"liquid.beer\"},"\
-        "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","\
-        "\"name\":\"Atomic Swap Pint\","\
-        "\"precision\":2,"\
-        "\"obj\":{\"a\":1,\"b\":{\"x\":{\"xx\":true},\"y\"},\"c\":{}},"\
-        "\"ticker\":\"ASP\","\
+        "{\"entity\":{\"domain\":\"liquid.beer\"},"
+        "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","
+        "\"name\":\"Atomic Swap Pint\","
+        "\"precision\":2,"
+        "\"obj\":{\"a\":1,\"b\":{\"x\":{\"xx\":true},\"y\"},\"c\":{}},"
+        "\"ticker\":\"ASP\","
         "\"version\":0}";
 
     parser_outputs_t outs;
     assert_true(parse_contract(contract, &outs));
     assert_string_equal(outs.asset.info.ticker, "ASP");
-    assert_int_equal((int)outs.asset.info.decimals, 2);
+    assert_int_equal((int) outs.asset.info.decimals, 2);
     assert_string_equal(outs.asset.name, "Atomic Swap Pint");
     assert_string_equal(outs.asset.domain, "liquid.beer");
 }
@@ -259,16 +261,16 @@ static void test_contract_parser_no_ticker(void **state) {
     (void) state;
 
     static const char contract[] =
-        "{\"entity\":{\"domain\":\"tether.to\"},"\
-        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
-        "\"name\":\"Tether USD\","\
-        "\"precision\":8,"\
+        "{\"entity\":{\"domain\":\"tether.to\"},"
+        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
+        "\"name\":\"Tether USD\","
+        "\"precision\":8,"
         "\"version\":0}";
 
     parser_outputs_t outs;
     assert_true(parse_contract(contract, &outs));
     assert_string_equal(outs.asset.info.ticker, UNKNOWN_ASSET_TICKER);
-    assert_int_equal((int)outs.asset.info.decimals, 8);
+    assert_int_equal((int) outs.asset.info.decimals, 8);
     assert_string_equal(outs.asset.name, "Tether USD");
     assert_string_equal(outs.asset.domain, "tether.to");
 }
@@ -277,42 +279,42 @@ static void test_contract_parser_limits(void **state) {
     (void) state;
     parser_outputs_t outs;
 
-    { // Maximum values
+    {  // Maximum values
         static const char contract[] =
-            "{\"entity\":{\"domain\":\"abcdefghijklmnopqrstuvwxyz.abcd\"},"\
-            "\"name\":\"Abcdefghijklmnopqrstuvwxyzabcde\","\
-            "\"precision\":19,"\
+            "{\"entity\":{\"domain\":\"abcdefghijklmnopqrstuvwxyz.abcd\"},"
+            "\"name\":\"Abcdefghijklmnopqrstuvwxyzabcde\","
+            "\"precision\":19,"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_true(parse_contract(contract, &outs));
         assert_string_equal(outs.asset.info.ticker, "ABCDEFGHIJ");
-        assert_int_equal((int)outs.asset.info.decimals, 19);
+        assert_int_equal((int) outs.asset.info.decimals, 19);
         assert_string_equal(outs.asset.name, "Abcdefghijklmnopqrstuvwxyzabcde");
         assert_string_equal(outs.asset.domain, "abcdefghijklmnopqrstuvwxyz.abcd");
     }
 
-    { // Minimum values
+    {  // Minimum values
         static const char contract[] =
-            "{\"entity\":{\"domain\":\"a\"},"\
-            "\"name\":\"A\","\
-            "\"precision\":0,"\
+            "{\"entity\":{\"domain\":\"a\"},"
+            "\"name\":\"A\","
+            "\"precision\":0,"
             "\"ticker\":\"A\"}";
         assert_true(parse_contract(contract, &outs));
         assert_string_equal(outs.asset.info.ticker, "A");
-        assert_int_equal((int)outs.asset.info.decimals, 0);
+        assert_int_equal((int) outs.asset.info.decimals, 0);
         assert_string_equal(outs.asset.name, "A");
         assert_string_equal(outs.asset.domain, "a");
     }
 
-    { // Precision higher than allowed
+    {  // Precision higher than allowed
         static const char contract[] =
-            "{\"precision\":20,"\
+            "{\"precision\":20,"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_false(parse_contract(contract, &outs));
     }
 
-    { // Precision lower than allowed
+    {  // Precision lower than allowed
         static const char contract[] =
-            "{\"precision\":-1,"\
+            "{\"precision\":-1,"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_false(parse_contract(contract, &outs));
     }
@@ -322,30 +324,30 @@ static void test_contract_parser_corrupted(void **state) {
     (void) state;
     parser_outputs_t outs;
 
-    { // Missing opening curly bracket
+    {  // Missing opening curly bracket
         static const char contract[] =
-            "\"precision\":19,"\
+            "\"precision\":19,"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_false(parse_contract(contract, &outs));
     }
 
-    { // Missing closing curly bracket
+    {  // Missing closing curly bracket
         static const char contract[] =
-            "{\"precision\":19,"\
+            "{\"precision\":19,"
             "\"ticker\":\"ABCDEFGHIJ\"";
         assert_false(parse_contract(contract, &outs));
     }
 
-    { // Missing comma
+    {  // Missing comma
         static const char contract[] =
-            "{\"precision\":19"\
+            "{\"precision\":19"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_false(parse_contract(contract, &outs));
     }
 
-    { // Unexpected whitespace
+    {  // Unexpected whitespace
         static const char contract[] =
-            "{ \"precision\":19,"\
+            "{ \"precision\":19,"
             "\"ticker\":\"ABCDEFGHIJ\"}";
         assert_false(parse_contract(contract, &outs));
     }

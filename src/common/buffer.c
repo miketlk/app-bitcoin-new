@@ -270,11 +270,11 @@ void *buffer_alloc(buffer_t *buffer, size_t size, bool aligned) {
 
 uint8_t *buffer_get_cur_aligned(const buffer_t *buffer) {
     uint8_t *cur = buffer->ptr + buffer->offset;
-    uintptr_t d = (uintptr_t)cur % BUFFER_ALIGN_BYTES;
+    uintptr_t d = (uintptr_t) cur % BUFFER_ALIGN_BYTES;
 
     if (d != 0) {
         cur += BUFFER_ALIGN_BYTES - d;
-        return (uintptr_t)(cur - buffer->ptr) < (uintptr_t)buffer->size ? cur : NULL;
+        return (uintptr_t) (cur - buffer->ptr) < (uintptr_t) buffer->size ? cur : NULL;
     }
     return cur;
 }

@@ -1,22 +1,21 @@
 #pragma once
 
-
 /*******************************************************************************
-*   Ledger Nano S - Secure firmware
-*   (c) 2019 Ledger
-*
-*  Licensed under the Apache License, Version 2.0 (the "License");
-*  you may not use this file except in compliance with the License.
-*  You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-*  Unless required by applicable law or agreed to in writing, software
-*  distributed under the License is distributed on an "AS IS" BASIS,
-*  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-*  See the License for the specific language governing permissions and
-*  limitations under the License.
-********************************************************************************/
+ *   Ledger Nano S - Secure firmware
+ *   (c) 2019 Ledger
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ ********************************************************************************/
 
 #ifndef OS_H
 #define OS_H
@@ -29,68 +28,62 @@
 // -----------------------------------------------------------------------
 // - BASIC MATHS
 // -----------------------------------------------------------------------
-#define U2(hi, lo) ((((hi)&0xFFu) << 8) | ((lo)&0xFFu))
-#define U4(hi3, hi2, lo1, lo0)                                                 \
-  ((((hi3)&0xFFu) << 24) | (((hi2)&0xFFu) << 16) | (((lo1)&0xFFu) << 8) |      \
-   ((lo0)&0xFFu))
+#define U2(hi, lo) ((((hi) &0xFFu) << 8) | ((lo) &0xFFu))
+#define U4(hi3, hi2, lo1, lo0) \
+    ((((hi3) &0xFFu) << 24) | (((hi2) &0xFFu) << 16) | (((lo1) &0xFFu) << 8) | ((lo0) &0xFFu))
 #define U2BE(buf, off) ((((buf)[off] & 0xFFu) << 8) | ((buf)[off + 1] & 0xFFu))
 #define U2LE(buf, off) ((((buf)[off + 1] & 0xFFu) << 8) | ((buf)[off] & 0xFFu))
 #define U4BE(buf, off) ((U2BE(buf, off) << 16) | (U2BE(buf, off + 2) & 0xFFFFu))
 #define U4LE(buf, off) ((U2LE(buf, off + 2) << 16) | (U2LE(buf, off) & 0xFFFFu))
-#define MIN(x, y) ((x) < (y) ? (x) : (y))
-#define MAX(x, y) ((x) > (y) ? (x) : (y))
-#define IS_POW2(x) (((x) & ((x)-1)) == 0)
-#define UPPER_ALIGN(adr, align, type)                                          \
-  (type)((type)((type)(adr) +                                                  \
-                (type)((type)((type)MAX((type)(align), (type)1UL)) -           \
-                       (type)1UL)) &                                           \
-         (type)(~(type)((type)((type)MAX(((type)align), (type)1UL)) -          \
-                        (type)1UL)))
-#define LOWER_ALIGN(adr, align, type)                                          \
-  ((type)(adr) &                                                               \
-   (type)((type) ~(type)(((type)MAX((type)(align), (type)1UL)) - (type)1UL)))
-#define U4BE_ENCODE(buf, off, value)                                           \
-  {                                                                            \
-    (buf)[(off) + 0] = ((value) >> 24) & 0xFF;                                 \
-    (buf)[(off) + 1] = ((value) >> 16) & 0xFF;                                 \
-    (buf)[(off) + 2] = ((value) >> 8) & 0xFF;                                  \
-    (buf)[(off) + 3] = ((value)) & 0xFF;                                       \
-  }
-#define U4LE_ENCODE(buf, off, value)                                           \
-  {                                                                            \
-    (buf)[(off) + 3] = ((value) >> 24) & 0xFF;                                 \
-    (buf)[(off) + 2] = ((value) >> 16) & 0xFF;                                 \
-    (buf)[(off) + 1] = ((value) >> 8) & 0xFF;                                  \
-    (buf)[(off) + 0] = ((value)) & 0xFF;                                       \
-  }
-#define U2BE_ENCODE(buf, off, value)                                           \
-  {                                                                            \
-    (buf)[(off) + 0] = ((value) >> 8) & 0xFF;                                  \
-    (buf)[(off) + 1] = ((value)) & 0xFF;                                       \
-  }
-#define U2LE_ENCODE(buf, off, value)                                           \
-  {                                                                            \
-    (buf)[(off) + 1] = ((value) >> 8) & 0xFF;                                  \
-    (buf)[(off) + 0] = ((value)) & 0xFF;                                       \
-  }
+#define MIN(x, y)      ((x) < (y) ? (x) : (y))
+#define MAX(x, y)      ((x) > (y) ? (x) : (y))
+#define IS_POW2(x)     (((x) & ((x) -1)) == 0)
+#define UPPER_ALIGN(adr, align, type)                                                       \
+    (type)((type) ((type) (adr) +                                                           \
+                   (type) ((type) ((type) MAX((type) (align), (type) 1UL)) - (type) 1UL)) & \
+           (type) (~(type) ((type) ((type) MAX(((type) align), (type) 1UL)) - (type) 1UL)))
+#define LOWER_ALIGN(adr, align, type) \
+    ((type) (adr) & (type) ((type) ~(type) (((type) MAX((type) (align), (type) 1UL)) - (type) 1UL)))
+#define U4BE_ENCODE(buf, off, value)               \
+    {                                              \
+        (buf)[(off) + 0] = ((value) >> 24) & 0xFF; \
+        (buf)[(off) + 1] = ((value) >> 16) & 0xFF; \
+        (buf)[(off) + 2] = ((value) >> 8) & 0xFF;  \
+        (buf)[(off) + 3] = ((value)) & 0xFF;       \
+    }
+#define U4LE_ENCODE(buf, off, value)               \
+    {                                              \
+        (buf)[(off) + 3] = ((value) >> 24) & 0xFF; \
+        (buf)[(off) + 2] = ((value) >> 16) & 0xFF; \
+        (buf)[(off) + 1] = ((value) >> 8) & 0xFF;  \
+        (buf)[(off) + 0] = ((value)) & 0xFF;       \
+    }
+#define U2BE_ENCODE(buf, off, value)              \
+    {                                             \
+        (buf)[(off) + 0] = ((value) >> 8) & 0xFF; \
+        (buf)[(off) + 1] = ((value)) & 0xFF;      \
+    }
+#define U2LE_ENCODE(buf, off, value)              \
+    {                                             \
+        (buf)[(off) + 1] = ((value) >> 8) & 0xFF; \
+        (buf)[(off) + 0] = ((value)) & 0xFF;      \
+    }
 
 /**
  * Helper to perform compilation time assertions
  */
-#if !defined(SYSCALL_GENERATE) &&                                              \
-    (defined(__clang__) ||                                                     \
-     (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 6))))
+#if !defined(SYSCALL_GENERATE) && \
+    (defined(__clang__) || (__GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ >= 6))))
 #define CCASSERT(id, predicate) _Static_assert(predicate, #id)
 #else
-#define CCASSERT(id, predicate) __x_CCASSERT_LINE(predicate, id, __LINE__)
-#define __x_CCASSERT_LINE(predicate, file, line)                               \
-  __xx_CCASSERT_LINE(predicate, file, line)
-#define __xx_CCASSERT_LINE(predicate, file, line)                              \
-  typedef char CCASSERT_##file##_line_##line[((predicate) ? 1 : -1)]
+#define CCASSERT(id, predicate)                  __x_CCASSERT_LINE(predicate, id, __LINE__)
+#define __x_CCASSERT_LINE(predicate, file, line) __xx_CCASSERT_LINE(predicate, file, line)
+#define __xx_CCASSERT_LINE(predicate, file, line) \
+    typedef char CCASSERT_##file##_line_##line[((predicate) ? 1 : -1)]
 #endif
 
 #ifdef macro_offsetof
-#define offsetof(type, field) ((unsigned int)&(((type *)NULL)->field))
+#define offsetof(type, field) ((unsigned int) &(((type *) NULL)->field))
 #endif
 
 /**
@@ -109,30 +102,29 @@
 // error type definition
 typedef unsigned short exception_t;
 
-
 //#define macro_offsetof // already defined in stddef.h
 #define OS_LITTLE_ENDIAN
 #define NATIVE_64BITS
 #define NVM_ERASED_WORD_VALUE 0xFFFFFFFFUL
 
-#define WIDE // const // don't !!
-#define WIDE_AS_INT unsigned long int
-#define REENTRANT(x) x //
+#define WIDE  // const // don't !!
+#define WIDE_AS_INT  unsigned long int
+#define REENTRANT(x) x  //
 
 #include <setjmp.h>
 // GCC/LLVM declare way too big jmp context, reduce them to what is used on CM0+
 typedef struct try_context_s try_context_t;
 
 struct try_context_s {
-  // jmp context to backup (in increasing order address: r4, r5, r6, r7, r8, r9,
-  // r10, r11, SP, setjmpcallPC)
-  jmp_buf jmp_buf;
+    // jmp context to backup (in increasing order address: r4, r5, r6, r7, r8, r9,
+    // r10, r11, SP, setjmpcallPC)
+    jmp_buf jmp_buf;
 
-  // link to the previous jmp_buf context
-  try_context_t *previous;
+    // link to the previous jmp_buf context
+    try_context_t *previous;
 
-  // current exception
-  exception_t ex;
+    // current exception
+    exception_t ex;
 };
 
 // borrowed from setjmp.h
@@ -148,7 +140,7 @@ int setjmp(jmp_buf __jmpb);
 #include "stdint.h"
 // #include <core_sc000.h>
 
-#define UNUSED(x) (void)x
+#define UNUSED(x) (void) x
 
 #endif
 #if defined(ST33)
@@ -158,23 +150,23 @@ int setjmp(jmp_buf __jmpb);
 //#define macro_offsetof // already defined in stddef.h
 #define OS_LITTLE_ENDIAN
 #define NATIVE_64BITS
-#define WIDE // const // don't !!
-#define WIDE_AS_INT unsigned long int
-#define REENTRANT(x) x //
+#define WIDE  // const // don't !!
+#define WIDE_AS_INT  unsigned long int
+#define REENTRANT(x) x  //
 
 //#include <setjmp.h>
 // GCC/LLVM declare way too big jmp context, reduce them to what is used on CM0+
 typedef struct try_context_s try_context_t;
 typedef unsigned int jmp_buf[10];
 struct try_context_s {
-  // jmp context to backup (in increasing order address: r4, r5, r6, r7, r8, r9,
-  // r10, r11, SP, setjmpcallPC)
-  jmp_buf jmp_buf;
+    // jmp context to backup (in increasing order address: r4, r5, r6, r7, r8, r9,
+    // r10, r11, SP, setjmpcallPC)
+    jmp_buf jmp_buf;
 
-  // link to the previous jmp_buf context
-  try_context_t *previous;
-  // current exception
-  exception_t ex;
+    // link to the previous jmp_buf context
+    try_context_t *previous;
+    // current exception
+    exception_t ex;
 };
 
 // borrowed from setjmp.hm0
@@ -190,18 +182,18 @@ int setjmp(jmp_buf __jmpb);
 #include "stdint.h"
 #include <core_sc300.h>
 
-#define UNUSED(x) (void)x
+#define UNUSED(x) (void) x
 
 #endif
 
 // #include "os_apilevel.h"
 
 #ifndef NULL
-#define NULL ((void *)0)
+#define NULL ((void *) 0)
 #endif
 
 #ifndef WIDE_NULL
-#define WIDE_NULL ((void WIDE *)0)
+#define WIDE_NULL ((void WIDE *) 0)
 #endif
 
 // Position-independent code reference
@@ -212,10 +204,10 @@ int setjmp(jmp_buf __jmpb);
 #define PIC(x) (x)
 #else
 #ifndef PIC
-#define PIC(x) pic((unsigned int)x)
+#define PIC(x) pic((unsigned int) x)
 unsigned int pic(unsigned int linked_address);
 #endif
-#endif // SKIP_FOR_CMOCKA
+#endif  // SKIP_FOR_CMOCKA
 
 #ifndef SYSCALL
 // #define SYSCALL syscall
@@ -292,7 +284,7 @@ unsigned int pic(unsigned int linked_address);
 #define APPLICATION_FLAG_DERIVE_MASTER 0x10
 
 #define APPLICATION_FLAG_SHARED_NVRAM 0x20
-#define APPLICATION_FLAG_GLOBAL_PIN 0x40
+#define APPLICATION_FLAG_GLOBAL_PIN   0x40
 
 // This flag means the application is meant to be debugged and allows for dump
 // or core ARM register in case of a fault detection
@@ -370,8 +362,7 @@ unsigned int pic(unsigned int linked_address);
 #endif
 
 #ifdef CUSTOM_IO_APDU_BUFFER_SIZE
-#define IO_APDU_BUFFER_SIZE                                                    \
-  MAX(IMPL_IO_APDU_BUFFER_SIZE, CUSTOM_IO_APDU_BUFFER_SIZE)
+#define IO_APDU_BUFFER_SIZE MAX(IMPL_IO_APDU_BUFFER_SIZE, CUSTOM_IO_APDU_BUFFER_SIZE)
 #else
 #define IO_APDU_BUFFER_SIZE IMPL_IO_APDU_BUFFER_SIZE
 #endif
@@ -392,26 +383,21 @@ void os_boot(void);
 /* ----------------------------------------------------------------------- */
 /* -                            OS FUNCTIONS                             - */
 /* ----------------------------------------------------------------------- */
-#define os_swap_u16(u16)                                                       \
-  ((((unsigned short)(u16) << 8) & 0xFF00U) |                                  \
-   (((unsigned short)(u16) >> 8) & 0x00FFU))
+#define os_swap_u16(u16) \
+    ((((unsigned short) (u16) << 8) & 0xFF00U) | (((unsigned short) (u16) >> 8) & 0x00FFU))
 
-#define os_swap_u32(u32)                                                       \
-  (((unsigned long int)(u32) >> 24) |                                          \
-   (((unsigned long int)(u32) << 8) & 0x00FF0000UL) |                          \
-   (((unsigned long int)(u32) >> 8) & 0x0000FF00UL) |                          \
-   ((unsigned long int)(u32) << 24))
+#define os_swap_u32(u32)                                                                     \
+    (((unsigned long int) (u32) >> 24) | (((unsigned long int) (u32) << 8) & 0x00FF0000UL) | \
+     (((unsigned long int) (u32) >> 8) & 0x0000FF00UL) | ((unsigned long int) (u32) << 24))
 
-REENTRANT(void os_memmove(void *dst, const void WIDE *src,
-                          unsigned int length));
+REENTRANT(void os_memmove(void *dst, const void WIDE *src, unsigned int length));
 #define os_memcpy os_memmove
 
 void os_memset(void *dst, unsigned char c, unsigned int length);
 
 void os_memset4(void *dst, unsigned int initval, unsigned int nbintval);
 
-char os_memcmp(const void WIDE *buf1, const void WIDE *buf2,
-               unsigned int length);
+char os_memcmp(const void WIDE *buf1, const void WIDE *buf2, unsigned int length);
 
 void os_xor(void *dst, void WIDE *src1, void WIDE *src2, unsigned int length);
 
@@ -432,28 +418,26 @@ SYSCALL REENTRANT(void halt(void));
 
 // send tx_len bytes (atr or rapdu) and retrieve the length of the next command
 // apdu (over the requested channel)
-#define CHANNEL_APDU 0
-#define CHANNEL_KEYBOARD 1
-#define CHANNEL_SPI 2
+#define CHANNEL_APDU           0
+#define CHANNEL_KEYBOARD       1
+#define CHANNEL_SPI            2
 #define IO_RESET_AFTER_REPLIED 0x80
-#define IO_RECEIVE_DATA 0x40
-#define IO_RETURN_AFTER_TX 0x20
-#define IO_ASYNCH_REPLY                                                        \
-  0x10 // avoid apdu state reset if tx_len == 0 when we're expected to reply
-#define IO_FINISHED 0x08 // inter task communication value
-#define IO_FLAGS 0xF8
-unsigned short io_exchange(unsigned char channel_and_flags,
-                           unsigned short tx_len);
+#define IO_RECEIVE_DATA        0x40
+#define IO_RETURN_AFTER_TX     0x20
+#define IO_ASYNCH_REPLY        0x10  // avoid apdu state reset if tx_len == 0 when we're expected to reply
+#define IO_FINISHED            0x08  // inter task communication value
+#define IO_FLAGS               0xF8
+unsigned short io_exchange(unsigned char channel_and_flags, unsigned short tx_len);
 
 typedef enum {
-  IO_APDU_MEDIA_NONE = 0, // not correctly in an apdu exchange
-  IO_APDU_MEDIA_USB_HID = 1,
-  IO_APDU_MEDIA_BLE,
-  IO_APDU_MEDIA_NFC,
-  IO_APDU_MEDIA_USB_CCID,
-  IO_APDU_MEDIA_USB_WEBUSB,
-  IO_APDU_MEDIA_RAW,
-  IO_APDU_MEDIA_U2F,
+    IO_APDU_MEDIA_NONE = 0,  // not correctly in an apdu exchange
+    IO_APDU_MEDIA_USB_HID = 1,
+    IO_APDU_MEDIA_BLE,
+    IO_APDU_MEDIA_NFC,
+    IO_APDU_MEDIA_USB_CCID,
+    IO_APDU_MEDIA_USB_WEBUSB,
+    IO_APDU_MEDIA_RAW,
+    IO_APDU_MEDIA_U2F,
 } io_apdu_media_t;
 
 #ifndef USB_SEGMENT_SIZE
@@ -468,8 +452,7 @@ typedef enum {
 #endif
 
 // common usb endpoint buffer
-extern unsigned char
-    G_io_usb_ep_buffer[MAX(USB_SEGMENT_SIZE, BLE_SEGMENT_SIZE)];
+extern unsigned char G_io_usb_ep_buffer[MAX(USB_SEGMENT_SIZE, BLE_SEGMENT_SIZE)];
 
 /**
  * Return 1 when the event has been processed, 0 else
@@ -495,12 +478,12 @@ SYSCALL void nvm_write(void WIDE *dst_adr PLENGTH(src_len),
                        unsigned int src_len);
 // the priviledged version of nvm_write, called by bolos itself
 void nvm_write_os(void WIDE *dst_adr PLENGTH(src_len),
-                  void WIDE *src_adr PLENGTH(src_len), unsigned int src_len);
+                  void WIDE *src_adr PLENGTH(src_len),
+                  unsigned int src_len);
 
 // program a page with the content of the nvm_page_buffer
 // HAL for the high level NVM management functions
-SUDOCALL PERMISSION(APPLICATION_FLAG_ISSUER) void nvm_write_page(
-    unsigned char WIDE *page_adr);
+SUDOCALL PERMISSION(APPLICATION_FLAG_ISSUER) void nvm_write_page(unsigned char WIDE *page_adr);
 void svc_nvm_write_page(unsigned char WIDE *page_adr);
 
 /* ----------------------------------------------------------------------- */
@@ -508,7 +491,7 @@ void svc_nvm_write_page(unsigned char WIDE *page_adr);
 /* ----------------------------------------------------------------------- */
 
 // workaround to make sure defines are replaced by their value for example
-#define CPP_CONCAT(x, y) CPP_CONCAT_x(x, y)
+#define CPP_CONCAT(x, y)   CPP_CONCAT_x(x, y)
 #define CPP_CONCAT_x(x, y) x##y
 
 SUDOCALL PERMISSION(APPLICATION_FLAG_NONE) try_context_t *try_context_get(void);
@@ -518,77 +501,76 @@ try_context_t *svc_try_context_get(void);
 // never dereferenced within the SUDOCALL.
 //                and is checked before being used in all SYSCALL that would use
 //                it.
-SUDOCALL PERMISSION(APPLICATION_FLAG_NONE)
-    try_context_t *try_context_set(try_context_t *context);
+SUDOCALL PERMISSION(APPLICATION_FLAG_NONE) try_context_t *try_context_set(try_context_t *context);
 try_context_t *svc_try_context_set(try_context_t *tryctx);
 
 // -----------------------------------------------------------------------
 // - BEGIN TRY
 // -----------------------------------------------------------------------
 
-#define BEGIN_TRY_L(L)                                                         \
-  {                                                                            \
-    try_context_t __try##L;
+#define BEGIN_TRY_L(L) \
+    {                  \
+        try_context_t __try##L;
 
 // -----------------------------------------------------------------------
 // - TRY
 // -----------------------------------------------------------------------
-#define TRY_L(L)                                                               \
-  /* previous exception context chain is saved within the setjmp r9 save */    \
-  __try                                                                        \
-    ##L.ex = setjmp(__try##L.jmp_buf);                                         \
-  if (__try##L.ex == 0) {                                                      \
-    __try                                                                      \
-      ##L.previous = try_context_set(&__try##L);
+#define TRY_L(L)                                                              \
+    /* previous exception context chain is saved within the setjmp r9 save */ \
+    __try                                                                     \
+        ##L.ex = setjmp(__try##L.jmp_buf);                                    \
+    if (__try##L.ex == 0) {                                                   \
+        __try                                                                 \
+            ##L.previous = try_context_set(&__try##L);
 
 // -----------------------------------------------------------------------
 // - EXCEPTION CATCH
 // -----------------------------------------------------------------------
-#define CATCH_L(L, x)                                                          \
-  goto CPP_CONCAT(__FINALLY, L);                                               \
-  }                                                                            \
-  else if (__try##L.ex == x) {                                                 \
-    __try                                                                      \
-      ##L.ex = 0;                                                              \
-    CLOSE_TRY_L(L);
+#define CATCH_L(L, x)              \
+    goto CPP_CONCAT(__FINALLY, L); \
+    }                              \
+    else if (__try##L.ex == x) {   \
+        __try                      \
+            ##L.ex = 0;            \
+        CLOSE_TRY_L(L);
 
 // -----------------------------------------------------------------------
 // - EXCEPTION CATCH OTHER
 // -----------------------------------------------------------------------
-#define CATCH_OTHER_L(L, e)                                                    \
-  goto CPP_CONCAT(__FINALLY, L);                                               \
-  }                                                                            \
-  else {                                                                       \
-    exception_t e;                                                             \
-    e = __try##L.ex;                                                           \
-    __try                                                                      \
-      ##L.ex = 0;                                                              \
-    CLOSE_TRY_L(L);
+#define CATCH_OTHER_L(L, e)        \
+    goto CPP_CONCAT(__FINALLY, L); \
+    }                              \
+    else {                         \
+        exception_t e;             \
+        e = __try##L.ex;           \
+        __try                      \
+            ##L.ex = 0;            \
+        CLOSE_TRY_L(L);
 
 // -----------------------------------------------------------------------
 // - EXCEPTION CATCH ALL
 // -----------------------------------------------------------------------
-#define CATCH_ALL_L(L)                                                         \
-  goto CPP_CONCAT(__FINALLY, L);                                               \
-  }                                                                            \
-  else {                                                                       \
-    __try                                                                      \
-      ##L.ex = 0;                                                              \
-    CLOSE_TRY_L(L);
+#define CATCH_ALL_L(L)             \
+    goto CPP_CONCAT(__FINALLY, L); \
+    }                              \
+    else {                         \
+        __try                      \
+            ##L.ex = 0;            \
+        CLOSE_TRY_L(L);
 
 // -----------------------------------------------------------------------
 // - FINALLY
 // -----------------------------------------------------------------------
-#define FINALLY_L(L)                                                           \
-  goto CPP_CONCAT(__FINALLY, L);                                               \
-  }                                                                            \
-  CPP_CONCAT(__FINALLY, L)                                                     \
-      : /* has TRY clause ended without nested throw ? */                      \
-        if (try_context_get() == &__try##L) {                                  \
-    /* restore previous context manually (as a throw would have when caught)   \
-     */                                                                        \
-    CLOSE_TRY_L(L);                                                            \
-  }
+#define FINALLY_L(L)                                                             \
+    goto CPP_CONCAT(__FINALLY, L);                                               \
+    }                                                                            \
+    CPP_CONCAT(__FINALLY, L)                                                     \
+        : /* has TRY clause ended without nested throw ? */                      \
+          if (try_context_get() == &__try##L) {                                  \
+        /* restore previous context manually (as a throw would have when caught) \
+         */                                                                      \
+        CLOSE_TRY_L(L);                                                          \
+    }
 // -----------------------------------------------------------------------
 // - CLOSE TRY
 // -----------------------------------------------------------------------
@@ -600,13 +582,13 @@ try_context_t *svc_try_context_set(try_context_t *tryctx);
 // -----------------------------------------------------------------------
 // - END TRY
 // -----------------------------------------------------------------------
-#define END_TRY_L(L)                                                           \
-  /* nested throw not consumed ? (by CATCH* clause) */                         \
-  if (__try##L.ex != 0) {                                                      \
-    /* rethrow */                                                              \
-    THROW_L(L, __try##L.ex);                                                   \
-  }                                                                            \
-  }
+#define END_TRY_L(L)                                     \
+    /* nested throw not consumed ? (by CATCH* clause) */ \
+    if (__try##L.ex != 0) {                              \
+        /* rethrow */                                    \
+        THROW_L(L, __try##L.ex);                         \
+    }                                                    \
+    }
 
 // -----------------------------------------------------------------------
 // - EXCEPTION THROW
@@ -818,35 +800,35 @@ void os_longjmp(unsigned int exception) __attribute__((noreturn));
 #define THROW_L(L, x) os_longjmp(x)
 
 // Default macros when nesting is not used.
-#define THROW(x) THROW_L(EX, x)
-#define BEGIN_TRY BEGIN_TRY_L(EX)
-#define TRY TRY_L(EX)
-#define CATCH(x) CATCH_L(EX, x)
+#define THROW(x)       THROW_L(EX, x)
+#define BEGIN_TRY      BEGIN_TRY_L(EX)
+#define TRY            TRY_L(EX)
+#define CATCH(x)       CATCH_L(EX, x)
 #define CATCH_OTHER(e) CATCH_OTHER_L(EX, e)
-#define CATCH_ALL CATCH_ALL_L(EX)
-#define FINALLY FINALLY_L(EX)
-#define CLOSE_TRY CLOSE_TRY_L(EX)
-#define END_TRY END_TRY_L(EX)
+#define CATCH_ALL      CATCH_ALL_L(EX)
+#define FINALLY        FINALLY_L(EX)
+#define CLOSE_TRY      CLOSE_TRY_L(EX)
+#define END_TRY        END_TRY_L(EX)
 
-#define EXCEPTION 1
-#define INVALID_PARAMETER 2
-#define EXCEPTION_OVERFLOW 3
-#define EXCEPTION_SECURITY 4
-#define INVALID_CRC 5
-#define INVALID_CHECKSUM 6
-#define INVALID_COUNTER 7
-#define NOT_SUPPORTED 8
-#define INVALID_STATE 9
-#define TIMEOUT 10
-#define EXCEPTION_PIC 11
-#define EXCEPTION_APPEXIT 12
+#define EXCEPTION             1
+#define INVALID_PARAMETER     2
+#define EXCEPTION_OVERFLOW    3
+#define EXCEPTION_SECURITY    4
+#define INVALID_CRC           5
+#define INVALID_CHECKSUM      6
+#define INVALID_COUNTER       7
+#define NOT_SUPPORTED         8
+#define INVALID_STATE         9
+#define TIMEOUT               10
+#define EXCEPTION_PIC         11
+#define EXCEPTION_APPEXIT     12
 #define EXCEPTION_IO_OVERFLOW 13
-#define EXCEPTION_IO_HEADER 14
-#define EXCEPTION_IO_STATE 15
-#define EXCEPTION_IO_RESET 16
-#define EXCEPTION_CXPORT 17
-#define EXCEPTION_SYSTEM 18
-#define NOT_ENOUGH_SPACE 19
+#define EXCEPTION_IO_HEADER   14
+#define EXCEPTION_IO_STATE    15
+#define EXCEPTION_IO_RESET    16
+#define EXCEPTION_CXPORT      17
+#define EXCEPTION_SYSTEM      18
+#define NOT_ENOUGH_SPACE      19
 
 /* ----------------------------------------------------------------------- */
 /* -                          CRYPTO FUNCTIONS                           - */
@@ -866,71 +848,71 @@ void os_longjmp(unsigned int exception) __attribute__((noreturn));
 /* -                        BOLOS UX DEFINITIONS                         - */
 /* ----------------------------------------------------------------------- */
 typedef enum bolos_ux_e {
-  BOLOS_UX_INITIALIZE = 0, // tag to be processed by the UX from the serial line
+    BOLOS_UX_INITIALIZE = 0,  // tag to be processed by the UX from the serial line
 
-  BOLOS_UX_EVENT, // tag to be processed by the UX from the serial line
-  BOLOS_UX_KEYBOARD,
-  BOLOS_UX_WAKE_UP, // the application/os asks for the screen to be waked up
-                    // (asking pin if the lock period has been exceeded)
-  BOLOS_UX_STATUS_BAR,
+    BOLOS_UX_EVENT,  // tag to be processed by the UX from the serial line
+    BOLOS_UX_KEYBOARD,
+    BOLOS_UX_WAKE_UP,  // the application/os asks for the screen to be waked up
+                       // (asking pin if the lock period has been exceeded)
+    BOLOS_UX_STATUS_BAR,
 
-  BOLOS_UX_BOOT, // will never be presented to loaded UX app, this is for
-                 // failsafe UX only
-  BOLOS_UX_BOOT_NOT_PERSONALIZED,
-  BOLOS_UX_BOOT_ONBOARDING,
-  BOLOS_UX_BOOT_UNSAFE_WIPE,
-  BOLOS_UX_BOOT_UX_NOT_SIGNED,
-  BOLOS_UX_BOLOS_START = 10, // called in before dashboard displays
-  BOLOS_UX_DASHBOARD,
-  BOLOS_UX_PROCESSING,
+    BOLOS_UX_BOOT,  // will never be presented to loaded UX app, this is for
+                    // failsafe UX only
+    BOLOS_UX_BOOT_NOT_PERSONALIZED,
+    BOLOS_UX_BOOT_ONBOARDING,
+    BOLOS_UX_BOOT_UNSAFE_WIPE,
+    BOLOS_UX_BOOT_UX_NOT_SIGNED,
+    BOLOS_UX_BOLOS_START = 10,  // called in before dashboard displays
+    BOLOS_UX_DASHBOARD,
+    BOLOS_UX_PROCESSING,
 
-  BOLOS_UX_LOADER, // display loader screen or advance it
+    BOLOS_UX_LOADER,  // display loader screen or advance it
 
-  BOLOS_UX_VALIDATE_PIN,
-  BOLOS_UX_CONSENT_UPGRADE,
-  BOLOS_UX_CONSENT_APP_ADD,
-  BOLOS_UX_CONSENT_APP_DEL,
-  BOLOS_UX_CONSENT_APP_UPG,
-  BOLOS_UX_CONSENT_ISSUER_KEY,
-  BOLOS_UX_CONSENT_CUSTOMCA_KEY = 20,
-  BOLOS_UX_CONSENT_FOREIGN_KEY,
-  BOLOS_UX_CONSENT_GET_DEVICE_NAME,
-  BOLOS_UX_CONSENT_SET_DEVICE_NAME,
-  BOLOS_UX_CONSENT_RESET_CUSTOMCA_KEY,
-  BOLOS_UX_CONSENT_SETUP_CUSTOMCA_KEY,
-  BOLOS_UX_APP_ACTIVITY, // special code when application is processing data but
-                         // not displaying UI. It prevent going poweroff, while
-                         // not avoiding screen locking
-  BOLOS_UX_CONSENT_NOT_INTERACTIVE_ONBOARD,
-  BOLOS_UX_PREPARE_RUN_APP, // called before the os runs an application, the os
-                            // ux must be cleared and not display anything on
-                            // upcoming display processed events
+    BOLOS_UX_VALIDATE_PIN,
+    BOLOS_UX_CONSENT_UPGRADE,
+    BOLOS_UX_CONSENT_APP_ADD,
+    BOLOS_UX_CONSENT_APP_DEL,
+    BOLOS_UX_CONSENT_APP_UPG,
+    BOLOS_UX_CONSENT_ISSUER_KEY,
+    BOLOS_UX_CONSENT_CUSTOMCA_KEY = 20,
+    BOLOS_UX_CONSENT_FOREIGN_KEY,
+    BOLOS_UX_CONSENT_GET_DEVICE_NAME,
+    BOLOS_UX_CONSENT_SET_DEVICE_NAME,
+    BOLOS_UX_CONSENT_RESET_CUSTOMCA_KEY,
+    BOLOS_UX_CONSENT_SETUP_CUSTOMCA_KEY,
+    BOLOS_UX_APP_ACTIVITY,  // special code when application is processing data but
+                            // not displaying UI. It prevent going poweroff, while
+                            // not avoiding screen locking
+    BOLOS_UX_CONSENT_NOT_INTERACTIVE_ONBOARD,
+    BOLOS_UX_PREPARE_RUN_APP,  // called before the os runs an application, the os
+                               // ux must be cleared and not display anything on
+                               // upcoming display processed events
 
-  BOLOS_UX_MCU_UPGRADE_REQUIRED,
-  BOLOS_UX_CONSENT_RUN_APP = 30,
-  BOLOS_UX_SECURITY_BOOT_DELAY,
-  DEPRECATED_BOLOS_UX_CONSENT_GENUINENESS,
-  BOLOS_UX_BOOT_MENU,
-  BOLOS_UX_CONTROL_CENTER,
-  BOLOS_UX_ASYNCHMODAL_PAIRING_REQUEST, // ask the ux to display a modal to
-                                        // accept/reject the current pairing
-                                        // request
-  BOLOS_UX_ASYNCHMODAL_PAIRING_CANCEL,  //
+    BOLOS_UX_MCU_UPGRADE_REQUIRED,
+    BOLOS_UX_CONSENT_RUN_APP = 30,
+    BOLOS_UX_SECURITY_BOOT_DELAY,
+    DEPRECATED_BOLOS_UX_CONSENT_GENUINENESS,
+    BOLOS_UX_BOOT_MENU,
+    BOLOS_UX_CONTROL_CENTER,
+    BOLOS_UX_ASYNCHMODAL_PAIRING_REQUEST,  // ask the ux to display a modal to
+                                           // accept/reject the current pairing
+                                           // request
+    BOLOS_UX_ASYNCHMODAL_PAIRING_CANCEL,   //
 
-  BOLOS_UX_CONSENT_LISTAPPS,
+    BOLOS_UX_CONSENT_LISTAPPS,
 
-  BOLOS_UX_LAST_ID, // keep that one at the end
+    BOLOS_UX_LAST_ID,  // keep that one at the end
 } bolos_ux_t;
 
 typedef char bolos_bool_t;
-#define BOLOS_TRUE BOLOS_UX_OK
+#define BOLOS_TRUE  BOLOS_UX_OK
 #define BOLOS_FALSE BOLOS_UX_CANCEL
 
 typedef unsigned char bolos_task_status_t;
 
-#define BOLOS_UX_OK 0xAA
+#define BOLOS_UX_OK     0xAA
 #define BOLOS_UX_CANCEL 0x55
-#define BOLOS_UX_ERROR 0xD6
+#define BOLOS_UX_ERROR  0xD6
 
 /* Value returned by os_ux to notify the application that the processed event
  * must be discarded and not processed by the application. Generally due to
@@ -947,12 +929,12 @@ typedef unsigned char bolos_task_status_t;
 
 typedef void (*appmain_t)(void);
 
-#define BOLOS_TAG_APPNAME 0x01
+#define BOLOS_TAG_APPNAME    0x01
 #define BOLOS_TAG_APPVERSION 0x02
-#define BOLOS_TAG_ICON 0x03
+#define BOLOS_TAG_ICON       0x03
 #define BOLOS_TAG_DERIVEPATH 0x04
-#define BOLOS_TAG_DATA_SIZE                                                    \
-  0x05 // meta tag to retrieve the size of the data section for the application
+#define BOLOS_TAG_DATA_SIZE \
+    0x05  // meta tag to retrieve the size of the data section for the application
 // Library Dependencies are a tuple of 2 LV, the lib appname and the lib version
 // (only exact for now). When lib version is not specified, it is not check,
 // only name is asserted The DEPENDENCY tag may have several occurences, one for
@@ -964,38 +946,38 @@ typedef void (*appmain_t)(void);
 
 // application slot description
 typedef struct application_s {
-  // nvram start address for this application (to check overlap when loading,
-  // and mpu lock)
-  unsigned char *nvram_begin;
-  // nvram stop address (exclusive) for this application (to check overlap when
-  // loading, and mpu lock)
-  unsigned char *nvram_end;
+    // nvram start address for this application (to check overlap when loading,
+    // and mpu lock)
+    unsigned char *nvram_begin;
+    // nvram stop address (exclusive) for this application (to check overlap when
+    // loading, and mpu lock)
+    unsigned char *nvram_end;
 
-  // address of the main address, must be set according to BLX spec ( ORed with
-  // 1 when jumping into Thumb code
-  appmain_t main;
+    // address of the main address, must be set according to BLX spec ( ORed with
+    // 1 when jumping into Thumb code
+    appmain_t main;
 
-  // special flags for this application
-  unsigned int flags;
+    // special flags for this application
+    unsigned int flags;
 
-  // Memory organization: [ code (RX) |alignpage| data (RW) |alignpage| install
-  // params (R) ]
+    // Memory organization: [ code (RX) |alignpage| data (RW) |alignpage| install
+    // params (R) ]
 
-  // length of the code section of the application (RX)
-  unsigned int code_length;
+    // length of the code section of the application (RX)
+    unsigned int code_length;
 
-  // NOTE: code_length+params_length must be a multiple of PAGE_SIZE
-  // Length of the DATA section of the application. (RW)
-  unsigned int data_length;
+    // NOTE: code_length+params_length must be a multiple of PAGE_SIZE
+    // Length of the DATA section of the application. (RW)
+    unsigned int data_length;
 
-  // NOTE: code_length+params_length must be a multiple of PAGE_SIZE
-  // length of the parameters sections of the application (R)
-  unsigned int params_length;
+    // NOTE: code_length+params_length must be a multiple of PAGE_SIZE
+    // length of the parameters sections of the application (R)
+    unsigned int params_length;
 
-  // Intermediate hash of the application's loaded code and data segments
-  unsigned char sha256_code_data[32];
-  // Hash of the application's loaded code, data and instantiation parameters
-  unsigned char sha256_full[32];
+    // Intermediate hash of the application's loaded code and data segments
+    unsigned char sha256_code_data[32];
+    // Hash of the application's loaded code, data and instantiation parameters
+    unsigned char sha256_full[32];
 
 } application_t;
 
@@ -1065,10 +1047,10 @@ typedef struct bolos_ux_params_s {
 
     struct {
       unsigned int keycode;
-#define BOLOS_UX_MODE_UPPERCASE 0
-#define BOLOS_UX_MODE_LOWERCASE 1
-#define BOLOS_UX_MODE_SYMBOLS 2
-#define BOLOS_UX_MODE_COUNT 3 // number of keyboard modes
+#define BOLOS_UX_MODE_UPPERCASE            0
+#define BOLOS_UX_MODE_LOWERCASE            1
+#define BOLOS_UX_MODE_SYMBOLS              2
+#define BOLOS_UX_MODE_COUNT                3  // number of keyboard modes
       unsigned int mode;
       // + 1 EOS (0)
 #define BOLOS_UX_KEYBOARD_TEXT_BUFFER_SIZE 32
@@ -1115,7 +1097,7 @@ typedef struct bolos_ux_params_s {
   } u;
 
 } bolos_ux_params_t;
-#endif // 0
+#endif  // 0
 
 // any application can wipe the global pin, global seed, user's keys
 // disabled for security reasons // SYSCALL void           os_perso_wipe(void);
@@ -1124,29 +1106,34 @@ SYSCALL void os_perso_erase_all(void);
 
 /* set_pin can update the pin if the perso is onboarded (tearing leads to perso
  * wipe though) */
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_pin(
-    unsigned int identity, unsigned char *pin PLENGTH(length),
-    unsigned int length);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_pin(unsigned int identity,
+                                                                    unsigned char *pin
+                                                                        PLENGTH(length),
+                                                                    unsigned int length);
 // set the currently unlocked identity pin. (change pin feature)
 SYSCALL
-    PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_current_identity_pin(
-        unsigned char *pin PLENGTH(length), unsigned int length);
+PERMISSION(APPLICATION_FLAG_BOLOS_UX)
+void os_perso_set_current_identity_pin(unsigned char *pin PLENGTH(length), unsigned int length);
 
-#define BOLOS_UX_ONBOARDING_ALGORITHM_BIP39 1
+#define BOLOS_UX_ONBOARDING_ALGORITHM_BIP39    1
 #define BOLOS_UX_ONBOARDING_ALGORITHM_ELECTRUM 2
 
 /**
  * Set the persisted seed if none yet, else override the volatile seed (in RAM)
  */
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_seed(
-    unsigned int identity, unsigned int algorithm,
-    unsigned char *seed PLENGTH(length), unsigned int length);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_seed(unsigned int identity,
+                                                                     unsigned int algorithm,
+                                                                     unsigned char *seed
+                                                                         PLENGTH(length),
+                                                                     unsigned int length);
 
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_derive_and_set_seed(
-    unsigned char identity, const char *prefix PLENGTH(prefix_length),
+    unsigned char identity,
+    const char *prefix PLENGTH(prefix_length),
     unsigned int prefix_length,
     const char *passphrase PLENGTH(passphrase_length),
-    unsigned int passphrase_length, const char *words PLENGTH(words_length),
+    unsigned int passphrase_length,
+    const char *words PLENGTH(words_length),
     unsigned int words_length);
 
 // SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void
@@ -1154,8 +1141,9 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_derive_and_set_seed(
 // pinLength); SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void
 // os_perso_set_alternate_seed(unsigned char* seed PLENGTH(seedLength), unsigned
 // int seedLength);
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_words(
-    const unsigned char *words PLENGTH(length), unsigned int length);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_set_words(const unsigned char *words
+                                                                          PLENGTH(length),
+                                                                      unsigned int length);
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_perso_finalize(void);
 
 // checked in the ux flow to avoid asking the pin for example
@@ -1173,7 +1161,7 @@ SYSCALL void os_perso_derive_node_bip32(
     unsigned char *chain PLENGTH(32));
 #endif
 
-#define HDW_NORMAL 0
+#define HDW_NORMAL         0
 #define HDW_ED25519_SLIP10 1
 // symmetric key derivation according to SLIP-0021
 // this only supports derivation of the master node (level 1)
@@ -1195,39 +1183,47 @@ SYSCALL void os_perso_derive_node_with_seed_key(
     unsigned char *chain PLENGTH(32),
     unsigned char *seed_key PLENGTH(seed_key_length),
     unsigned int seed_key_length);
-#define os_perso_derive_node_bip32_seed_key(mode, curve, path, pathLength,     \
-                                            privateKey, chain, seed_key,       \
-                                            seed_key_length)                   \
-  os_perso_derive_node_with_seed_key(mode, curve, path, pathLength,            \
-                                     privateKey, chain, seed_key,              \
-                                     seed_key_length)
+#define os_perso_derive_node_bip32_seed_key(mode,            \
+                                            curve,           \
+                                            path,            \
+                                            pathLength,      \
+                                            privateKey,      \
+                                            chain,           \
+                                            seed_key,        \
+                                            seed_key_length) \
+    os_perso_derive_node_with_seed_key(mode,                 \
+                                       curve,                \
+                                       path,                 \
+                                       pathLength,           \
+                                       privateKey,           \
+                                       chain,                \
+                                       seed_key,             \
+                                       seed_key_length)
 #endif
 /**
  * Generate a seed based cookie
  * seed => derivation (path 0xda7aba5e/0xc1a551c5) => priv key =SECP256K1=>
  * pubkey => sha512 => cookie
  */
-SYSCALL unsigned int
-os_perso_seed_cookie(unsigned char *seed_cookie PLENGTH(seed_cookie_length),
-                     unsigned int seed_cookie_length);
+SYSCALL unsigned int os_perso_seed_cookie(unsigned char *seed_cookie PLENGTH(seed_cookie_length),
+                                          unsigned int seed_cookie_length);
 
 // endorsement APIs
-SYSCALL unsigned int
-os_endorsement_get_code_hash(unsigned char *buffer PLENGTH(32));
-SYSCALL unsigned int
-os_endorsement_get_public_key(unsigned char index,
-                              unsigned char *buffer PLENGTH(65));
+SYSCALL unsigned int os_endorsement_get_code_hash(unsigned char *buffer PLENGTH(32));
+SYSCALL unsigned int os_endorsement_get_public_key(unsigned char index,
+                                                   unsigned char *buffer PLENGTH(65));
 SYSCALL unsigned int os_endorsement_get_public_key_certificate(
     unsigned char index,
     unsigned char *buffer PLENGTH(1 + 1 + 2 * (1 + 1 + 33)));
-SYSCALL unsigned int
-os_endorsement_key1_get_app_secret(unsigned char *buffer PLENGTH(64));
-SYSCALL unsigned int os_endorsement_key1_sign_data(
-    unsigned char *src PLENGTH(srcLength), unsigned int srcLength,
-    unsigned char *signature PLENGTH(1 + 1 + 2 * (1 + 1 + 33)));
-SYSCALL unsigned int os_endorsement_key2_derive_sign_data(
-    unsigned char *src PLENGTH(srcLength), unsigned int srcLength,
-    unsigned char *signature PLENGTH(1 + 1 + 2 * (1 + 1 + 33)));
+SYSCALL unsigned int os_endorsement_key1_get_app_secret(unsigned char *buffer PLENGTH(64));
+SYSCALL unsigned int os_endorsement_key1_sign_data(unsigned char *src PLENGTH(srcLength),
+                                                   unsigned int srcLength,
+                                                   unsigned char *signature
+                                                       PLENGTH(1 + 1 + 2 * (1 + 1 + 33)));
+SYSCALL unsigned int os_endorsement_key2_derive_sign_data(unsigned char *src PLENGTH(srcLength),
+                                                          unsigned int srcLength,
+                                                          unsigned char *signature
+                                                              PLENGTH(1 + 1 + 2 * (1 + 1 + 33)));
 
 // nvram shared zone access right => MPU opening at application switch, using a
 // flags in the registry
@@ -1244,15 +1240,13 @@ SYSCALL bolos_bool_t os_global_pin_is_validated(void);
  * @return BOLOS_UX_OK if pin validated
  */
 SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) bolos_bool_t
-    os_global_pin_check(unsigned char *pin_buffer PLENGTH(pin_length),
-                        unsigned char pin_length);
+    os_global_pin_check(unsigned char *pin_buffer PLENGTH(pin_length), unsigned char pin_length);
 SYSCALL
-    PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) void os_global_pin_invalidate(void);
-SYSCALL PERMISSION(
-    APPLICATION_FLAG_GLOBAL_PIN) unsigned int os_global_pin_retries(void);
+PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) void os_global_pin_invalidate(void);
+SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) unsigned int os_global_pin_retries(void);
 
 SYSCALL
-    PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_count(void);
+PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_count(void);
 // return any entry, activated or not, enabled or not, empty or not. to enable
 // full control
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_registry_get(
@@ -1273,7 +1267,7 @@ os_ux_result(bolos_ux_params_t *params PLENGTH(sizeof(bolos_ux_params_t)));
 // the firewalling between tasks.
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_ux_read_parameters(
     bolos_ux_params_t *params PLENGTH(sizeof(bolos_ux_params_t)));
-#endif // 0
+#endif  // 0
 
 // process all possible messages while waiting for a ux to finish,
 // unprocessed messages are replied with a generic general status
@@ -1290,39 +1284,35 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_ux_read_parameters(
  * call_parameters[1] = library call identifier (0 = init, ...)
  * call_parameters[2+] = called function parameters
  */
-SYSCALL void
-os_lib_call(unsigned int *call_parameters PLENGTH(3 * sizeof(unsigned int)));
+SYSCALL void os_lib_call(unsigned int *call_parameters PLENGTH(3 * sizeof(unsigned int)));
 SYSCALL void os_lib_end(void);
 SYSCALL void os_lib_throw(unsigned int exception);
 
 /* ----------------------------------------------------------------------- */
 /* -                            ID FUNCTIONS                             - */
 /* ----------------------------------------------------------------------- */
-#define OS_FLAG_RECOVERY 1
+#define OS_FLAG_RECOVERY        1
 #define OS_FLAG_SIGNED_MCU_CODE 2
-#define OS_FLAG_ONBOARDED 4
-#define OS_FLAG_PIN_VALIDATED 128
+#define OS_FLAG_ONBOARDED       4
+#define OS_FLAG_PIN_VALIDATED   128
 //#define OS_FLAG_CUSTOM_UX       4
 /* Enable application to retrieve OS current running options */
 SYSCALL PERMISSION(APPLICATION_FLAG_NONE) unsigned int os_flags(void);
-SYSCALL unsigned int os_version(unsigned char *version PLENGTH(maxlength),
-                                unsigned int maxlength);
+SYSCALL unsigned int os_version(unsigned char *version PLENGTH(maxlength), unsigned int maxlength);
 /* Grab the SE serial number */
-SYSCALL unsigned int os_serial(unsigned char *serial PLENGTH(maxlength),
-                               unsigned int maxlength);
+SYSCALL unsigned int os_serial(unsigned char *serial PLENGTH(maxlength), unsigned int maxlength);
 #ifdef TARGET_NANOX
 /* Grab the SEPROXYHAL's MCU serial number */
 SYSCALL unsigned int os_seph_serial(unsigned char *serial PLENGTH(maxlength),
                                     unsigned int maxlength);
-#endif // TARGET_NANOX
+#endif  // TARGET_NANOX
 /* Grab the SEPROXYHAL's feature set */
 SYSCALL unsigned int os_seph_features(void);
 /* Grab the SEPROXYHAL's version */
 SYSCALL unsigned int os_seph_version(unsigned char *version PLENGTH(maxlength),
                                      unsigned int maxlength);
-SYSCALL unsigned int
-os_bootloader_version(unsigned char *version PLENGTH(maxlength),
-                      unsigned int maxlength);
+SYSCALL unsigned int os_bootloader_version(unsigned char *version PLENGTH(maxlength),
+                                           unsigned int maxlength);
 
 /*
  * Copy the serial number in the given buffer and return its length
@@ -1333,31 +1323,31 @@ unsigned int os_get_sn(unsigned char *buffer);
 /* -                         SETTINGS FUNCTIONS                          - */
 /* ----------------------------------------------------------------------- */
 typedef enum os_setting_e {
-  OS_SETTING_BRIGHTNESS,
-  OS_SETTING_INVERT,
-  OS_SETTING_ROTATION,
+    OS_SETTING_BRIGHTNESS,
+    OS_SETTING_INVERT,
+    OS_SETTING_ROTATION,
 #ifdef HAVE_BOLOS_NOT_SHUFFLED_PIN
-  OS_SETTING_NOSHUFFLE_PIN,
-#endif // HAVE_BOLOS_NOT_SHUFFLED_PIN
-  OS_SETTING_AUTO_LOCK_DELAY,
-  OS_SETTING_POWER_OFF_DELAY,
+    OS_SETTING_NOSHUFFLE_PIN,
+#endif  // HAVE_BOLOS_NOT_SHUFFLED_PIN
+    OS_SETTING_AUTO_LOCK_DELAY,
+    OS_SETTING_POWER_OFF_DELAY,
 
-  OS_SETTING_PLANEMODE,
+    OS_SETTING_PLANEMODE,
 
-  // default off
-  OS_SETTING_PRIVACY_MODE,
+    // default off
+    OS_SETTING_PRIVACY_MODE,
 
-  // before that value, all settings are only making use of the length value
-  // with a null buffer to be set, and are returned through the return value
-  // with a maxlength = 0 in the get.
-  OS_SETTING_LAST_INT,
+    // before that value, all settings are only making use of the length value
+    // with a null buffer to be set, and are returned through the return value
+    // with a maxlength = 0 in the get.
+    OS_SETTING_LAST_INT,
 
-  // screen saver string to display
-  OS_SETTING_SAVER_STRING = OS_SETTING_LAST_INT,
-  OS_SETTING_DEVICENAME,
-  OS_SETTING_BLEMACADR,
+    // screen saver string to display
+    OS_SETTING_SAVER_STRING = OS_SETTING_LAST_INT,
+    OS_SETTING_DEVICENAME,
+    OS_SETTING_BLEMACADR,
 
-  OS_SETTING_LAST,
+    OS_SETTING_LAST,
 } os_setting_t;
 
 /**
@@ -1365,16 +1355,18 @@ typedef enum os_setting_e {
  * length, and return the effective returned length.
  */
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_SETTINGS) unsigned int os_setting_get(
-    unsigned int setting_id, unsigned char *value PLENGTH(maxlen),
+    unsigned int setting_id,
+    unsigned char *value PLENGTH(maxlen),
     unsigned int maxlen);
 
 /**
  * Define a setting's value from a user buffer and its length. In case of error,
  * a throw is executed.
  */
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_SETTINGS) void os_setting_set(
-    unsigned int setting_id, unsigned char *value PLENGTH(length),
-    unsigned int length);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_SETTINGS) void os_setting_set(unsigned int setting_id,
+                                                                        unsigned char *value
+                                                                            PLENGTH(length),
+                                                                        unsigned int length);
 
 /* ----------------------------------------------------------------------- */
 /* -                          DEBUG FUNCTIONS                           - */
@@ -1396,10 +1388,10 @@ void screen_printc(unsigned char const c);
 // sizeof(io_send_t) + 1 ), unsigned int len);
 
 typedef struct meminfo_s {
-  unsigned int free_nvram_size;
-  unsigned int appMemory;
-  unsigned int systemSize;
-  unsigned int slots;
+    unsigned int free_nvram_size;
+    unsigned int appMemory;
+    unsigned int systemSize;
+    unsigned int slots;
 } meminfo_t;
 
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_get_memory_info(
@@ -1412,7 +1404,7 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_get_memory_info(
 // returned (no exception thrown). takes into account the currently loaded
 // application
 #define OS_REGISTRY_GET_TAG_OFFSET_COMPARE_WITH_BUFFER (0x80000000UL)
-#define OS_REGISTRY_GET_TAG_OFFSET_GET_LENGTH (0x40000000UL)
+#define OS_REGISTRY_GET_TAG_OFFSET_GET_LENGTH          (0x40000000UL)
 
 /**
  * @param appidx The application entry index in the registry (raw, not filtering
@@ -1435,8 +1427,11 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_get_memory_info(
  * (trimmed depending the TLV effective length).
  */
 SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_get_tag(
-    unsigned int appidx, unsigned int *tlvoffset, unsigned int tag,
-    unsigned int value_offset, void *buffer PLENGTH(maxlength),
+    unsigned int appidx,
+    unsigned int *tlvoffset,
+    unsigned int tag,
+    unsigned int value_offset,
+    void *buffer PLENGTH(maxlength),
     unsigned int maxlength);
 
 // Copy the currently running application tag from its install parameters to the
@@ -1444,10 +1439,9 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_get_tag(
 // retrievable to avoid install parameters private information. Warning: this
 // function returns tag content of the application lastly scheduled to run, not
 // the tag content of the currently executed piece of code (libraries subcalls)
-SYSCALL unsigned int
-os_registry_get_current_app_tag(unsigned int tag,
-                                unsigned char *buffer PLENGTH(maxlen),
-                                unsigned int maxlen);
+SYSCALL unsigned int os_registry_get_current_app_tag(unsigned int tag,
+                                                     unsigned char *buffer PLENGTH(maxlen),
+                                                     unsigned int maxlen);
 
 #ifndef HAVE_BOLOS_NO_CUSTOMCA
 /* ----------------------------------------------------------------------- */
@@ -1455,11 +1449,10 @@ os_registry_get_current_app_tag(unsigned int tag,
 /* ----------------------------------------------------------------------- */
 
 // Verify the signature is issued from the custom certificate authority
-SYSCALL unsigned int
-os_customca_verify(unsigned char *hash PLENGTH(32),
-                   unsigned char *sign PLENGTH(sign_length),
-                   unsigned int sign_length);
-#endif // HAVE_BOLOS_NO_CUSTOMCA
+SYSCALL unsigned int os_customca_verify(unsigned char *hash PLENGTH(32),
+                                        unsigned char *sign PLENGTH(sign_length),
+                                        unsigned int sign_length);
+#endif  // HAVE_BOLOS_NO_CUSTOMCA
 
 /* ----------------------------------------------------------------------- */
 /* -                         PRECISE WATCHDOG                            - */
@@ -1469,38 +1462,38 @@ os_customca_verify(unsigned char *hash PLENGTH(32),
 #ifdef BOLOS_RELEASE
 // Boot delay before wiping the fault detection counter
 #define BOLOS_SECURITY_BOOT_DELAY_H 5
-#else // BOLOS_RELEASE
+#else  // BOLOS_RELEASE
 #define BOLOS_SECURITY_BOOT_DELAY_H 1 - (60 * 60 * 100) + 15 * 100
-#endif // BOLOS_RELEASE
-#endif // BOLOS_SECURITY_BOOT_DELAY_H
+#endif  // BOLOS_RELEASE
+#endif  // BOLOS_SECURITY_BOOT_DELAY_H
 #ifndef BOLOS_SECURITY_ONBOARD_DELAY_S
 #ifdef BOLOS_RELEASE
 // Minimal time for an onboard
 #define BOLOS_SECURITY_ONBOARD_DELAY_S (2 * 60)
-#else // BOLOS_RELEASE
+#else  // BOLOS_RELEASE
 // small overhead in dev
 #define BOLOS_SECURITY_ONBOARD_DELAY_S 5
-#endif // BOLOS_RELEASE
-#endif // BOLOS_SECURITY_ONBOARD_DELAY_S
+#endif  // BOLOS_RELEASE
+#endif  // BOLOS_SECURITY_ONBOARD_DELAY_S
 
 #ifndef BOLOS_SECURITY_ATTESTATION_DELAY_S
 // Minimal time interval in between two use of the device's private key (SCP
 // opening and endorsement)
 #define BOLOS_SECURITY_ATTESTATION_DELAY_S 5
-#endif // BOLOS_SECURITY_ATTESTATION_DELAY_S
+#endif  // BOLOS_SECURITY_ATTESTATION_DELAY_S
 
 void safe_desynch(void);
 #define SAFE_DESYNCH() safe_desynch()
 
 typedef enum {
-  /* Watchdog consumption lead to no action being taken, overflowed value is
-     accounted and can be retrieved by the application */
-  OS_WATCHDOG_NOACTION = 0,
-  /* Request a platform reset when the watchdog set value is completely consumed
-   */
-  OS_WATCHDOG_RESET = 1,
-  /* Request a wipe of the user data when the watchdog times out */
-  OS_WATCHDOG_WIPE = 2,
+    /* Watchdog consumption lead to no action being taken, overflowed value is
+       accounted and can be retrieved by the application */
+    OS_WATCHDOG_NOACTION = 0,
+    /* Request a platform reset when the watchdog set value is completely consumed
+     */
+    OS_WATCHDOG_RESET = 1,
+    /* Request a wipe of the user data when the watchdog times out */
+    OS_WATCHDOG_WIPE = 2,
 } os_watchdog_behavior_t;
 
 /**
@@ -1519,31 +1512,29 @@ void os_watchdog_arm(unsigned int useconds, os_watchdog_behavior_t behavior);
 int os_watchdog_value(void);
 
 enum task_unsecure_id_e {
-  TASK_BOLOS = 0, // can call os
-  TASK_SYSCALL,   // can call os
-  TASK_USERTASKS_START,
-  // disabled for now // TASK_USER_UX, // must call syscalls to reach os, locked
-  // in ux ram
-  TASK_USER =
-      TASK_USERTASKS_START, // must call syscalls to reach os, locked in app ram
-  TASK_SUBTASKS_START,
-  TASK_SUBTASK_0 = TASK_SUBTASKS_START,
+    TASK_BOLOS = 0,  // can call os
+    TASK_SYSCALL,    // can call os
+    TASK_USERTASKS_START,
+    // disabled for now // TASK_USER_UX, // must call syscalls to reach os, locked
+    // in ux ram
+    TASK_USER = TASK_USERTASKS_START,  // must call syscalls to reach os, locked in app ram
+    TASK_SUBTASKS_START,
+    TASK_SUBTASK_0 = TASK_SUBTASKS_START,
 #ifdef TARGET_NANOX
-  TASK_SUBTASK_1,
-  TASK_SUBTASK_2,
-  TASK_SUBTASK_3,
-#endif // TARGET_NANOX
-  TASK_BOLOS_UX,
-  TASK_MAXCOUNT, // must be last in the structure
+    TASK_SUBTASK_1,
+    TASK_SUBTASK_2,
+    TASK_SUBTASK_3,
+#endif  // TARGET_NANOX
+    TASK_BOLOS_UX,
+    TASK_MAXCOUNT,  // must be last in the structure
 };
 
 // execute the given application index in the registry, this function kills the
 // current app task
-SYSCALL TASKSWITCH PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_sched_exec(
-    unsigned int application_index);
+SYSCALL TASKSWITCH
+    PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_sched_exec(unsigned int application_index);
 // exit the current task
-SYSCALL PERMISSION(APPLICATION_FLAG_NONE) void os_sched_exit(
-    bolos_task_status_t exit_code);
+SYSCALL PERMISSION(APPLICATION_FLAG_NONE) void os_sched_exit(bolos_task_status_t exit_code);
 
 // returns true when the given task is running, false else.
 SYSCALL bolos_bool_t os_sched_is_running(unsigned int task_idx);
@@ -1560,8 +1551,8 @@ bolos_task_status_t svc_os_sched_last_status(unsigned int task_idx);
  * Meta call for task_switch with 'the enxt' task idx.
  * @param status is the current task status
  */
-SUDOCALL TASKSWITCH PERMISSION(APPLICATION_FLAG_NONE) void os_sched_yield(
-    bolos_task_status_t status);
+SUDOCALL TASKSWITCH
+    PERMISSION(APPLICATION_FLAG_NONE) void os_sched_yield(bolos_task_status_t status);
 void svc_os_sched_yield(bolos_task_status_t status);
 
 /**
@@ -1570,15 +1561,15 @@ void svc_os_sched_yield(bolos_task_status_t status);
  * @param status of the currently executed task
  * @return the status of the previously running task
  */
-SUDOCALL TASKSWITCH PERMISSION(APPLICATION_FLAG_NONE) void os_sched_switch(
-    unsigned int task_idx, bolos_task_status_t status);
+SUDOCALL TASKSWITCH PERMISSION(
+    APPLICATION_FLAG_NONE) void os_sched_switch(unsigned int task_idx, bolos_task_status_t status);
 void svc_os_sched_switch(unsigned int task_idx, bolos_task_status_t status);
 
 /**
  * Function that returns the currently running task identifier.
  */
 SUDOCALL
-    PERMISSION(APPLICATION_FLAG_NONE) unsigned int os_sched_current_task(void);
+PERMISSION(APPLICATION_FLAG_NONE) unsigned int os_sched_current_task(void);
 unsigned int svc_os_sched_current_task(void);
 
 /**
@@ -1598,12 +1589,16 @@ unsigned int svc_os_sched_current_task(void);
  * @param ram1 /ram1_length the second RAM segment description
  * @param stack /stack_length the task's stack RAM segment description
  */
-SYSCALL unsigned int
-os_sched_create(unsigned int permissions, void *main,
-                void *nvram PLENGTH(nvram_length), unsigned int nvram_length,
-                void *ram0 PLENGTH(ram0_length), unsigned int ram0_length,
-                void *ram1 PLENGTH(ram1_length), unsigned int ram1_length,
-                void *stack PLENGTH(stack_length), unsigned int stack_length);
+SYSCALL unsigned int os_sched_create(unsigned int permissions,
+                                     void *main,
+                                     void *nvram PLENGTH(nvram_length),
+                                     unsigned int nvram_length,
+                                     void *ram0 PLENGTH(ram0_length),
+                                     unsigned int ram0_length,
+                                     void *ram1 PLENGTH(ram1_length),
+                                     unsigned int ram1_length,
+                                     void *stack PLENGTH(stack_length),
+                                     unsigned int stack_length);
 
 // kill a task
 SYSCALL void os_sched_kill(unsigned int taskidx);
@@ -1628,27 +1623,35 @@ SYSCALL void screen_update(void);
  * Require a specific zone not to be cleared/drawn by any graphic HAL to
  * implement screen overlay
  */
-SYSCALL void screen_set_keepout(unsigned int x, unsigned int y,
-                                unsigned int width, unsigned int height);
+SYSCALL void screen_set_keepout(unsigned int x,
+                                unsigned int y,
+                                unsigned int width,
+                                unsigned int height);
 /**
  * Draw the given bitmap, with the given colors and position into the screen
  * buffer. Don't update the screen driver.
  */
-SYSCALL void bagl_hal_draw_bitmap_within_rect(
-    int x, int y, unsigned int width, unsigned int height,
-    unsigned int color_count,
-    const unsigned int *colors PLENGTH(color_count * 4),
-    unsigned int bit_per_pixel,
-    const unsigned char *bitmap PLENGTH(1 + bitmap_length_bits / 8),
-    unsigned int bitmap_length_bits);
+SYSCALL void bagl_hal_draw_bitmap_within_rect(int x,
+                                              int y,
+                                              unsigned int width,
+                                              unsigned int height,
+                                              unsigned int color_count,
+                                              const unsigned int *colors PLENGTH(color_count * 4),
+                                              unsigned int bit_per_pixel,
+                                              const unsigned char *bitmap
+                                                  PLENGTH(1 + bitmap_length_bits / 8),
+                                              unsigned int bitmap_length_bits);
 /**
  * Fill a rectangle with a given color in the screen buffer, but don't update
  * the screen driver.
  */
-SYSCALL void bagl_hal_draw_rect(unsigned int color, int x, int y,
-                                unsigned int width, unsigned int height);
-#endif // TARGET_NANOX
-#endif // HAVE_BAGL
+SYSCALL void bagl_hal_draw_rect(unsigned int color,
+                                int x,
+                                int y,
+                                unsigned int width,
+                                unsigned int height);
+#endif  // TARGET_NANOX
+#endif  // HAVE_BAGL
 
 #ifdef HAVE_TINY_COROUTINE
 
@@ -1665,32 +1668,37 @@ void tcr_init(void);
 
 #define TCR_FLAG_PRIORITY_MAX 0x0
 #define TCR_FLAG_PRIORITY_MIN 0xF
-void tcr_add(unsigned int priority, unsigned int stack_ptr,
-             unsigned int stack_size, tcr_entry_function_t coroutine_entry);
+void tcr_add(unsigned int priority,
+             unsigned int stack_ptr,
+             unsigned int stack_size,
+             tcr_entry_function_t coroutine_entry);
 void tcr_harakiri(void);
 void tcr_yield(void);
 void tcr_start(void);
 
-#endif // HAVE_TINY_COROUTINE
+#endif  // HAVE_TINY_COROUTINE
 
 /* ----------------------------------------------------------------------- */
 /*   -                            HELPERS                                - */
 /* ----------------------------------------------------------------------- */
 
 #define OS_PARSE_BERTLV_OFFSET_COMPARE_WITH_BUFFER 0x80000000UL
-#define OS_PARSE_BERTLV_OFFSET_GET_LENGTH 0x40000000UL
+#define OS_PARSE_BERTLV_OFFSET_GET_LENGTH          0x40000000UL
 
-unsigned int os_parse_bertlv(unsigned char *mem, unsigned int mem_len,
+unsigned int os_parse_bertlv(unsigned char *mem,
+                             unsigned int mem_len,
                              unsigned int *tlv_instance_offset,
-                             unsigned int tag, unsigned int offset,
-                             void **buffer, unsigned int maxlength);
+                             unsigned int tag,
+                             unsigned int offset,
+                             void **buffer,
+                             unsigned int maxlength);
 
 #ifdef BOLOS_DEBUG
 #ifdef TARGET_NANOX
 SYSCALL void trigger_gpio3(unsigned int val);
 SUDOCALL void l(char *fmt, unsigned int i);
-#endif // TARGET_NANOX
-#endif // BOLOS_DEBUG
+#endif  // TARGET_NANOX
+#endif  // BOLOS_DEBUG
 
 /* ----------------------------------------------------------------------- */
 /*   -                            I/O I2C                                - */
@@ -1698,11 +1706,11 @@ SUDOCALL void l(char *fmt, unsigned int i);
 
 #ifdef HAVE_IO_I2C
 
-#define IO_I2C_SPEED_STD 0
-#define IO_I2C_SPEED_FAST 1
+#define IO_I2C_SPEED_STD      0
+#define IO_I2C_SPEED_FAST     1
 #define IO_I2C_SPEED_FASTPLUS 2
-#define IO_I2C_SPEED_HS 3
-#define IO_I2C_MASTER 0x80
+#define IO_I2C_SPEED_HS       3
+#define IO_I2C_MASTER         0x80
 /**
  * Configure the I2C peripheral.
  * @param speed_and_master enables to set the bus speed. And to select if the
@@ -1713,8 +1721,7 @@ SUDOCALL void l(char *fmt, unsigned int i);
  * interface. The address is always a 7bit address (excluding the transfer
  * direction bit).
  */
-SYSCALL void io_i2c_setmode(unsigned int speed_and_master,
-                            unsigned int address);
+SYSCALL void io_i2c_setmode(unsigned int speed_and_master, unsigned int address);
 
 /**
  * Setup the I2C peripheral for:
@@ -1725,10 +1732,10 @@ SYSCALL void io_i2c_setmode(unsigned int speed_and_master,
  */
 SYSCALL void io_i2c_prepare(unsigned int maxlength);
 
-#define IO_I2C_FLAGS_READ 0
+#define IO_I2C_FLAGS_READ  0
 #define IO_I2C_FLAGS_WRITE 1
 #define IO_I2C_FLAGS_START 2
-#define IO_I2C_FLAGS_STOP 4
+#define IO_I2C_FLAGS_STOP  4
 /**
  * Request to execute a transfer:
  * - In slave mode, this call is non-blocking. It only enables to reply to a
@@ -1741,16 +1748,14 @@ SYSCALL void io_i2c_prepare(unsigned int maxlength);
  * place or transmit data from the given buffer and length. Depending on the
  * passed start/stop flags, corresponding bus condition are executed.
  */
-SYSCALL void io_i2c_xfer(void *buffer PLENGTH(length), unsigned int length,
-                         unsigned int flags);
+SYSCALL void io_i2c_xfer(void *buffer PLENGTH(length), unsigned int length, unsigned int flags);
 
 #ifndef BOLOS_RELEASE
 SYSCALL void io_i2c_dumpstate(void);
-#endif // BOLOS_RELEASE
-
+#endif  // BOLOS_RELEASE
 
 #ifndef SYSCALL_GENERATE
 // #include "syscalls.h"
-#endif // SYSCALL_GENERATE
+#endif  // SYSCALL_GENERATE
 
-#endif // OS_H
+#endif  // OS_H

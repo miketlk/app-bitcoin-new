@@ -170,7 +170,7 @@ UX_STEP_NOCB(ux_display_reissuance_token_step,
                  .title = "Reissuance token",
                  .text = g_ui_state.validate_output.token_ticker,
              });
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 // Step with "Amount" and an output amount
 UX_STEP_NOCB(ux_validate_amount_step,
@@ -347,29 +347,35 @@ UX_STEP_NOCB(ux_va_review_asset_domain_step,
 UX_STEP_NOCB(ux_confirm_asset_op_step,
              pbb,
              {
-                &C_icon_warning,
-                "Confirm",
-                g_ui_state.validate_transaction.asset_op_type,
+                 &C_icon_warning,
+                 "Confirm",
+                 g_ui_state.validate_transaction.asset_op_type,
              });
 
 // Step for displaying a single sighash flag
-UX_STEP_NOCB(ux_display_sighash_flag_1_of_1_step, nn,
-             { "Sighash flag", g_ui_state.sighash_flags.sighash_name.flags[0] });
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_1_step,
+             nn,
+             {"Sighash flag", g_ui_state.sighash_flags.sighash_name.flags[0]});
 
 // Steps for displaying 2 sighash flags on the separate pages
-UX_STEP_NOCB(ux_display_sighash_flag_1_of_2_step, nn,
-             { "Sighash flag (1/2)", g_ui_state.sighash_flags.sighash_name.flags[0] });
-UX_STEP_NOCB(ux_display_sighash_flag_2_of_2_step, nn,
-             { "Sighash flag (2/2)", g_ui_state.sighash_flags.sighash_name.flags[1] });
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_2_step,
+             nn,
+             {"Sighash flag (1/2)", g_ui_state.sighash_flags.sighash_name.flags[0]});
+UX_STEP_NOCB(ux_display_sighash_flag_2_of_2_step,
+             nn,
+             {"Sighash flag (2/2)", g_ui_state.sighash_flags.sighash_name.flags[1]});
 
 // Steps for displaying 3 sighash flags on the separate pages
-UX_STEP_NOCB(ux_display_sighash_flag_1_of_3_step, nn,
-             { "Sighash flag (1/3)", g_ui_state.sighash_flags.sighash_name.flags[0] });
-UX_STEP_NOCB(ux_display_sighash_flag_2_of_3_step, nn,
-             { "Sighash flag (2/3)", g_ui_state.sighash_flags.sighash_name.flags[1] });
-UX_STEP_NOCB(ux_display_sighash_flag_3_of_3_step, nn,
-             { "Sighash flag (3/3)", g_ui_state.sighash_flags.sighash_name.flags[2] });
-#endif // HAVE_LIQUID
+UX_STEP_NOCB(ux_display_sighash_flag_1_of_3_step,
+             nn,
+             {"Sighash flag (1/3)", g_ui_state.sighash_flags.sighash_name.flags[0]});
+UX_STEP_NOCB(ux_display_sighash_flag_2_of_3_step,
+             nn,
+             {"Sighash flag (2/3)", g_ui_state.sighash_flags.sighash_name.flags[1]});
+UX_STEP_NOCB(ux_display_sighash_flag_3_of_3_step,
+             nn,
+             {"Sighash flag (3/3)", g_ui_state.sighash_flags.sighash_name.flags[2]});
+#endif  // HAVE_LIQUID
 
 // FLOW to display BIP32 path to sign a message:
 // #1 screen: certificate icon + "Sign message"
@@ -521,7 +527,7 @@ UX_FLOW(ux_display_nondefault_sighash_flow,
         &ux_display_reject_if_not_sure_step,
         &ux_display_continue_step,
         &ux_display_reject_step);
-#endif // !defined(HAVE_LIQUID)
+#endif  // !defined(HAVE_LIQUID)
 
 // FLOW to validate a single output
 // #1 screen: eye icon + "Review" + index of output to validate
@@ -755,7 +761,7 @@ void ui_display_unverified_segwit_inputs_flows(void) {
 void ui_display_nondefault_sighash_flow(void) {
 #ifdef HAVE_LIQUID
     const ui_sighash_flags_state_t *st = &g_ui_state.sighash_flags;
-    switch(st->sighash_name.n_flags) {
+    switch (st->sighash_name.n_flags) {
         case 1:
             ux_flow_init(0, ux_display_nondefault_sighash_flags_1_flow, NULL);
             break;
@@ -769,9 +775,9 @@ void ui_display_nondefault_sighash_flow(void) {
             LEDGER_ASSERT(0, "Unsupported number of sighash flags: %d", st->sighash_name.n_flags);
             return;
     }
-#else // HAVE_LIQUID
+#else   // HAVE_LIQUID
     ux_flow_init(0, ux_display_nondefault_sighash_flow, NULL);
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 }
 
 void ui_display_output_address_amount_flow(int index) {
@@ -813,15 +819,15 @@ void ui_display_output_address_amount_flow_ext(int index,
              index);
 
     if (display_asset_tag) {
-        ux_flow_init(0, asset_is_reissuance_token ?
-                        ux_display_output_address_token_amount_asset_flow :
-                        ux_display_output_address_amount_asset_flow,
-                    NULL);
+        ux_flow_init(0,
+                     asset_is_reissuance_token ? ux_display_output_address_token_amount_asset_flow
+                                               : ux_display_output_address_amount_asset_flow,
+                     NULL);
     } else {
-        ux_flow_init(0, asset_is_reissuance_token ?
-                        ux_display_output_address_token_amount_flow :
-                        ux_display_output_address_amount_flow,
-                    NULL);
+        ux_flow_init(0,
+                     asset_is_reissuance_token ? ux_display_output_address_token_amount_flow
+                                               : ux_display_output_address_amount_flow,
+                     NULL);
     }
 }
 
@@ -833,7 +839,6 @@ void ui_display_validate_asset_flow(void) {
     ux_flow_init(0, ux_validate_asset_flow, NULL);
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 #endif  // HAVE_BAGL
-

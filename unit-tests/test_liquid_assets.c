@@ -11,7 +11,7 @@
 #include "liquid/liquid_hash_wrappers.h"
 #include "liquid/liquid_assets.h"
 
-extern bool sha256_midstate_reversed(const cx_sha256_t* sha256_context, uint8_t out[32]);
+extern bool sha256_midstate_reversed(const cx_sha256_t *sha256_context, uint8_t out[32]);
 extern bool generate_asset_entropy(const uint8_t contract_hash[static SHA256_LEN],
                                    const uint8_t prevout_txid[static SHA256_LEN],
                                    uint32_t prevout_index,
@@ -32,6 +32,7 @@ typedef struct {
     asset_class_t asset_class;
 } asset_test_data_t;
 
+// clang-format off
 static const asset_test_data_t asset_test_data[] = {
     // tether.to USDt (Tether USD)
     {
@@ -208,6 +209,7 @@ static const asset_test_data_t asset_test_data[] = {
         .asset_class = ACLASS_REISSUANCE_TOKEN_CONFIDENTIAL
     }
 };
+// clang-format on
 
 static void test_liquid_get_asset_info(void **state) {
     (void) state;
@@ -215,7 +217,7 @@ static void test_liquid_get_asset_info(void **state) {
     // Scan through all asset values in table
     asset_info_t asset;
     const asset_info_t *result = NULL;
-    for(int i = 0; i < n_liquid_assets; ++i) {
+    for (int i = 0; i < n_liquid_assets; ++i) {
         asset = liquid_assets[i].info;
         result = liquid_get_asset_info(liquid_assets[i].tag);
         assert_non_null(result);
@@ -226,54 +228,50 @@ static void test_liquid_get_asset_info(void **state) {
 
     // Try to find an asset by passing random asset tag
     // SHA-256 is used as PRNG function
-    uint8_t tag[SIZE_OF_SHA_256_HASH] = { 0 };
-    assert_null( liquid_get_asset_info(tag) );
+    uint8_t tag[SIZE_OF_SHA_256_HASH] = {0};
+    assert_null(liquid_get_asset_info(tag));
     memset(tag, 0xFF, sizeof(tag));
     for (int i = 0; i < 100000; ++i) {
-        assert_null( liquid_get_asset_info(tag) );
+        assert_null(liquid_get_asset_info(tag));
         calc_sha_256(tag, tag, sizeof(tag));
     }
 
     // Try passing NULL as asset tag
     const uint8_t *null_tag = NULL;
-    assert_null( liquid_get_asset_info(null_tag) );
+    assert_null(liquid_get_asset_info(null_tag));
 }
 
 static void test_sha256_midstate_reversed(void **state) {
     (void) state;
     static const uint8_t data[] = {
-        0x9d, 0xd0, 0x1b, 0x56, 0xb1, 0x56, 0x45, 0x14,
-        0x3e, 0xad, 0x15, 0x8d, 0xec, 0x19, 0xf8, 0xce,
-        0xa9, 0x0b, 0xd0, 0xa9, 0xb2, 0xf8, 0x1d, 0x21,
-        0xff, 0xa3, 0xa4, 0xc6, 0x44, 0x81, 0xd4, 0x1c,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9d, 0xd0, 0x1b, 0x56, 0xb1, 0x56, 0x45, 0x14, 0x3e, 0xad, 0x15, 0x8d, 0xec,
+        0x19, 0xf8, 0xce, 0xa9, 0x0b, 0xd0, 0xa9, 0xb2, 0xf8, 0x1d, 0x21, 0xff, 0xa3,
+        0xa4, 0xc6, 0x44, 0x81, 0xd4, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
-    static const uint8_t ref_midstate[] = { // reversed
-        0x03, 0x2e, 0x03, 0x7f, 0x7f, 0x33, 0xed, 0x14,
-        0xb4, 0x05, 0x06, 0x2a, 0x91, 0x12, 0xf7, 0xf2,
-        0x03, 0xf5, 0xb0, 0xf0, 0x1d, 0x7c, 0x4f, 0x4f,
-        0xd3, 0xc7, 0x6c, 0x4e, 0xe5, 0xe0, 0xcf, 0x0b
-    };
+    static const uint8_t ref_midstate[] = {// reversed
+                                           0x03, 0x2e, 0x03, 0x7f, 0x7f, 0x33, 0xed, 0x14,
+                                           0xb4, 0x05, 0x06, 0x2a, 0x91, 0x12, 0xf7, 0xf2,
+                                           0x03, 0xf5, 0xb0, 0xf0, 0x1d, 0x7c, 0x4f, 0x4f,
+                                           0xd3, 0xc7, 0x6c, 0x4e, 0xe5, 0xe0, 0xcf, 0x0b};
 
     cx_sha256_t sha_ctx;
-    uint8_t midstate[SHA256_LEN] = { 0 };
+    uint8_t midstate[SHA256_LEN] = {0};
 
     assert_true(hash_init_sha256(&sha_ctx));
     assert_true(hash_update(&sha_ctx.header, data, sizeof(data)));
     assert_true(sha256_midstate_reversed(&sha_ctx, midstate));
-    assert_memory_equal (ref_midstate, midstate, sizeof(midstate));
+    assert_memory_equal(ref_midstate, midstate, sizeof(midstate));
 }
 
 void test_compute_asset_tag_from_entropy(void **state) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = { 0 };
+    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = {0};
     bool res;
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         res = compute_asset_tag_from_entropy(p_vect->entropy, p_vect->asset_class, asset_tag);
         assert_true(res);
         assert_memory_equal(p_vect->asset_tag, asset_tag, sizeof(asset_tag));
@@ -283,9 +281,9 @@ void test_compute_asset_tag_from_entropy(void **state) {
 void test_generate_asset_entropy(void **state) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t entropy[SHA256_LEN] = { 0 };
+    uint8_t entropy[SHA256_LEN] = {0};
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         bool res = generate_asset_entropy(p_vect->contract_hash,
                                           p_vect->prevout_txid,
                                           p_vect->prevout_index,
@@ -298,9 +296,9 @@ void test_generate_asset_entropy(void **state) {
 void test_liquid_compute_asset_tag(void **state) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = { 0 };
+    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = {0};
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         bool res = liquid_compute_asset_tag(p_vect->contract_hash,
                                             p_vect->prevout_txid,
                                             p_vect->prevout_index,
@@ -312,13 +310,11 @@ void test_liquid_compute_asset_tag(void **state) {
 }
 
 int main(void) {
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_liquid_get_asset_info),
-        cmocka_unit_test(test_sha256_midstate_reversed),
-        cmocka_unit_test(test_compute_asset_tag_from_entropy),
-        cmocka_unit_test(test_generate_asset_entropy),
-        cmocka_unit_test(test_liquid_compute_asset_tag)
-    };
+    const struct CMUnitTest tests[] = {cmocka_unit_test(test_liquid_get_asset_info),
+                                       cmocka_unit_test(test_sha256_midstate_reversed),
+                                       cmocka_unit_test(test_compute_asset_tag_from_entropy),
+                                       cmocka_unit_test(test_generate_asset_entropy),
+                                       cmocka_unit_test(test_liquid_compute_asset_tag)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

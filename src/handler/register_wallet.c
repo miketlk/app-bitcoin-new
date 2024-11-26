@@ -266,14 +266,13 @@ static bool is_policy_acceptable(const policy_node_t *policy) {
 #ifdef HAVE_LIQUID
     if (policy->type == TOKEN_CT) {
         // ct(<BLINDING_KEY>, <DESCRIPTOR>)
-        if(liquid_is_blinding_key_acceptable(policy)) {
+        if (liquid_is_blinding_key_acceptable(policy)) {
             policy_type = liquid_policy_type(policy);
-        }
-        else {
+        } else {
             return false;
         }
     }
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
     return policy_type == TOKEN_PKH || policy_type == TOKEN_WPKH || policy_type == TOKEN_SH ||
            policy_type == TOKEN_WSH || policy_type == TOKEN_TR;

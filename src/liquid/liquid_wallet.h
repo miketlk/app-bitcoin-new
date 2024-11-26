@@ -68,4 +68,4 @@ bool policy_is_multisig(const policy_node_t *policy);
 bool validate_policy_map_extended_pubkey(const policy_map_key_info_t *key_info,
                                          uint32_t bip32_pubkey_version);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

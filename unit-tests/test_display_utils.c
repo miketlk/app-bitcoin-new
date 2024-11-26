@@ -9,6 +9,7 @@
 
 #include "ui/display_utils.h"
 
+// clang-format off
 static const struct {
     const char *coin;
     uint64_t amount;
@@ -116,7 +117,7 @@ static const struct {
      {.coin = "TEST", .amount = 12345LLU, .decimals = 18, .expected = "TEST 0.000000000000012345"},
      {.coin = "TEST", .amount = 12345LLU, .decimals = 19, .expected = "TEST 0.0000000000000012345"},
 };
-
+// clang-format on
 
 static void test_format_amount(void **state) {
     (void) state;
@@ -134,7 +135,7 @@ static void test_format_amount(void **state) {
 
         // Check for buffer overflow
         for (int i = MAX_AMOUNT_LENGTH + 1; i < sizeof(out) - 1; ++i) {
-            assert_int_equal((int)(unsigned char)out[i], 0xEE);
+            assert_int_equal((int) (unsigned char) out[i], 0xEE);
         }
     }
 }

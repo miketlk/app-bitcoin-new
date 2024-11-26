@@ -182,9 +182,7 @@ void apdu_dispatcher(command_descriptor_t const cmd_descriptors[],
 #ifdef HAVE_LOG_PROCESSOR
 // Print current filename, line number and function name.
 // Indents according to the nesting depth for subprocessors.
-void print_dispatcher_info(const char *file,
-                           int line,
-                           const char *func) {
+void print_dispatcher_info(const char *file, int line, const char *func) {
     // PRINTF() replaced with low-level functions to reduce stack usage (~ 40 vs 500 bytes)
 
     debug_write("->");
@@ -211,7 +209,7 @@ void print_dispatcher_info(const char *file,
 
 #define CCMD_DEBUG 0xEE
 
-int ccmd_printf(dispatcher_context_t *dc, const char *format, ... ) {
+int ccmd_printf(dispatcher_context_t *dc, const char *format, ...) {
     char buf[1 + 128 + 1];
 
     va_list args;
@@ -229,10 +227,10 @@ int ccmd_printf(dispatcher_context_t *dc, const char *format, ... ) {
 
     return 0;
 }
-#endif // HAVE_CCMD_PRINTF
+#endif  // HAVE_CCMD_PRINTF
 
 #ifdef HAVE_APDU_LOG
-void log_apdu(const command_t* cmd) {
+void log_apdu(const command_t *cmd) {
     debug_write("=> CLA=");
     debug_write_hex(cmd->cla, 1);
     debug_write(" | INS=");

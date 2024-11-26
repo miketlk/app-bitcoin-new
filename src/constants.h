@@ -21,13 +21,13 @@
 
 #ifdef HAVE_LIQUID
 #define MAX_ADDRESS_LENGTH_STR (118 + MAX_SEGWIT_PREFIX_LENGTH)
-#else // HAVE_LIQUID
+#else  // HAVE_LIQUID
 /**
  * Maximum length of a serialized address (in characters).
  * Segwit addresses can reach 74 characters; 76 on regtest because of the longer "bcrt" prefix.
  */
 #define MAX_ADDRESS_LENGTH_STR (72 + sizeof(COIN_NATIVE_SEGWIT_PREFIX))
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
 
 /**
  * Maximum transaction length (bytes).
@@ -71,7 +71,7 @@
 #define SIGHASH_SINGLE       0x00000003
 #define SIGHASH_ANYONECANPAY 0x00000080
 #ifdef HAVE_LIQUID
-#define SIGHASH_RANGEPROOF   0x00000040
+#define SIGHASH_RANGEPROOF 0x00000040
 #endif
 
 /**
@@ -116,16 +116,16 @@
  * Main app icon
  */
 #ifdef HAVE_LIQUID
-    #define APP_MAIN_ICON C_liquid_logo
+#define APP_MAIN_ICON C_liquid_logo
 #else
-    #define APP_MAIN_ICON C_bitcoin_logo
+#define APP_MAIN_ICON C_bitcoin_logo
 #endif
 
 /**
  * Main app icon in high resolution
  */
 #ifdef HAVE_LIQUID
-    #define APP_MAIN_ICON_64 C_Liquid_64px
+#define APP_MAIN_ICON_64 C_Liquid_64px
 #else
-    #define APP_MAIN_ICON_64 C_Bitcoin_64px
+#define APP_MAIN_ICON_64 C_Bitcoin_64px
 #endif

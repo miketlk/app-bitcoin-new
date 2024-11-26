@@ -17,7 +17,7 @@ typedef struct {
     asset_class_t asset_class;
 } asset_test_data_t;
 
-
+// clang-format off
 static const asset_test_data_t asset_test_data[] = {
     // tether.to USDt (Tether USD)
     {
@@ -107,27 +107,24 @@ static const asset_test_data_t asset_test_data[] = {
         .asset_class = ACLASS_ASSET
     },
 };
+// clang-format on
 
 static void test_sha256_midstate_reversed(test_ctx_t *test_ctx) {
     static const uint8_t data[] = {
-        0x9d, 0xd0, 0x1b, 0x56, 0xb1, 0x56, 0x45, 0x14,
-        0x3e, 0xad, 0x15, 0x8d, 0xec, 0x19, 0xf8, 0xce,
-        0xa9, 0x0b, 0xd0, 0xa9, 0xb2, 0xf8, 0x1d, 0x21,
-        0xff, 0xa3, 0xa4, 0xc6, 0x44, 0x81, 0xd4, 0x1c,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x9d, 0xd0, 0x1b, 0x56, 0xb1, 0x56, 0x45, 0x14, 0x3e, 0xad, 0x15, 0x8d, 0xec,
+        0x19, 0xf8, 0xce, 0xa9, 0x0b, 0xd0, 0xa9, 0xb2, 0xf8, 0x1d, 0x21, 0xff, 0xa3,
+        0xa4, 0xc6, 0x44, 0x81, 0xd4, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     };
-    static const uint8_t ref_midstate[] = { // reversed
-        0x03, 0x2e, 0x03, 0x7f, 0x7f, 0x33, 0xed, 0x14,
-        0xb4, 0x05, 0x06, 0x2a, 0x91, 0x12, 0xf7, 0xf2,
-        0x03, 0xf5, 0xb0, 0xf0, 0x1d, 0x7c, 0x4f, 0x4f,
-        0xd3, 0xc7, 0x6c, 0x4e, 0xe5, 0xe0, 0xcf, 0x0b
-    };
+    static const uint8_t ref_midstate[] = {// reversed
+                                           0x03, 0x2e, 0x03, 0x7f, 0x7f, 0x33, 0xed, 0x14,
+                                           0xb4, 0x05, 0x06, 0x2a, 0x91, 0x12, 0xf7, 0xf2,
+                                           0x03, 0xf5, 0xb0, 0xf0, 0x1d, 0x7c, 0x4f, 0x4f,
+                                           0xd3, 0xc7, 0x6c, 0x4e, 0xe5, 0xe0, 0xcf, 0x0b};
 
     cx_sha256_t sha_ctx;
-    uint8_t midstate[SHA256_LEN] = { 0 };
+    uint8_t midstate[SHA256_LEN] = {0};
 
     TEST_ASSERT(hash_init_sha256(&sha_ctx));
     TEST_ASSERT(hash_update(&sha_ctx.header, data, sizeof(data)));
@@ -138,10 +135,10 @@ static void test_sha256_midstate_reversed(test_ctx_t *test_ctx) {
 void test_compute_asset_tag_from_entropy(test_ctx_t *test_ctx) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = { 0 };
+    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = {0};
     bool res;
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         res = compute_asset_tag_from_entropy(p_vect->entropy, ACLASS_ASSET, asset_tag);
         TEST_ASSERT(res);
         TEST_ASSERT_EQUAL_MEMORY(p_vect->asset_tag, asset_tag, sizeof(asset_tag));
@@ -151,9 +148,9 @@ void test_compute_asset_tag_from_entropy(test_ctx_t *test_ctx) {
 void test_generate_asset_entropy(test_ctx_t *test_ctx) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t entropy[SHA256_LEN] = { 0 };
+    uint8_t entropy[SHA256_LEN] = {0};
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         bool res = generate_asset_entropy(p_vect->contract_hash,
                                           p_vect->prevout_txid,
                                           p_vect->prevout_index,
@@ -166,9 +163,9 @@ void test_generate_asset_entropy(test_ctx_t *test_ctx) {
 void test_liquid_compute_asset_tag(test_ctx_t *test_ctx) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_test_data_t *p_vect = asset_test_data;
-    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = { 0 };
+    uint8_t asset_tag[LIQUID_ASSET_TAG_LEN] = {0};
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         bool res = liquid_compute_asset_tag(p_vect->contract_hash,
                                             p_vect->prevout_txid,
                                             p_vect->prevout_index,

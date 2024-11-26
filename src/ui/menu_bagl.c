@@ -57,14 +57,17 @@ UX_FLOW(ux_menu_main_flow_bitcoin_testnet,
         &ux_menu_exit_step,
         FLOW_LOOP);
 
-
-UX_STEP_NOCB(ux_menu_info_step, bn, {
+UX_STEP_NOCB(ux_menu_info_step,
+             bn,
+             {
 #ifdef HAVE_LIQUID
-    "Liquid App", "(c) 2024 Blockstream"
+                 "Liquid App",
+                 "(c) 2024 Blockstream"
 #else
-    "Bitcoin App", "(c) 2024 Ledger"
+                 "Bitcoin App",
+                 "(c) 2024 Ledger"
 #endif
-});
+             });
 UX_STEP_CB(ux_menu_back_step, pb, ui_menu_main(), {&C_icon_back, "Back"});
 
 // FLOW for the about submenu:

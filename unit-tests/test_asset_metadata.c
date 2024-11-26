@@ -22,6 +22,7 @@ typedef struct {
     asset_info_t asset_info;
 } asset_metadata_vector_t;
 
+// clang-format off
 static const asset_metadata_vector_t asset_test_data[] = {
     // tether.to USDt (Tether USD)
     {
@@ -164,17 +165,17 @@ static const asset_metadata_vector_t asset_test_data[] = {
         }
     }
 };
+// clang-format on
 
 extern bool asset_metadata_parser_init(asset_metadata_parser_context_t *ctx,
                                        asset_info_t *asset_info,
                                        asset_info_ext_t *ext_asset_info);
-extern void asset_metadata_parser_process(asset_metadata_parser_context_t *ctx,
-                                          buffer_t *data);
+extern void asset_metadata_parser_process(asset_metadata_parser_context_t *ctx, buffer_t *data);
 extern bool asset_metadata_parser_finalize(asset_metadata_parser_context_t *ctx,
                                            const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
                                            asset_class_t asset_class);
 
-static asset_info_t* parse_metadata(buffer_t *data,
+static asset_info_t *parse_metadata(buffer_t *data,
                                     const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
                                     asset_class_t asset_class) {
     asset_metadata_parser_context_t ctx;
@@ -191,10 +192,10 @@ static asset_info_t* parse_metadata(buffer_t *data,
     return NULL;
 }
 
-static buffer_t* alloc_buffer(size_t size) {
-    buffer_t *buffer = (buffer_t*)malloc(sizeof(buffer_t));
+static buffer_t *alloc_buffer(size_t size) {
+    buffer_t *buffer = (buffer_t *) malloc(sizeof(buffer_t));
     if (buffer) {
-        uint8_t *data = (uint8_t*)malloc(size);
+        uint8_t *data = (uint8_t *) malloc(size);
         if (data) {
             *buffer = buffer_create(data, size);
             return buffer;
@@ -205,7 +206,7 @@ static buffer_t* alloc_buffer(size_t size) {
     return NULL;
 }
 
-static void free_buffer(buffer_t* buffer) {
+static void free_buffer(buffer_t *buffer) {
     if (buffer) {
         if (buffer->ptr) {
             free(buffer->ptr);
@@ -220,7 +221,7 @@ static void free_s(void *ptr) {
     }
 }
 
-static buffer_t* create_metadata(const asset_metadata_vector_t *vect) {
+static buffer_t *create_metadata(const asset_metadata_vector_t *vect) {
     size_t contract_len = strlen(vect->contract_str);
     size_t data_len = varint_size(contract_len) + contract_len + sizeof(vect->prevout_txid) + 4;
 
@@ -231,11 +232,10 @@ static buffer_t* create_metadata(const asset_metadata_vector_t *vect) {
     buffer_t *buffer = alloc_buffer(data_len);
     if (buffer) {
         bool ok = varint_write(buffer_get_cur(buffer), 0, contract_len) > 0 &&
-            buffer_seek_cur(buffer, varint_size(contract_len)) &&
-            buffer_write_bytes(buffer, (const uint8_t*)vect->contract_str, contract_len) &&
-            buffer_write_bytes(buffer, prevout_txid_rev, sizeof(prevout_txid_rev)) &&
-            buffer_write_u32(buffer, vect->prevout_index, LE) &&
-            buffer_seek_set(buffer, 0);
+                  buffer_seek_cur(buffer, varint_size(contract_len)) &&
+                  buffer_write_bytes(buffer, (const uint8_t *) vect->contract_str, contract_len) &&
+                  buffer_write_bytes(buffer, prevout_txid_rev, sizeof(prevout_txid_rev)) &&
+                  buffer_write_u32(buffer, vect->prevout_index, LE) && buffer_seek_set(buffer, 0);
 
         if (ok) {
             return buffer;
@@ -249,7 +249,7 @@ static void test_metadata_parser_valid(void **state) {
     int n_vectors = sizeof(asset_test_data) / sizeof(asset_test_data[0]);
     const asset_metadata_vector_t *p_vect = asset_test_data;
 
-    for(int i = 0; i < n_vectors; ++i, p_vect++) {
+    for (int i = 0; i < n_vectors; ++i, p_vect++) {
         buffer_t *meta = create_metadata(p_vect);
         assert_non_null(meta);
 
@@ -258,7 +258,7 @@ static void test_metadata_parser_valid(void **state) {
 
         if (info) {
             assert_string_equal(info->ticker, p_vect->asset_info.ticker);
-            assert_int_equal((int)info->decimals, p_vect->asset_info.decimals);
+            assert_int_equal((int) info->decimals, p_vect->asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -289,11 +289,11 @@ static void test_metadata_parser_invalid_truncated(void **state) {
 
     // Re-test with full metadata and ensure it parses correctly
     {
-        asset_info_t * info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
+        asset_info_t *info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
         assert_non_null(info);
         if (info) {
             assert_string_equal(info->ticker, vect.asset_info.ticker);
-            assert_int_equal((int)info->decimals, vect.asset_info.decimals);
+            assert_int_equal((int) info->decimals, vect.asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -317,16 +317,16 @@ static void test_metadata_parser_invalid_asset_tag(void **state) {
         free_s(info);
     }
 
-    buffer_seek_set(meta, 0); // Rewind metadata buffer
+    buffer_seek_set(meta, 0);  // Rewind metadata buffer
 
     // Restore asset tag by inverting the bit second time and re-test
     {
         vect.asset_tag[0] ^= 1;
-        asset_info_t * info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
+        asset_info_t *info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
         assert_non_null(info);
         if (info) {
             assert_string_equal(info->ticker, vect.asset_info.ticker);
-            assert_int_equal((int)info->decimals, vect.asset_info.decimals);
+            assert_int_equal((int) info->decimals, vect.asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -339,33 +339,23 @@ static void test_metadata_parser_invalid_asset_tag(void **state) {
 static void test_metadata_parser_invalid_contract(void **state) {
     // Create a valid test vector with a modifiable contract string
     char contract_str[] =
-        "{\"entity\":{\"domain\":\"tether.to\"},"\
-        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
-        "\"name\":\"Tether USD\","\
-        "\"precision\":8,"\
-        "\"ticker\":\"USDt\","\
+        "{\"entity\":{\"domain\":\"tether.to\"},"
+        "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
+        "\"name\":\"Tether USD\","
+        "\"precision\":8,"
+        "\"ticker\":\"USDt\","
         "\"version\":0}";
 
     asset_metadata_vector_t vect = {
-        .asset_tag = {
-            0xce, 0x09, 0x1c, 0x99, 0x8b, 0x83, 0xc7, 0x8b,
-            0xb7, 0x1a, 0x63, 0x23, 0x13, 0xba, 0x37, 0x60,
-            0xf1, 0x76, 0x3d, 0x9c, 0xfc, 0xff, 0xae, 0x02,
-            0x25, 0x8f, 0xfa, 0x98, 0x65, 0xa3, 0x7b, 0xd2
-        },
+        .asset_tag = {0xce, 0x09, 0x1c, 0x99, 0x8b, 0x83, 0xc7, 0x8b, 0xb7, 0x1a, 0x63,
+                      0x23, 0x13, 0xba, 0x37, 0x60, 0xf1, 0x76, 0x3d, 0x9c, 0xfc, 0xff,
+                      0xae, 0x02, 0x25, 0x8f, 0xfa, 0x98, 0x65, 0xa3, 0x7b, 0xd2},
         .contract_str = contract_str,
-        .prevout_txid = {
-            0x95, 0x96, 0xd2, 0x59, 0x27, 0x0e, 0xf5, 0xba,
-            0xc0, 0x02, 0x04, 0x35, 0xe6, 0xd8, 0x59, 0xae,
-            0xa6, 0x33, 0x40, 0x94, 0x83, 0xba, 0x64, 0xe2,
-            0x32, 0xb8, 0xba, 0x04, 0xce, 0x28, 0x86, 0x68
-        },
+        .prevout_txid = {0x95, 0x96, 0xd2, 0x59, 0x27, 0x0e, 0xf5, 0xba, 0xc0, 0x02, 0x04,
+                         0x35, 0xe6, 0xd8, 0x59, 0xae, 0xa6, 0x33, 0x40, 0x94, 0x83, 0xba,
+                         0x64, 0xe2, 0x32, 0xb8, 0xba, 0x04, 0xce, 0x28, 0x86, 0x68},
         .prevout_index = 0,
-        .asset_info = {
-            .ticker = "USDt",
-            .decimals = 8
-        }
-    };
+        .asset_info = {.ticker = "USDt", .decimals = 8}};
 
     // In the word "entity" inside the contract, replace first letter 'e' with capital 'E'
     char *entity = &contract_str[2];
@@ -389,11 +379,11 @@ static void test_metadata_parser_invalid_contract(void **state) {
     {
         buffer_t *meta = create_metadata(&vect);
         assert_non_null(meta);
-        asset_info_t * info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
+        asset_info_t *info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
         assert_non_null(info);
         if (info) {
             assert_string_equal(info->ticker, vect.asset_info.ticker);
-            assert_int_equal((int)info->decimals, vect.asset_info.decimals);
+            assert_int_equal((int) info->decimals, vect.asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -421,11 +411,11 @@ static void test_metadata_parser_invalid_prevout_txid(void **state) {
     {
         buffer_t *meta = create_metadata(&vect);
         assert_non_null(meta);
-        asset_info_t * info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
+        asset_info_t *info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
         assert_non_null(info);
         if (info) {
             assert_string_equal(info->ticker, vect.asset_info.ticker);
-            assert_int_equal((int)info->decimals, vect.asset_info.decimals);
+            assert_int_equal((int) info->decimals, vect.asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -453,11 +443,11 @@ static void test_metadata_parser_invalid_prevout_index(void **state) {
     {
         buffer_t *meta = create_metadata(&vect);
         assert_non_null(meta);
-        asset_info_t * info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
+        asset_info_t *info = parse_metadata(meta, vect.asset_tag, vect.asset_class);
         assert_non_null(info);
         if (info) {
             assert_string_equal(info->ticker, vect.asset_info.ticker);
-            assert_int_equal((int)info->decimals, vect.asset_info.decimals);
+            assert_int_equal((int) info->decimals, vect.asset_info.decimals);
         } else {
             assert_true(0);
         }
@@ -473,8 +463,7 @@ int main(void) {
         cmocka_unit_test(test_metadata_parser_invalid_asset_tag),
         cmocka_unit_test(test_metadata_parser_invalid_contract),
         cmocka_unit_test(test_metadata_parser_invalid_prevout_txid),
-        cmocka_unit_test(test_metadata_parser_invalid_prevout_index)
-    };
+        cmocka_unit_test(test_metadata_parser_invalid_prevout_index)};
 
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

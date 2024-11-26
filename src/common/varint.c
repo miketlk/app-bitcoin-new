@@ -39,7 +39,7 @@ uint8_t varint_size(uint64_t value) {
 }
 
 uint8_t varint_size_by_prefix(uint8_t prefix) {
-    switch(prefix) {
+    switch (prefix) {
         case 0xFD:
             return 3;
 

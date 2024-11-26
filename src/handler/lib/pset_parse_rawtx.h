@@ -61,7 +61,6 @@ typedef struct {
     uint8_t txid[32];
 } txid_parser_outputs_t;
 
-
 /**
  * Parses a serialized Elements transaction while computing issuance hash
  *
@@ -159,4 +158,4 @@ int call_psbt_parse_rawtx_single_output(dispatcher_context_t *dispatcher_context
                                         txid_parser_vout_t *output,
                                         cx_sha256_t *hash_context);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

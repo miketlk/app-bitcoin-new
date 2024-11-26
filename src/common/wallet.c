@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "../liquid/liquid.h"
 #include "../common/base58.h"
 #include "../common/bip32.h"
 #include "../common/buffer.h"
@@ -20,7 +21,7 @@
 #else
 // disable problematic macros when compiling unit tests with CMOCKA
 #define PIC(x) (x)
-#endif // SKIP_FOR_CMOCKA
+#endif  // SKIP_FOR_CMOCKA
 
 typedef struct {
     PolicyNodeType type;
@@ -227,10 +228,7 @@ static bool is_alphanumeric(char c) {
  *
  * @return true if the character is a lowercase hexadecimal digit, false otherwise.
  */
-#ifndef HAVE_LIQUID
-static
-#endif
-bool is_lowercase_hex(char c) {
+IF_NOT_LIQUID(static) bool is_lowercase_hex(char c) {
     return is_digit(c) || ('a' <= c && c <= 'f');
 }
 
@@ -242,10 +240,7 @@ bool is_lowercase_hex(char c) {
  *
  * @return integer corresponding to the given hexadecimal digit.
  */
-#ifndef HAVE_LIQUID
-static
-#endif
-uint8_t lowercase_hex_to_int(char c) {
+IF_NOT_LIQUID(static) uint8_t lowercase_hex_to_int(char c) {
     return (uint8_t) (is_digit(c) ? c - '0' : c - 'a' + 10);
 }
 
@@ -536,12 +531,11 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
 #endif
         if (!consume_character(in_buf, '/')           // the next character is "/"
             || !buffer_peek(in_buf, &next_character)  // we must be able to read the next character
-            || !(next_character == '*' || next_character == '<' // and it must be '*' or '<'
+            || !(next_character == '*' || next_character == '<'  // and it must be '*' or '<'
 #ifdef HAVE_LIQUID
-                 || (next_character >= '0' && next_character <= '9') // For Liquid /N/* is allowed
+                 || (next_character >= '0' && next_character <= '9')  // For Liquid /N/* is allowed
 #endif
-                )
-        ) {
+                 )) {
             return WITH_ERROR(-1, "Expected /** or /<M;N>/* in key placeholder");
         }
 
@@ -583,9 +577,8 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
         else if (next_character >= '0' && next_character <= '9') {
             if (parse_unsigned_decimal(in_buf, &out->num_first) == -1 ||
                 out->num_first > 0x80000000u) {
-                return WITH_ERROR(
-                    -1,
-                    "Expected a single unhardened decimal number in key placeholder");
+                return WITH_ERROR(-1,
+                                  "Expected a single unhardened decimal number in key placeholder");
             }
             out->num_second = out->num_first;
             if (!consume_characters(in_buf, "/*", 2)) {
@@ -604,8 +597,8 @@ static int parse_placeholder(buffer_t *in_buf, int version, policy_node_key_plac
 #define CONTEXT_WITHIN_WSH 2  // parsing a direct child of WSH
 #define CONTEXT_WITHIN_TR  4  // parsing a child of TR (direct or not)
 #ifdef HAVE_LIQUID
-#define CONTEXT_WITHIN_CT  128  // parsing a child of ct()
-#endif // HAVE_LIQUID
+#define CONTEXT_WITHIN_CT 128  // parsing a child of ct()
+#endif                         // HAVE_LIQUID
 
 // forward declaration
 static int parse_script(buffer_t *in_buf,
@@ -817,11 +810,8 @@ static int parse_script(buffer_t *in_buf,
             // of the inner scripts.
             buffer_alloc(out_buf, 0, true);  // ensure alignment of current pointer
             i_policy_node(&node->script, buffer_get_cur(out_buf));
-            if (0 > parse_script(in_buf,
-                                 out_buf,
-                                 version,
-                                 depth,
-                                 context_flags | CONTEXT_WITHIN_CT)) {
+            if (0 >
+                parse_script(in_buf, out_buf, version, depth, context_flags | CONTEXT_WITHIN_CT)) {
                 // failed while parsing internal script
                 return -1;
             }
@@ -1812,7 +1802,7 @@ static int parse_script(buffer_t *in_buf,
 #ifdef HAVE_LIQUID
         && !(context_flags & CONTEXT_WITHIN_CT)
 #endif
-       ) {
+    ) {
         return WITH_ERROR(-1, "Input buffer too long");
     }
 
@@ -2680,7 +2670,7 @@ int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
             int count_s = 0;
             int count_e = 0;
             int count_m = 0;
-            UNUSED(count_m); // TODO: consider removing
+            UNUSED(count_m);  // TODO: consider removing
             size_t children_scriptsize = 0;
             size_t n_children = 0;
             while (cur != NULL) {
@@ -2991,4 +2981,4 @@ void get_policy_wallet_id(policy_map_wallet_header_t *wallet_header, uint8_t out
     crypto_hash_digest(&wallet_hash_context.header, out, 32);
 }
 
-#endif // SKIP_FOR_CMOCKA
+#endif  // SKIP_FOR_CMOCKA

@@ -2,17 +2,17 @@
 
 // Helper macros to reduce the number of ifdef sections
 #ifdef HAVE_LIQUID
-    #define LIQUID_PARAM(...) , __VA_ARGS__
-    #define IF_LIQUID(...) __VA_ARGS__
-    #define IF_NOT_LIQUID(...)
-    #define IF_LIQUID_ELSE(x,y) x
-    #define IS_LIQUID true
+#define LIQUID_PARAM(...) , __VA_ARGS__
+#define IF_LIQUID(...)    __VA_ARGS__
+#define IF_NOT_LIQUID(...)
+#define IF_LIQUID_ELSE(x, y) x
+#define IS_LIQUID            true
 #else
-    #define LIQUID_PARAM(x)
-    #define IF_LIQUID(...)
-    #define IF_NOT_LIQUID(...) __VA_ARGS__
-    #define IF_LIQUID_ELSE(x,y) y
-    #define IS_LIQUID false
+#define LIQUID_PARAM(x)
+#define IF_LIQUID(...)
+#define IF_NOT_LIQUID(...)   __VA_ARGS__
+#define IF_LIQUID_ELSE(x, y) y
+#define IS_LIQUID            false
 #endif
 
 #ifdef HAVE_LIQUID
@@ -27,9 +27,8 @@
 /**
  * The label used to derive the master blinding key according to SLIP-0077
  */
-#define SLIP77_LABEL "\0SLIP-0077"
-#define SLIP77_LABEL_LEN \
-    (sizeof(SLIP77_LABEL) - 1)  // sizeof counts the terminating 0
+#define SLIP77_LABEL     "\0SLIP-0077"
+#define SLIP77_LABEL_LEN (sizeof(SLIP77_LABEL) - 1)  // sizeof counts the terminating 0
 
 /**
  * Maximum length of the 'script' field of the LIQUID_GET_BLINDING_KEY command, that is currently
@@ -61,16 +60,16 @@
  * Compression trait of a public key
  */
 typedef enum {
-    LIQUID_PUBKEY_UNCOMPRESSED = 0, // Public key is compressed, 33 bytes
-    LIQUID_PUBKEY_COMPRESSED = 1    // Public key is uncompressed, 65 bytes
+    LIQUID_PUBKEY_UNCOMPRESSED = 0,  // Public key is compressed, 33 bytes
+    LIQUID_PUBKEY_COMPRESSED = 1     // Public key is uncompressed, 65 bytes
 } liquid_pubkey_compression_t;
 
 typedef struct {
     uint32_t p2pkh_version;
     uint32_t p2sh_version;
     uint32_t prefix_confidential;
-    char segwit_prefix[MAX_SEGWIT_PREFIX_LENGTH+1];
-    char segwit_prefix_confidential[MAX_SEGWIT_PREFIX_LENGTH+1];
+    char segwit_prefix[MAX_SEGWIT_PREFIX_LENGTH + 1];
+    char segwit_prefix_confidential[MAX_SEGWIT_PREFIX_LENGTH + 1];
 } liquid_network_config_t;
 
 #if defined(HAVE_LIQUID) && !defined(SKIP_FOR_CMOCKA)
@@ -134,7 +133,7 @@ WARN_UNUSED_RESULT bool liquid_get_blinding_key(const uint8_t mbk[static 32],
  *
  * @return Prefix for a confidential SegWit address or NULL if unsuccessfull.
  */
-const char* liquid_confidential_segwit_prefix(const char* segwit_prefix);
+const char *liquid_confidential_segwit_prefix(const char *segwit_prefix);
 
 /**
  * Returns a confidential address from given script and public key.
@@ -156,13 +155,14 @@ const char* liquid_confidential_segwit_prefix(const char* segwit_prefix);
  *
  * @return size of produced address in bytes, or -1 in case of error.
  */
-WARN_UNUSED_RESULT int liquid_get_script_confidential_address(const uint8_t *script,
-                                                              size_t script_len,
-                                                              const liquid_network_config_t *network_config,
-                                                              const uint8_t *pub_key,
-                                                              size_t pub_key_len,
-                                                              char *out,
-                                                              size_t out_len);
+WARN_UNUSED_RESULT int liquid_get_script_confidential_address(
+    const uint8_t *script,
+    size_t script_len,
+    const liquid_network_config_t *network_config,
+    const uint8_t *pub_key,
+    size_t pub_key_len,
+    char *out,
+    size_t out_len);
 
 /**
  * Returns the policy type, getting it from the inside script if the policy is blinded.
@@ -173,7 +173,6 @@ WARN_UNUSED_RESULT int liquid_get_script_confidential_address(const uint8_t *scr
  * @return type of the root policy node.
  */
 static inline PolicyNodeType liquid_policy_type(const policy_node_t *policy) {
-
     if (TOKEN_CT == policy->type) {
         return r_policy_node(&((const policy_node_ct_t *) policy)->script)->type;
     }
@@ -200,12 +199,13 @@ static inline PolicyNodeType liquid_policy_type(const policy_node_t *policy) {
  *
  * @return true on success, false in case of error.
  */
-WARN_UNUSED_RESULT bool liquid_get_blinding_public_key(const policy_node_t *policy,
-                                                       const uint8_t *script,
-                                                       size_t script_length,
-                                                       liquid_get_script_callback_t get_script_callback,
-                                                       void *get_script_callback_state,
-                                                       uint8_t pubkey[static 33]);
+WARN_UNUSED_RESULT bool liquid_get_blinding_public_key(
+    const policy_node_t *policy,
+    const uint8_t *script,
+    size_t script_length,
+    liquid_get_script_callback_t get_script_callback,
+    void *get_script_callback_state,
+    uint8_t pubkey[static 33]);
 
 /**
  * Derives blinding public key from given bare public key according to ELIP 150.
@@ -221,10 +221,11 @@ WARN_UNUSED_RESULT bool liquid_get_blinding_public_key(const policy_node_t *poli
  *
  * @return true on success, false in case of error.
  */
-WARN_UNUSED_RESULT bool liquid_derive_blinding_public_key_elip150(const uint8_t bare_pubkey[static 33],
-                                                                  const uint8_t *script,
-                                                                  size_t script_length,
-                                                                  uint8_t out_pubkey[static 33]);
+WARN_UNUSED_RESULT bool liquid_derive_blinding_public_key_elip150(
+    const uint8_t bare_pubkey[static 33],
+    const uint8_t *script,
+    size_t script_length,
+    uint8_t out_pubkey[static 33]);
 
 /**
  * Validates the blinding key in the policy ensuring that it can be accepted.
@@ -260,4 +261,4 @@ static inline bool liquid_policy_is_blinded(const policy_node_t *policy) {
     return policy && (TOKEN_CT == policy->type);
 }
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID

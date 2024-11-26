@@ -4,7 +4,6 @@
 #include "../common/buffer.h"
 #include "liquid.h"
 
-
 /// Bits indicating presense (or status) of input's/output's field(s) in PSET
 typedef enum {
     /// PSBT_IN_BIP32_DERIVATION or PSBT_IN_TAP_BIP32_DERIVATION
@@ -184,7 +183,7 @@ bool pset_hash_input_issuance(dispatcher_context_t *dc,
  *
  * @return  pointer to constant text string or NULL for default transaction type.
  */
-const char* pset_get_tx_type_by_flags(uint32_t flags);
+const char *pset_get_tx_type_by_flags(uint32_t flags);
 
 /**
  * Detects PSET input key in the buffer.
@@ -218,4 +217,4 @@ void pset_detect_input_key(buffer_t *data, uint32_t *p_key_presence);
  */
 void pset_detect_output_key(buffer_t *data, uint32_t *p_key_presence);
 
-#endif // HAVE_LIQUID
+#endif  // HAVE_LIQUID
