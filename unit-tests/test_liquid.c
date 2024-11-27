@@ -13,22 +13,9 @@
 // about half of the memory would be needed
 #define MAX_POLICY_MAP_MEMORY_SIZE 512
 
-// Version bytes of Liquid regtest xpub
-#define LIQUID_REGTEST_XPUB 0x043587CF
-// Version bytes of Liquid regtest xprv
-#define LIQUID_REGTEST_XPRV 0x04358394
-// Version bytes of Liquid main network (liquidv1) xpub
-#define LIQUID_MAIN_XPUB 0x0488B21E
-// Version bytes of Liquid main network (liquidv1) xprv
-#define LIQUID_MAIN_XPRV 0x0488ADE4
-
 #if defined(BIP32_PUBKEY_VERSION) || defined(BIP32_PRIVKEY_VERSION)
 #error Macros BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION must be undefined to allow mocking
 #endif
-
-// Mock BIP32_PUBKEY_VERSION and BIP32_PRIVKEY_VERSION macros with global variables
-uint32_t BIP32_PUBKEY_VERSION = LIQUID_REGTEST_XPUB;
-uint32_t BIP32_PRIVKEY_VERSION = LIQUID_REGTEST_XPRV;
 
 const liquid_network_config_t config_elementsregtest = {.p2pkh_version = 0x6F,
                                                         .p2sh_version = 0x4B,
@@ -192,9 +179,10 @@ static void test_parse_policy_map_blinded_slip77_multisig(void **state) {
         &((const policy_node_ct_t *) out)->mbk_script);
     assert_non_null(mbk);
     assert_int_equal(mbk->base.type, TOKEN_SLIP77);
-    static const char ref_mbk[] = {0x80, 0xb7, 0x96, 0xc7, 0x6c, 0x89, 0x5b, 0xda, 0x15, 0x1c, 0xd5,
-                                   0xc4, 0x0f, 0x3a, 0x11, 0xaf, 0xcd, 0x96, 0xd6, 0x6f, 0x99, 0x34,
-                                   0x7a, 0x76, 0x0d, 0x3f, 0x7b, 0x8a, 0xaa, 0x58, 0x15, 0xb5};
+    static const uint8_t ref_mbk[] = {0x80, 0xb7, 0x96, 0xc7, 0x6c, 0x89, 0x5b, 0xda,
+                                      0x15, 0x1c, 0xd5, 0xc4, 0x0f, 0x3a, 0x11, 0xaf,
+                                      0xcd, 0x96, 0xd6, 0x6f, 0x99, 0x34, 0x7a, 0x76,
+                                      0x0d, 0x3f, 0x7b, 0x8a, 0xaa, 0x58, 0x15, 0xb5};
     assert_memory_equal(mbk->privkey, ref_mbk, sizeof(ref_mbk));
 
     const policy_node_with_script_t *inner1 =

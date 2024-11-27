@@ -185,13 +185,13 @@ void handler_sign_message(dispatcher_context_t* dc, uint8_t protocol_version) {
                                                  n_chunks,
                                                  (uint8_t*) path_str)) {
             SEND_SW(dc, SW_DENY);
-            ui_post_processing_confirm_message(dc, false);
+            (void) ui_post_processing_confirm_message(dc, false);
             return;
         }
     } else {
         if (!ui_display_message_path_hash_and_confirm(dc, path_str, message_hash_str)) {
             SEND_SW(dc, SW_DENY);
-            ui_post_processing_confirm_message(dc, false);
+            (void) ui_post_processing_confirm_message(dc, false);
             return;
         }
     }
@@ -207,7 +207,7 @@ void handler_sign_message(dispatcher_context_t* dc, uint8_t protocol_version) {
     if (sig_len < 0) {
         // unexpected error when signing
         SEND_SW(dc, SW_BAD_STATE);
-        ui_post_processing_confirm_message(dc, false);
+        (void) ui_post_processing_confirm_message(dc, false);
         return;
     }
 
@@ -223,7 +223,7 @@ void handler_sign_message(dispatcher_context_t* dc, uint8_t protocol_version) {
 
         if (r_length > 33 || s_length > 33) {
             SEND_SW(dc, SW_BAD_STATE);  // can never happen
-            ui_post_processing_confirm_message(dc, false);
+            (void) ui_post_processing_confirm_message(dc, false);
             return;
         }
 
@@ -239,7 +239,7 @@ void handler_sign_message(dispatcher_context_t* dc, uint8_t protocol_version) {
         result[0] = 27 + 4 + ((info & CX_ECCINFO_PARITY_ODD) ? 1 : 0);
 
         SEND_RESPONSE(dc, result, sizeof(result), SW_OK);
-        ui_post_processing_confirm_message(dc, true);
+        (void) ui_post_processing_confirm_message(dc, true);
         return;
     }
 }

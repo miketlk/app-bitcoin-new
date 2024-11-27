@@ -1117,14 +1117,14 @@ init_global_state(dispatcher_context_t *dc,
     // If it's not a default wallet policy, ask the user for confirmation, and abort if they deny
     if (!st->is_wallet_default && !ui_authorize_wallet_spend(dc, wallet_header.name)) {
         SEND_SW(dc, SW_DENY);
-        ui_post_processing_confirm_wallet_spend(dc, false);
+        (void) ui_post_processing_confirm_wallet_spend(dc, false);
         return false;
     }
 
     st->master_key_fingerprint = crypto_get_master_key_fingerprint();
 
     if (!st->is_wallet_default) {
-        ui_post_processing_confirm_wallet_spend(dc, true);
+        (void) ui_post_processing_confirm_wallet_spend(dc, true);
     }
 
 #ifdef HAVE_LIQUID
@@ -2393,7 +2393,7 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
         if (10 * fee >= st->inputs_total_amount && st->inputs_total_amount > 10000) {
             if (!ui_warn_high_fee(dc)) {
                 SEND_SW(dc, SW_DENY);
-                ui_post_processing_confirm_transaction(dc, false);
+                (void) ui_post_processing_confirm_transaction(dc, false);
                 return false;
             }
         }
@@ -2410,7 +2410,7 @@ confirm_transaction(dispatcher_context_t *dc, sign_psbt_state_t *st) {
                                      is_self_transfer LIQUID_PARAM(BITCOIN_DECIMALS)
                                          LIQUID_PARAM(asset_op_type))) {
             SEND_SW(dc, SW_DENY);
-            ui_post_processing_confirm_transaction(dc, false);
+            (void) ui_post_processing_confirm_transaction(dc, false);
             return false;
         }
     }
@@ -3685,7 +3685,7 @@ sign_transaction(dispatcher_context_t *dc,
         if (n_key_placeholders < 0) {
             SEND_SW(dc, SW_BAD_STATE);  // should never happen
             if (!G_swap_state.called_from_swap) {
-                ui_post_processing_confirm_transaction(dc, false);
+                (void) ui_post_processing_confirm_transaction(dc, false);
             }
             return false;
         }
@@ -3722,7 +3722,7 @@ sign_transaction(dispatcher_context_t *dc,
                         PRINTF("Error processing input keys\n");
                         SEND_SW(dc, SW_INCORRECT_DATA);
                         if (!G_swap_state.called_from_swap) {
-                            ui_post_processing_confirm_transaction(dc, false);
+                            (void) ui_post_processing_confirm_transaction(dc, false);
                         }
                         return false;
                     }
@@ -3736,7 +3736,7 @@ sign_transaction(dispatcher_context_t *dc,
 
                     if (!sign_transaction_input(dc, st, &hashes, &placeholder_info, &input, i)) {
                         if (!G_swap_state.called_from_swap) {
-                            ui_post_processing_confirm_transaction(dc, false);
+                            (void) ui_post_processing_confirm_transaction(dc, false);
                         }
 
                         // we do not send a status word, since sign_transaction_input
@@ -3750,7 +3750,7 @@ sign_transaction(dispatcher_context_t *dc,
     }
 
     if (!G_swap_state.called_from_swap) {
-        ui_post_processing_confirm_transaction(dc, true);
+        (void) ui_post_processing_confirm_transaction(dc, true);
     }
     return true;
 }

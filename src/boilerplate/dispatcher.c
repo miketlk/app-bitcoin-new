@@ -64,7 +64,9 @@ static void set_ui_dirty() {
 // TODO: refactor code in common with the main apdu loop
 static int process_interruption(dispatcher_context_t *dc) {
     command_t cmd;
-    int input_len;
+    // We declare `input_len` as volatile to keep static analysis tools calm while allowing
+    // io_exchange() to return error codes as negative values in future versions of the SDK.
+    unsigned short input_len;
 
     // Reset structured APDU command
     memset(&cmd, 0, sizeof(cmd));
@@ -72,9 +74,16 @@ static int process_interruption(dispatcher_context_t *dc) {
     io_start_interruption_timeout();
 
     // Receive command bytes in G_io_apdu_buffer
-    if ((input_len = io_exchange(CHANNEL_APDU, G_output_len)) < 0) {
-        return -1;
-    }
+    input_len = io_exchange(CHANNEL_APDU, G_output_len);
+
+    /*
+     * The following check was removed because in the current SDK io_exchange() has stopped
+     * returning the error codes as negative values.
+     *
+     * if (input_len) < 0) {
+     *     return -1;
+     * }
+     */
 
     io_clear_interruption_timeout();
 

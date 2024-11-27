@@ -5,7 +5,6 @@
  * Not to be included in normal way as a header!
  */
 
-//#include "liquid_proofs_test_data.h"
 #include "debug.h"
 
 typedef struct {

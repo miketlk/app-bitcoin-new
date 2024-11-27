@@ -6,7 +6,7 @@
 #define PSBT_PROPRIETARY_ID_MAX_LENGTH 8
 
 /// Evaluates to 0 if condition is true, otherwise compilation fails
-#define PSET_H_PREPROC_CHECK(condition)  ((int)(!sizeof(char[1 - 2*!(condition)])))
+#define PSET_H_PREPROC_CHECK(condition)  (sizeof(char[1 - 2 * ((condition) ? 0 : 1)]) ? 0 : 1)
 
 /// Defines Elements proprietary key for single-byte subkeytype
 #define PSBT_KEY_ELEMENTS(x) \

@@ -121,6 +121,22 @@ int get_script_address(const uint8_t script[], size_t script_len, char *out, siz
 
 #endif
 
+/**
+ * Checks if the given opcode is allowed in OP_RETURN script that is going to be formatted.
+ *
+ * @param[in] opcode
+ *   Opcode of the script.
+ *
+ * @return true if opcode is valid, false otherwise.
+ */
+static inline bool is_opcode_formatable(uint8_t opcode) {
+    if (opcode > OP_16 || opcode == OP_RESERVED || opcode == OP_PUSHDATA2 ||
+        opcode == OP_PUSHDATA4) {
+        return false;
+    }
+    return true;
+}
+
 int format_opscript_script(const uint8_t script[],
                            size_t script_len,
                            char out[static MAX_OPRETURN_OUTPUT_DESC_SIZE]) {
@@ -153,16 +169,15 @@ int format_opscript_script(const uint8_t script[],
         uint8_t opcode = script[offset++];
         size_t hex_length = 0;  // Data length to process
 
-        if (opcode > OP_16 || opcode == OP_RESERVED || opcode == OP_PUSHDATA2 ||
-            opcode == OP_PUSHDATA4) {
+        if (!is_opcode_formatable(opcode)) {
             return -1;  // unsupported
         }
 
-        if (opcode == OP_0) {
-            out[out_ctr++] = '0';
-        } else if (opcode >= 1 && opcode <= 75) {
+        if (opcode >= 1 && opcode <= 75) {
             // opcodes between 1 and 75 indicate a data push of the corresponding length
             hex_length = opcode;
+        } else if (opcode == OP_0) {
+            out[out_ctr++] = '0';
         } else if (opcode == OP_PUSHDATA1) {
             // the next byte is the length
             if (offset >= script_len) {
