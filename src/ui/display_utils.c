@@ -111,8 +111,8 @@ void format_amount(const char *coin_name,
     char *amount_str = out + coin_name_len + 1;
 
     // HACK: avoid __udivmoddi4
-    // uint64_t integral_part = amount / (10 ^ decimals);
-    // uint32_t fractional_part = (uint32_t) (amount % (10 ^ decimals));
+    // `uint64_t integral_part = amount / (10 ^ decimals);`
+    // `uint32_t fractional_part = (uint32_t) (amount % (10 ^ decimals));`
     uint64_t integral_part = div_pow10(amount, decimals);
     uint64_t fractional_part = amount - mul_pow10(integral_part, decimals);
 
@@ -120,8 +120,8 @@ void format_amount(const char *coin_name,
     size_t integral_part_digit_count = n_digits(integral_part);
     for (unsigned int i = 0; i < integral_part_digit_count; i++) {
         // HACK: avoid __udivmoddi4
-        // amount_str[integral_part_digit_count - 1 - i] = '0' + (integral_part % 10);
-        // integral_part /= 10;
+        // `amount_str[integral_part_digit_count - 1 - i] = '0' + (integral_part % 10);`
+        // `integral_part /= 10;`
 
         uint64_t tmp_quotient = div10(integral_part);
         char tmp_remainder = (char) (integral_part - 10 * tmp_quotient);

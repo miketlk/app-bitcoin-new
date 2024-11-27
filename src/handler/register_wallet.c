@@ -129,7 +129,7 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
 
     if (!ui_display_register_wallet(dc, &wallet_header, (char *) policy_map_descriptor)) {
         SEND_SW(dc, SW_DENY);
-        ui_post_processing_confirm_wallet_registration(dc, false);
+        (void) ui_post_processing_confirm_wallet_registration(dc, false);
         return;
     }
 
@@ -151,7 +151,7 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
 
         if (pubkey_info_len < 0) {
             SEND_SW(dc, SW_INCORRECT_DATA);
-            ui_post_processing_confirm_wallet_registration(dc, false);
+            (void) ui_post_processing_confirm_wallet_registration(dc, false);
             return;
         }
 
@@ -164,7 +164,7 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
         if (parse_policy_map_key_info(&key_info_buffer, &key_info, wallet_header.version) == -1) {
             PRINTF("Incorrect policy map.\n");
             SEND_SW(dc, SW_INCORRECT_DATA);
-            ui_post_processing_confirm_wallet_registration(dc, false);
+            (void) ui_post_processing_confirm_wallet_registration(dc, false);
             return;
         }
 
@@ -203,7 +203,7 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
                                                 &pubkey_derived);
                 if (serialized_pubkey_len == -1) {
                     SEND_SW(dc, SW_BAD_STATE);
-                    ui_post_processing_confirm_wallet_registration(dc, false);
+                    (void) ui_post_processing_confirm_wallet_registration(dc, false);
                     return;
                 }
 
@@ -229,13 +229,13 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
         // We disallow that, might reconsider in future versions if needed.
         PRINTF("Wallet policy with no internal keys\n");
         SEND_SW(dc, SW_INCORRECT_DATA);
-        ui_post_processing_confirm_wallet_registration(dc, false);
+        (void) ui_post_processing_confirm_wallet_registration(dc, false);
         return;
     } else if (n_internal_keys != 1 && wallet_header.version == WALLET_POLICY_VERSION_V1) {
         // for legacy policies, we keep the restriction to exactly 1 internal key
         PRINTF("V1 policies must have exactly 1 internal key\n");
         SEND_SW(dc, SW_INCORRECT_DATA);
-        ui_post_processing_confirm_wallet_registration(dc, false);
+        (void) ui_post_processing_confirm_wallet_registration(dc, false);
         return;
     }
 
@@ -258,7 +258,7 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
     compute_wallet_hmac(wallet_id, response.hmac);
 
     SEND_RESPONSE(dc, &response, sizeof(response), SW_OK);
-    ui_post_processing_confirm_wallet_registration(dc, true);
+    (void) ui_post_processing_confirm_wallet_registration(dc, true);
 }
 
 static bool is_policy_acceptable(const policy_node_t *policy) {

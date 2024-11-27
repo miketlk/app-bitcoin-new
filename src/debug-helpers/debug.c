@@ -39,7 +39,7 @@ void debug_write_dec(unsigned int word) {
         debug_write("0");
     } else {
         char asc[11];
-        unsigned int i;
+        int i;
         for (i = 9; i >= 0; --i) {
             asc[i] = '0' + word % 10;
             if (word == 0) {

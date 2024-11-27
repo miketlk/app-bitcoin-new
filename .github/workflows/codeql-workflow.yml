@@ -6,19 +6,21 @@ on:
     branches:
       - master
       - develop
+      - liquid_develop
+      - tmp_ci_integration
   pull_request:
     branches:
       - master
       - develop
+      - liquid_develop
+      - tmp_ci_integration
 
 jobs:
   analyse:
     name: CodeQL Analyse of boilerplate application
-    strategy: 
+    strategy:
       matrix:
         include:
-          - SDK: "$NANOS_SDK"
-            artifact: boilerplate-app-nanoS
           - SDK: "$NANOX_SDK"
             artifact: boilerplate-app-nanoX
           - SDK: "$NANOSP_SDK"
@@ -27,21 +29,25 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/ledgerhq/ledger-app-builder/ledger-app-builder-legacy:latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
 
     steps:
       - name: Clone
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v2
         with:
           languages: ${{ matrix.language }}
           queries: security-and-quality
-    
+
       - name: Build
         run: |
           make BOLOS_SDK=${{ matrix.SDK }}
-        
+
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v2
 

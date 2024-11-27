@@ -137,11 +137,14 @@ int parser_run(const parsing_step_t *parsing_steps,
                buffer_t *buffers[2],
                void *(*pic_fn)(void *) ) {
     while (parser_context->cur_step < n_steps) {
+        // We suppress here "ISO C forbids conversion of function pointer to object pointer type"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
         parsing_step_t step_fn =
             pic_fn != NULL
                 ? (parsing_step_t) pic_fn((void *) parsing_steps[parser_context->cur_step])
                 : parsing_steps[parser_context->cur_step];
-
+#pragma GCC diagnostic pop
         int step_result = step_fn(parser_context->state, buffers);
 
         if (step_result <= 0) {

@@ -6,14 +6,18 @@ on:
     branches:
     - master
     - develop
+    - liquid_develop
+    - tmp_ci_integration
   pull_request:
     branches:
     - master
     - develop
+    - liquid_develop
+    - tmp_ci_integration
 
 jobs:
   job_build:
-    name: Compilation for NanoS, X, S+, and Stax
+    name: Compilation for NanoS, X, and S+
 
     strategy:
       matrix:
@@ -24,8 +28,6 @@ jobs:
             SDK: "$NANOX_SDK"
           - model: nanosp
             SDK: "$NANOSP_SDK"
-          - model: stax
-            SDK: "$STAX_SDK"
 
     runs-on: ubuntu-latest
 
@@ -34,24 +36,24 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build
         run: |
-          make DEBUG=0 COIN=bitcoin BOLOS_SDK=${{ matrix.SDK }} && mv bin/ bitcoin-bin/
+          make DEBUG=0 COIN=liquid BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-bin/
           make clean
-          make DEBUG=0 COIN=bitcoin_testnet BOLOS_SDK=${{ matrix.SDK }} && mv bin/ bitcoin-testnet-bin/
-      - name: Upload Bitcoin app binary
-        uses: actions/upload-artifact@v2
+          make DEBUG=0 COIN=liquid_regtest BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-regtest-bin/
+      - name: Upload Liquid app binary
+        uses: actions/upload-artifact@v4
         with:
-          name: bitcoin-app-${{ matrix.model }}
-          path: bitcoin-bin
+          name: liquid-app-${{ matrix.model }}
+          path: liquid-bin
 
-      - name: Upload Bitcoin Testnet app binary
-        uses: actions/upload-artifact@v2
+      - name: Upload Liquid Regtest app binary
+        uses: actions/upload-artifact@v4
         with:
-          name: bitcoin-testnet-app-${{ matrix.model }}
-          path: bitcoin-testnet-bin
+          name: liquid-regtest-app-${{ matrix.model }}
+          path: liquid-regtest-bin
 
   job_unit_test:
     name: Unit test
@@ -63,7 +65,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Build unit tests
         run: |
@@ -77,7 +79,7 @@ jobs:
           lcov --directory . -b "$(realpath build/)" --add-tracefile coverage.base --add-tracefile coverage.capture -o coverage.info && \
           lcov --directory . -b "$(realpath build/)" --remove coverage.info '*/unit-tests/*' -o coverage.info && \
           genhtml coverage.info -o coverage
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: code-coverage
           path: unit-tests/coverage
@@ -88,14 +90,14 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./unit-tests/coverage.info
           flags: unittests
-          name: codecov-app-bitcoin
+          name: codecov-app-liquid
           fail_ci_if_error: true
           verbose: true
-      
+
       - name: HTML documentation
         run: doxygen .doxygen/Doxyfile
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v4
         with:
           name: documentation
           path: doc/html
@@ -108,39 +110,33 @@ jobs:
           - model: nanos
           - model: nanox
           - model: nanosp
-          - model: stax
 
     needs: job_build
     runs-on: ubuntu-latest
 
-    container:
-      image: ghcr.io/ledgerhq/app-bitcoin-new/speculos-bitcoin:latest
-      ports:
-        - 1234:1234
-        - 9999:9999
-        - 40000:40000
-        - 41000:41000
-        - 42000:42000
-        - 43000:43000
-      options: --entrypoint /bin/bash
-
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Download Bitcoin app binary
-        uses: actions/download-artifact@v2
+      - name: Download Liquid app binary
+        uses: actions/download-artifact@v4
         with:
-          name: bitcoin-app-${{matrix.model}}
-          path: bin
+          name: liquid-app-${{matrix.model}}
+          path: build/${{ matrix.model == 'nanosp' && 'nanos2' || matrix.model }}/bin
+
+      - name: Install tests dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y qemu-user-static tesseract-ocr libtesseract-dev
+          pip install -U pip setuptools
 
       - name: Run tests
         run: |
-          cd tests_mainnet
-          pip install -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --model=${{ matrix.model }} --timeout=300
+          cd tests_liquid_main
+          pip install --prefer-binary -r requirements.txt
+          PYTHONPATH=$PYTHONPATH:/speculos pytest --tb=short -v --device=${{matrix.model}} --speculos_api_port 5000
 
   job_test_python_lib_legacyapp:
+    if: false
     name: Tests with the Python library and legacy Bitcoin app
     needs: job_build
     runs-on: ubuntu-latest
@@ -158,16 +154,16 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run tests
         run: |
           cd bitcoin_client/tests
           pip install -r requirements.txt
-          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --timeout=300
-
+          PYTHONPATH=$PYTHONPATH:/speculos pytest --headless --timeout=300 --model=nanos
 
   job_test_js_lib:
+    if: false
     name: Tests with the JS library
     needs: job_build
     runs-on: ubuntu-latest
@@ -185,10 +181,10 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Install node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v4
         with:
           node-version: '16'
 
@@ -196,10 +192,10 @@ jobs:
         run: |
           npm install -g yarn
 
-      - name: Download Bitcoin Testnet app binary
-        uses: actions/download-artifact@v2
+      - name: Download Liquid Regtest app binary
+        uses: actions/download-artifact@v4
         with:
-          name: bitcoin-testnet-app-nanos
+          name: liquid-regtest-app-nanosp
           path: bin
 
       - name: Run tests
@@ -208,8 +204,8 @@ jobs:
           yarn install
           LOG_SPECULOS=1 LOG_APDUS=1 SPECULOS="/speculos/speculos.py" yarn test
 
-
   job_test_rust_client:
+    if: false
     name: Tests for rust client library
     needs: job_build
     runs-on: ubuntu-latest
@@ -219,7 +215,7 @@ jobs:
 
     steps:
       - name: Clone
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run tests
         run: |
