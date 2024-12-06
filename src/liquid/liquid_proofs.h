@@ -3,6 +3,7 @@
  */
 
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include <stddef.h>   // size_t
 #include <stdint.h>   // uint*_t
@@ -90,3 +91,5 @@ WARN_UNUSED_RESULT bool liquid_surjectionproof_verify_single(const uint8_t *proo
  */
 WARN_UNUSED_RESULT bool liquid_generator_generate(uint8_t gen[static LIQUID_GENERATOR_LEN],
                                                   const uint8_t seed32_reversed[static 32]);
+
+#endif // HAVE_LIQUID

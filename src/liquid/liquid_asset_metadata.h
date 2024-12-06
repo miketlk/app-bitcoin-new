@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -115,3 +116,4 @@ WARN_UNUSED_RESULT asset_metadata_status_t liquid_get_asset_metadata_by_leaf_ind
     asset_info_ext_t *ext_asset_info);
 
 #endif // SKIP_FOR_CMOCKA
+#endif // HAVE_LIQUID

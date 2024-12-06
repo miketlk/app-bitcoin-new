@@ -1,4 +1,4 @@
-from bitcoin_client.ledger_bitcoin import Client, AddressType, MultisigWallet, PolicyMapWallet, BlindedWallet, BlindedMultisigWallet
+from bitcoin_client.ledger_bitcoin import Client, AddressType, MultisigWallet, WalletPolicy, BlindedWallet, BlindedMultisigWallet
 from bitcoin_client.ledger_bitcoin.exception.errors import IncorrectDataError
 
 import random
@@ -34,7 +34,7 @@ def test_get_wallet_address_elip150_batch(client: Client, speculos_globals):
         assert res == test["confidential_address"]
 
         # Test unconfidential address
-        wallet = PolicyMapWallet(
+        wallet = WalletPolicy(
             name=random_wallet_name(),
             policy_map=test["policy_map"],
             keys_info=test["keys_info"]

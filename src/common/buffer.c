@@ -1,5 +1,5 @@
 /*****************************************************************************
- *   (c) 2021 Ledger SAS.
+ *   (c) 2024 Ledger SAS.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -74,11 +74,15 @@ bool buffer_read_u8(buffer_t *buffer, uint8_t *value) {
 }
 
 bool buffer_peek(const buffer_t *buffer, uint8_t *value) {
-    if (!buffer_can_read(buffer, 1)) {
+    return buffer_peek_n(buffer, 0, value);
+}
+
+bool buffer_peek_n(const buffer_t *buffer, size_t n, uint8_t *value) {
+    if (!buffer_can_read(buffer, n + 1)) {
         return false;
     }
 
-    *value = buffer->ptr[buffer->offset];
+    *value = buffer->ptr[buffer->offset + n];
 
     return true;
 }

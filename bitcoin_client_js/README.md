@@ -2,15 +2,21 @@
 
 ## Overview
 
-TypeScript client for Ledger Bitcoin application. Supports versions 2.0.0 and above of the app.
+TypeScript client for Ledger Bitcoin application. Supports versions 2.1.0 and above of the app.
 
 Main repository and documentation: https://github.com/LedgerHQ/app-bitcoin-new
 
-<!--
 ## Install
 
-TODO: fill this once the module is published
--->
+```bash
+$ yarn add ledger-bitcoin
+```
+
+Or if you prefer using npm:
+
+```bash
+$ npm install ledger-bitcoin
+```
 
 ## Building
 
@@ -24,10 +30,12 @@ $ yarn build
 
 The following example showcases all the main methods of the `Client`'s interface.
 
-Testing the `signPsbt` method requires a valid PSBTv2, and provide the corresponding wallet policy; it is skipped by default in the following example.
+More examples can be found in the [test suite](src/__tests__/appClient.test.ts).
+
+Testing the `signPsbt` method requires a valid PSBT, and provide the corresponding wallet policy; it is skipped by default in the following example.
 
 ```javascript
-import { AppClient, DefaultWalletPolicy, WalletPolicy, PsbtV2 } from 'ledger-bitcoin';
+import { AppClient, DefaultWalletPolicy, WalletPolicy } from 'ledger-bitcoin';
 import Transport from '@ledgerhq/hw-transport-node-hid';
 
 // This examples assumes the Bitcoin Testnet app is running.
@@ -44,8 +52,8 @@ async function main(transport) {
     // ==> Get and display on screen the first taproot address
     const firstTaprootAccountPubkey = await app.getExtendedPubkey("m/86'/1'/0'");
     const firstTaprootAccountPolicy = new DefaultWalletPolicy(
-        "tr(@0)",
-        `[${fpr}/86'/1'/0']${firstTaprootAccountPubkey}/**`
+        "tr(@0/**)",
+        `[${fpr}/86'/1'/0']${firstTaprootAccountPubkey}`
     );
 
     const firstTaprootAccountAddress = await app.getWalletAddress(
@@ -61,12 +69,12 @@ async function main(transport) {
     // ==> Register a multisig wallet named "Cold storage"
 
     const ourPubkey = await app.getExtendedPubkey("m/48'/1'/0'/2'");
-    const ourKeyInfo = `[${fpr}/48'/1'/0'/2']${ourPubkey}/**`;
-    const otherKeyInfo = "[76223a6e/48'/1'/0'/2']tpubDE7NQymr4AFtewpAsWtnreyq9ghkzQBXpCZjWLFVRAvnbf7vya2eMTvT2fPapNqL8SuVvLQdbUbMfWLVDCZKnsEBqp6UK93QEzL8Ck23AwF/**";
+    const ourKeyInfo = `[${fpr}/48'/1'/0'/2']${ourPubkey}`;
+    const otherKeyInfo = "[76223a6e/48'/1'/0'/2']tpubDE7NQymr4AFtewpAsWtnreyq9ghkzQBXpCZjWLFVRAvnbf7vya2eMTvT2fPapNqL8SuVvLQdbUbMfWLVDCZKnsEBqp6UK93QEzL8Ck23AwF";
 
     const multisigPolicy = new WalletPolicy(
         "Cold storage",
-        "wsh(sortedmulti(2,@0,@1))", // a 2-of-2 multisig policy template
+        "wsh(sortedmulti(2,@0/**,@1/**))", // a 2-of-2 multisig policy template
         [
             otherKeyInfo, // some other bitcoiner
             ourKeyInfo,   // that's us
@@ -87,18 +95,19 @@ async function main(transport) {
     // ==> Sign a psbt
 
     // TODO: set a wallet policy and a valid psbt file in order to test psbt signing
-    const rawPsbtBase64 = null; // a base64-encoded psbt file to sign
+    const psbt = null; // a base64-encoded psbt, or a binary psbt in a Buffer
     const signingPolicy = null; // an instance of WalletPolicy
     const signingPolicyHmac = null; // if not a default wallet policy, this must also be set
-    if (!rawPsbtBase64 || !signingPolicy) {
+    if (!psbt || !signingPolicy) {
         console.log("Nothing to sign :(");
         await transport.close();
         return;
     }
 
-    const psbt = new PsbtV2();
-    psbt.deserialize(rawPsbtBase64);
-
+    // result will be a list of triples [i, partialSig], where:
+    // - i is the input index
+    // - partialSig is an instance of PartialSignature; it contains a pubkey and a signature,
+    //   and it might contain a tapleaf_hash.
     const result = await app.signPsbt(psbt, signingPolicy, signingPolicyHmac);
 
     console.log("Returned signatures:");

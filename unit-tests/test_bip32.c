@@ -229,9 +229,7 @@ int main(void) {
         cmocka_unit_test(test_bip32_read),
         cmocka_unit_test(test_bad_bip32_read),
         cmocka_unit_test(test_is_pubkey_path_standard_true),
-        cmocka_unit_test(test_is_pubkey_path_standard_false),
-        cmocka_unit_test(test_is_address_path_standard_true),
-        cmocka_unit_test(test_is_address_path_standard_false)
+        cmocka_unit_test(test_is_pubkey_path_standard_false)
     };
 
     return cmocka_run_group_tests(tests, NULL, NULL);

@@ -8,6 +8,8 @@
 #include "../common/segwit_addr.h"
 #include "../crypto.h"
 
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 // constants previously defined in btchip_apdu_get_wallet_public_key.h
 #define P1_NO_DISPLAY    0x00
 #define P1_DISPLAY       0x01
@@ -68,7 +70,11 @@ bool get_address_from_compressed_public_key(unsigned char format,
                 uint8_t tweaked_key[32];
 
                 uint8_t parity;
-                if (0 != crypto_tr_tweak_pubkey(compressed_pub_key + 1, &parity, tweaked_key)) {
+                if (0 > crypto_tr_tweak_pubkey(compressed_pub_key + 1,
+                                               (uint8_t[]){},
+                                               0,
+                                               &parity,
+                                               tweaked_key)) {
                     return false;
                 }
 
@@ -82,6 +88,11 @@ bool get_address_from_compressed_public_key(unsigned char format,
         }
     }
     return true;
+}
+
+static int os_strcmp(const char* s1, const char* s2) {
+    size_t size = strlen(s1) + 1;
+    return memcmp(s1, s2, size);
 }
 
 int handle_check_address(check_address_parameters_t* params) {
@@ -118,7 +129,7 @@ int handle_check_address(check_address_parameters_t* params) {
         PRINTF("Can't create address from given public key\n");
         return 0;
     }
-    if (strncmp(address, params->address_to_check, sizeof(address)) != 0) {
+    if (os_strcmp(address, params->address_to_check) != 0) {
         PRINTF("Addresses don't match\n");
         return 0;
     }

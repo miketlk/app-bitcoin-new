@@ -1,6 +1,6 @@
 /*****************************************************************************
  *   Ledger App Bitcoin.
- *   (c) 2021 Ledger SAS.
+ *   (c) 2024 Ledger SAS.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,38 +20,24 @@
 #include "boilerplate/io.h"
 #include "boilerplate/dispatcher.h"
 #include "boilerplate/sw.h"
+#include "../common/base58.h"
+#include "../common/bip32.h"
 #include "../commands.h"
 #include "../constants.h"
 #include "../crypto.h"
 #include "../ui/display.h"
 #include "../ui/menu.h"
 
-/**
- * Sends response APDU.
- *
- * @param[in,out] dc
- *   Dispatcher context.
- */
-static void send_response(dispatcher_context_t *dc);
+#define H 0x80000000ul
 
-/**
- * Checks if requested path is safe to export derived public key.
- *
- * @param bip32_path
- *   Derivation path.
- * @param bip32_path_len
- *   Length of derivation path (number of 32-bit elements).
- * @param coin_types
- *   List of coin types this application supports.
- * @param coin_types_length
- *   Number of elements in the coin type list.
- *
- * @return true if export allowed, false otherwise.
- */
-static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
-                                           size_t bip32_path_len,
-                                           const uint32_t coin_types[],
-                                           size_t coin_types_length) {
+static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[], size_t bip32_path_len) {
+    // Exception for Electrum: it historically used "m/4541509h/1112098098h"
+    // to derive encryption keys, so we whitelist it.
+    if (bip32_path_len == 2 && bip32_path[0] == (4541509 ^ H) &&
+        bip32_path[1] == (1112098098 ^ H)) {
+        return true;
+    }
+
     if (bip32_path_len < 3) {
         return false;
     }
@@ -66,6 +52,11 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
         case 86:
             hardened_der_len = 3;
             break;
+        case 45:
+            // BIP-45 prescribes simply length 1, but we instead support existing deployed
+            // use cases with path "m/45'/coin_type'/account'
+            hardened_der_len = 3;
+            break;
         case 48:
             hardened_der_len = 4;
             break;
@@ -73,9 +64,9 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
             return false;
     }
 
-    // bip32_path_len should be either hardened_der_len, or just two more
-    // for change and address_index
-    if (bip32_path_len != hardened_der_len && bip32_path_len != hardened_der_len + 2) {
+    // bip32_path_len should be at least the hardened_der_len
+    // (but it could have additional unhardened derivation steps)
+    if (bip32_path_len < hardened_der_len) {
         return false;
     }
 
@@ -92,14 +83,7 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
     }
 
     uint32_t coin_type = bip32_path[1] & 0x7FFFFFFF;
-    bool coin_type_found = false;
-    for (unsigned int i = 0; i < coin_types_length; i++) {
-        if (coin_type == coin_types[i]) {
-            coin_type_found = true;
-        }
-    }
-
-    if (!coin_type_found) {
+    if (coin_type != BIP44_COIN_TYPE) {
         return false;
     }
 
@@ -108,19 +92,6 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
     // Account shouldn't be too large
     if (account > MAX_BIP44_ACCOUNT_RECOMMENDED) {
         return false;
-    }
-
-    if (bip32_path_len > hardened_der_len) {
-        uint32_t change = bip32_path[bip32_path_len - 2];
-        uint32_t address_index = bip32_path[bip32_path_len - 1];
-
-        if (change != 0 && change != 1) {
-            return false;
-        }
-
-        if (address_index > MAX_BIP44_ADDRESS_INDEX_RECOMMENDED) {
-            return false;
-        }
     }
 
     // For BIP48, there is also the script type, with only standardized values 1' and 2'
@@ -134,16 +105,10 @@ static bool is_path_safe_for_pubkey_export(const uint32_t bip32_path[],
     return true;
 }
 
-void handler_get_extended_pubkey(dispatcher_context_t *dc) {
-    get_extended_pubkey_state_t *state = (get_extended_pubkey_state_t *) &G_command_state;
+void handler_get_extended_pubkey(dispatcher_context_t *dc, uint8_t protocol_version) {
+    (void) protocol_version;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
-
-    // Device must be unlocked
-    if (os_global_pin_is_validated() != BOLOS_UX_OK) {
-        SEND_SW(dc, SW_SECURITY_STATUS_NOT_SATISFIED);
-        return;
-    }
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint8_t display;
     uint8_t bip32_path_len;
@@ -164,41 +129,48 @@ void handler_get_extended_pubkey(dispatcher_context_t *dc) {
         return;
     }
 
-    uint32_t coin_types[2] = {BIP44_COIN_TYPE, BIP44_COIN_TYPE_2};
-    bool is_safe = is_path_safe_for_pubkey_export(bip32_path, bip32_path_len, coin_types, 2);
+    bool is_safe = is_path_safe_for_pubkey_export(bip32_path, bip32_path_len);
 
     if (!is_safe && !display) {
         SEND_SW(dc, SW_NOT_SUPPORTED);
         return;
     }
 
-    int serialized_pubkey_len =
-        get_serialized_extended_pubkey_at_path(bip32_path,
-                                               bip32_path_len,
-                                               BIP32_PUBKEY_VERSION,
-                                               state->serialized_pubkey_str);
-    if (serialized_pubkey_len == -1) {
+    serialized_extended_pubkey_check_t pubkey_check;
+    if (0 > get_extended_pubkey_at_path(bip32_path,
+                                        bip32_path_len,
+                                        BIP32_PUBKEY_VERSION,
+                                        &pubkey_check.serialized_extended_pubkey)) {
+        PRINTF("Failed getting bip32 pubkey\n");
         SEND_SW(dc, SW_BAD_STATE);
         return;
     }
+
+    crypto_get_checksum((uint8_t *) &pubkey_check.serialized_extended_pubkey,
+                        sizeof(pubkey_check.serialized_extended_pubkey),
+                        pubkey_check.checksum);
+
+    char pubkey_str[MAX_SERIALIZED_PUBKEY_LENGTH + 1];
+    int pubkey_str_len = base58_encode((uint8_t *) &pubkey_check,
+                                       sizeof(pubkey_check),
+                                       pubkey_str,
+                                       sizeof(pubkey_str));
+    if (pubkey_str_len != 111 && pubkey_str_len != 112) {
+        PRINTF("Failed encoding base58 pubkey\n");
+        SEND_SW(dc, SW_BAD_STATE);
+        return;
+    }
+    pubkey_str[pubkey_str_len] = 0;
 
     char path_str[MAX_SERIALIZED_BIP32_PATH_LENGTH + 1] = "(Master key)";
     if (bip32_path_len > 0) {
         bip32_path_format(bip32_path, bip32_path_len, path_str, sizeof(path_str));
     }
 
-    if (display) {
-        ui_display_pubkey(dc, path_str, !is_safe, state->serialized_pubkey_str, send_response);
-    } else {
-        dc->next(send_response);
+    if (display && !ui_display_pubkey(dc, path_str, !is_safe, pubkey_str)) {
+        SEND_SW(dc, SW_DENY);
+        return;
     }
-}
 
-static void send_response(dispatcher_context_t *dc) {
-    get_extended_pubkey_state_t *state = (get_extended_pubkey_state_t *) &G_command_state;
-
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
-
-    size_t pubkey_len = strnlen(state->serialized_pubkey_str, sizeof(state->serialized_pubkey_str) - 1);
-    SEND_RESPONSE(dc, state->serialized_pubkey_str, pubkey_len, SW_OK);
+    SEND_RESPONSE(dc, pubkey_str, pubkey_str_len, SW_OK);
 }

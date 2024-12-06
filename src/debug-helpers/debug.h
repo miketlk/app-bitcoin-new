@@ -1,5 +1,15 @@
 #pragma once
 
+#include "os.h"
+
+// Workaround
+#ifdef HAVE_SEMIHOSTED_PRINTF
+    #ifdef PRINTF
+        #undef PRINTF
+    #endif
+    #define PRINTF semihosted_printf
+#endif // HAVE_SEMIHOSTED_PRINTF
+
 void debug_write(const char *buf);
 void debug_write_hex(unsigned int word, unsigned int bytes);
 void debug_write_dec(unsigned int word);
@@ -38,3 +48,18 @@ void print_strn(const char *msg, const char *str, int len);
 #define PRINT_STR(msg, str)
 #define PRINT_STRN(msg, str, len)
 #endif // HAVE_PRINTF
+
+
+static inline int print_error_info(const char *error_msg,
+                                   const char *filename,
+                                   int line,
+                                   int retval) {
+    (void) error_msg;
+    (void) filename;
+    (void) line;
+
+    PRINTF("ERR (%s::%d): %s\n", filename, line, error_msg);
+    return retval;
+}
+
+#define WITH_ERROR(retval, error_msg) print_error_info(error_msg, __FILE__, __LINE__, retval)

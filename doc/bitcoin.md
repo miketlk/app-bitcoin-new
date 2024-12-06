@@ -1,23 +1,25 @@
-Bitcoin application : Technical Specifications
+# Bitcoin application: Technical Specifications
 
-<!-- TODO: List all the technical limitation for each command (max limits, etc.) -->
+This page details the protocol implemented since version 2.1.0 of the app.
 
+The protocol documentation for version from 2.0.0 and before 2.1.0 is [here](./v0/bitcoin.md) and is now deprecated.
 
 ## Framework
 
 ### APDUs
 
-The messaging format of the app is compatible with the [APDU protocol](https://developers.ledger.com/docs/nano-app/application-structure/#apdu-interpretation-loop). The `P1` and `P2` fields are reserved for future use and must be set to `0` in all messages.
+The messaging format of the app is compatible with the [APDU protocol](https://developers.ledger.com/docs/nano-app/application-structure/#apdu-interpretation-loop). The `P1` field is reserved for future use and must be set to `0` in all messages. The `P2` field is used as a protocol version identifier; the current version is `1`, while version `0` is still supported. No other value must be used.
 
 The main commands use `CLA = 0xE1`, unlike the legacy Bitcoin application that used `CLA = 0xE0`.
 
-| CLA | INS | COMMAND NAME        | DESCRIPTION |
-|-----|-----|---------------------|-------------|
-|  E1 |  00 | GET_EXTENDED_PUBKEY | Return (and optionally show on screen) extended pubkey |
-|  E1 |  02 | REGISTER_WALLET     | Registers a wallet on the device (with user's approval) |
-|  E1 |  03 | GET_WALLET_ADDRESS  | Return and show on screen an address for a registered or default wallet |
-|  E1 |  04 | SIGN_PSBT           | Signs a PSBT with a registered or default wallet |
-|  E1 |  10 | SIGN_MESSAGE        | Sign a message with a key from a BIP32 path (Bitcoin Message Signing) |
+| CLA | INS | COMMAND NAME           | DESCRIPTION |
+|-----|-----|------------------------|-------------|
+|  E1 |  00 | GET_EXTENDED_PUBKEY    | Return (and optionally show on screen) extended pubkey |
+|  E1 |  02 | REGISTER_WALLET        | Register a wallet policy on the device (with user's approval) |
+|  E1 |  03 | GET_WALLET_ADDRESS     | Return and show on screen an address for a registered or default wallet |
+|  E1 |  04 | SIGN_PSBT              | Sign a PSBT with a registered or default wallet |
+|  E1 |  05 | GET_MASTER_FINGERPRINT | Return the fingerprint of the master public key |
+|  E1 |  10 | SIGN_MESSAGE           | Sign a message with a key from a BIP32 path (Bitcoin Message Signing) |
 
 The `CLA = 0xF8` is used for framework-specific (rather than app-specific) APDUs; at this time, only one command is present.
 
@@ -84,7 +86,7 @@ Returns an extended public key at the given derivation path, serialized as per B
 | Length | Name              | Description |
 |--------|-------------------|-------------|
 | `1`    | `display`         | `0` or `1`  |
-| `1`    | `n`               | Number of derivation steps (maximum 6) |
+| `1`    | `n`               | Number of derivation steps (maximum 8) |
 | `4`    | `bip32_path[0]`   | First derivation step (big endian) |
 | `4`    | `bip32_path[1]`   | Second derivation step (big endian) |
 |        | ...               |             |
@@ -142,6 +144,8 @@ After user's validation is completed successfully, the application returns the `
 
 #### Client commands
 
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the sha256 hash of its descriptor template.
+
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries related to the Merkle tree of the list of keys information.
 
 The `GET_MORE_ELEMENTS` command must be handled.
@@ -185,7 +189,7 @@ If the `display` parameter is `1`, the resulting wallet address is also shown on
 
 #### Client commands
 
-`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`.
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the sha256 hash of its descriptor template.
 
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries related to the Merkle tree of the list of keys information.
 
@@ -223,16 +227,23 @@ No output data; the signature are returned using the YIELD client command.
 
 #### Description
 
-Using the information in the PSBT and the wallet description, this command verifies what inputs are internal and what output matches the pattern for a change address. After validating all the external outputs and the transaction fee with the user, it signs each of the internal inputs; each signature is sent to the client using the YIELD command, encoded as `<input_index> <signature>`, where the `input_index` is a Bitcoin style varint (currently, always 1 byte).
+Using the information in the PSBT and the wallet description, this command verifies what inputs are internal and what outputs match the pattern for a change address. After validating all the external outputs and the transaction fee with the user, it signs each of the internal inputs; each signature is sent to the client using the YIELD command, in the format described below. If multiple key placeholders of the wallet policy are internal, the process is repeated for each of them.
+
+The results yielded via the YIELD command respect the following format: `<input_index> <pubkey_augm_len> <pubkey_augm> <signature>`, where:
+- `input_index` is a Bitcoin style varint, the index input of the input being signed (starting from 0);
+- `pubkey_augm_len` is an unsigned byte equal to the length of `pubkey_augm`;
+- `pubkey_augm` is the `pubkey` used for signing for legacy, segwit or taproot script path spends (a compressed pubkey if non-taproot, a 32-byte x-only pubkey if taproot); for taproot script path spends, it is the concatenation of the `x-only` pubkey and the 32-byte *tapleaf hash* as defined in [BIP-0341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki);
+- `signature` is the returned signature, possibly concatenated with the sighash byte (as it would be pushed on the stack).
+
+If `P2` is `0` (version `0` of the protocol), `pubkey_augm_len` and `pubkey_augm` are omitted in the YIELD messages.
 
 For a registered wallet, the hmac must be correct.
 
 For a default wallet, `hmac` must be equal to 32 bytes `0`.
 
-
 #### Client commands
 
-`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`.
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the sha256 hash of its descriptor template.
 
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries for all the Merkle trees in the input, including each of the Merkle trees for keys and values of the Merkleized map commitments of each of the inputs/outputs maps of the psbt.
 
@@ -287,7 +298,7 @@ The device shows on its secure screen the BIP-32 path used for signing, and the 
 
 | Length  | Name              | Description |
 |---------|-------------------|-------------|
-| `1`     | `n`               | Number of derivation steps (maximum 6) |
+| `1`     | `n`               | Number of derivation steps (maximum 8) |
 | `4`     | `bip32_path[0]`   | First derivation step (big endian) |
 | `4`     | `bip32_path[1]`   | Second derivation step (big endian) |
 |         | ...               |             |
@@ -338,7 +349,7 @@ The `YIELD` client command is sent to the client to communicate some result duri
 
 The client must respond with an empty message.
 
-### 40 GET_PREIMAGE
+### GET_PREIMAGE
 
 **Command code**: 0x40
 

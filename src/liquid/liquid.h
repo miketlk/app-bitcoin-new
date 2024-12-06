@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include <stddef.h>   // size_t
 #include <stdint.h>   // uint*_t
@@ -252,3 +253,5 @@ bool liquid_is_master_blinding_key_ours(const uint8_t mbk[static 32]);
 static inline bool liquid_policy_is_blinded(const policy_node_t *policy) {
     return policy && (TOKEN_CT == policy->type);
 }
+
+#endif // HAVE_LIQUID

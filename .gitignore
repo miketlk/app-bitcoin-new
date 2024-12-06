@@ -12,11 +12,9 @@ unit-tests/build/
 unit-tests/coverage/
 unit-tests/coverage.info
 
-tests-legacy/bitcoin-bin
-tests-legacy/bitcoin-testnet-bin
-
 # temporary folder used during tests
 tests/.test_bitcoin
+tests/snapshots-tmp
 
 # Fuzzing
 fuzzing/build/
@@ -35,13 +33,12 @@ __pycache__/
 .eggs/
 .python-version
 .pytest_cache
+venv/
+ledger/
 
 # Doxygen
 doc/html
 doc/latex
-
-# Python virtual environment
-.venv*
 
 # Mac directory metadata
 .DS_Store

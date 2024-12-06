@@ -1,7 +1,5 @@
 #pragma once
-
-#if defined HAVE_LIQUID && !defined(_LIQUID_ASSETS_H__)
-#define _LIQUID_ASSETS_H__
+#ifdef HAVE_LIQUID
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -121,5 +119,4 @@ WARN_UNUSED_RESULT bool liquid_compute_asset_tag(const uint8_t contract_hash[sta
 void liquid_format_asset_tag(const uint8_t asset_tag[static LIQUID_ASSET_TAG_LEN],
                              char out[static LIQUID_ASSET_TAG_HEX_LEN + 1]);
 
-#endif
-
+#endif // HAVE_LIQUID

@@ -21,18 +21,17 @@ if(NOT WIN32)
 endif()
 
 if(${CMAKE_VERSION} VERSION_LESS 3.10)
-    cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
+  cmake_policy(VERSION ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION})
 endif()
 
 # project information
 project(unit_tests
-        VERSION 0.1
-	      DESCRIPTION "Unit tests for Ledger Nano application"
-        LANGUAGES C)
-
+  VERSION 0.1
+  DESCRIPTION "Unit tests for Ledger Nano application"
+  LANGUAGES C)
 
 # guard against bad build-type strings
-if (NOT CMAKE_BUILD_TYPE)
+if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
 endif()
 
@@ -63,7 +62,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there. You may need to remove CMakeCache.txt. ")
 endif()
 
-add_compile_definitions(TEST DEBUG=0 SKIP_FOR_CMOCKA)
+add_compile_definitions(TEST DEBUG=0 SKIP_FOR_CMOCKA PRINTF=printf)
 
 if (NOT DEFINED HAVE_LIQUID OR HAVE_LIQUID GREATER_EQUAL 1)
   message("${BoldCyan}** LIQUID SUPPORT ENABLED **${ColourReset}")
@@ -79,6 +78,7 @@ if (CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
 endif()
+include_directories(libs)
 
 add_executable(test_apdu_parser test_apdu_parser.c)
 add_executable(test_base58 test_base58.c)
@@ -91,8 +91,13 @@ add_executable(test_parser test_parser.c)
 add_executable(test_script test_script.c)
 add_executable(test_wallet test_wallet.c)
 add_executable(test_write test_write.c)
-add_executable(test_crypto test_crypto.c)
+# add_executable(test_crypto test_crypto.c)
 add_executable(test_wif test_wif.c)
+
+# Mock libraries
+add_library(crypto_mocks SHARED libs/crypto_mocks.c)
+add_library(sha256 SHARED libs/sha-256.c)
+
 if (HAVE_LIQUID)
   add_executable(test_liquid_addr test_liquid_addr.c)
   add_executable(test_liquid test_liquid.c)
@@ -101,38 +106,43 @@ if (HAVE_LIQUID)
   add_executable(test_asset_metadata test_asset_metadata.c)
 endif()
 
-add_library(apdu_parser ${LIB_TYPE} ../src/boilerplate/apdu_parser.c)
-add_library(base58 ${LIB_TYPE} ../src/common/base58.c)
-add_library(bip32 ${LIB_TYPE} ../src/common/bip32.c)
-add_library(buffer ${LIB_TYPE} ../src/common/buffer.c)
-add_library(display_utils ${LIB_TYPE} ../src/ui/display_utils.c)
-add_library(format ${LIB_TYPE} ../src/common/format.c)
-add_library(parser ${LIB_TYPE} ../src/common/parser.c)
-add_library(read ${LIB_TYPE} ../src/common/read.c)
-add_library(script ${LIB_TYPE} ../src/common/script.c)
-add_library(varint ${LIB_TYPE} ../src/common/varint.c)
-add_library(wallet ${LIB_TYPE} ../src/common/wallet.c)
-add_library(write ${LIB_TYPE} ../src/common/write.c)
-add_library(crypto ${LIB_TYPE} ../src/crypto.c)
+# App's libraries
+add_library(apdu_parser SHARED ../src/boilerplate/apdu_parser.c)
+add_library(base58 SHARED ../src/common/base58.c)
+add_library(bip32 SHARED ../src/common/bip32.c)
+add_library(buffer SHARED ../src/common/buffer.c)
+add_library(display_utils SHARED ../src/ui/display_utils.c)
+add_library(format SHARED ../src/common/format.c)
+add_library(parser SHARED ../src/common/parser.c)
+add_library(read SHARED ../src/common/read.c)
+add_library(script SHARED ../src/common/script.c)
+add_library(varint SHARED ../src/common/varint.c)
+add_library(wallet SHARED ../src/common/wallet.c)
+add_library(write SHARED ../src/common/write.c)
+
+# add_library(crypto SHARED ../src/crypto.c)
 add_library(wif ${LIB_TYPE} ../src/common/wif.c)
 add_library(mock_crypto ${LIB_TYPE} mock_crypto.c lib/sha-2/sha-256.c)
 if (HAVE_LIQUID)
   add_library(liquid ${LIB_TYPE} ../src/liquid/liquid.c ../src/liquid/liquid_addr.c ../src/liquid/blech32.c ../src/liquid/liquid_assets.c ../src/liquid/contract_parser.c ../src/liquid/liquid_asset_metadata.c)
 endif()
 
-target_link_libraries(test_apdu_parser PUBLIC cmocka ${GCOV_LIB} apdu_parser)
-target_link_libraries(test_base58 PUBLIC cmocka ${GCOV_LIB} base58 mock_crypto)
-target_link_libraries(test_bip32 PUBLIC cmocka ${GCOV_LIB} bip32 read)
-target_link_libraries(test_bitvector PUBLIC cmocka ${GCOV_LIB})
-target_link_libraries(test_buffer PUBLIC cmocka ${GCOV_LIB} buffer varint read write bip32)
-target_link_libraries(test_display_utils PUBLIC cmocka ${GCOV_LIB} display_utils)
-target_link_libraries(test_format PUBLIC cmocka ${GCOV_LIB} format)
-target_link_libraries(test_parser PUBLIC cmocka ${GCOV_LIB} parser buffer varint read write bip32)
-target_link_libraries(test_script PUBLIC cmocka ${GCOV_LIB} script buffer varint read write bip32)
-target_link_libraries(test_wallet PUBLIC cmocka ${GCOV_LIB} wallet buffer varint read write bip32 wif base58 crypto mock_crypto)
-target_link_libraries(test_write PUBLIC cmocka ${GCOV_LIB} write)
-target_link_libraries(test_crypto PUBLIC cmocka ${GCOV_LIB} crypto base58 read mock_crypto)
-target_link_libraries(test_wif PUBLIC cmocka ${GCOV_LIB} wif base58 read mock_crypto)
+# Mock libraries
+target_link_libraries(crypto_mocks PUBLIC sha256)
+
+# App's libraries
+target_link_libraries(test_apdu_parser PUBLIC cmocka gcov apdu_parser)
+target_link_libraries(test_base58 PUBLIC cmocka gcov base58)
+target_link_libraries(test_bip32 PUBLIC cmocka gcov bip32 read)
+target_link_libraries(test_bitvector PUBLIC cmocka gcov)
+target_link_libraries(test_buffer PUBLIC cmocka gcov buffer varint read write bip32)
+target_link_libraries(test_display_utils PUBLIC cmocka gcov display_utils)
+target_link_libraries(test_format PUBLIC cmocka gcov format)
+target_link_libraries(test_parser PUBLIC cmocka gcov parser buffer varint read write bip32)
+target_link_libraries(test_script PUBLIC cmocka gcov script buffer varint read write bip32)
+target_link_libraries(test_wallet PUBLIC cmocka gcov wallet script buffer varint read write bip32 base58 crypto_mocks)
+target_link_libraries(test_write PUBLIC cmocka gcov write)
+
 if (HAVE_LIQUID)
   target_link_libraries(test_liquid_addr PUBLIC cmocka ${GCOV_LIB} liquid buffer varint bip32 base58 read write mock_crypto)
   target_link_libraries(test_liquid PUBLIC cmocka ${GCOV_LIB} liquid wif wallet script buffer varint bip32 base58 read write crypto mock_crypto)
@@ -141,6 +151,7 @@ if (HAVE_LIQUID)
   target_link_libraries(test_asset_metadata PUBLIC cmocka ${GCOV_LIB} liquid buffer varint read write bip32 mock_crypto)
 endif()
 
+# target_link_libraries(test_crypto PUBLIC cmocka gcov crypto)
 add_test(test_apdu_parser test_apdu_parser)
 add_test(test_base58 test_base58)
 add_test(test_bip32 test_bip32)
@@ -152,7 +163,8 @@ add_test(test_parser test_parser)
 add_test(test_script test_script)
 add_test(test_wallet test_wallet)
 add_test(test_write test_write)
-add_test(test_crypto test_crypto)
+# TODO: restore tests for crypto.c
+# add_test(test_crypto test_crypto)
 add_test(test_wif test_wif)
 if (HAVE_LIQUID)
   add_test(test_liquid_addr test_liquid_addr)

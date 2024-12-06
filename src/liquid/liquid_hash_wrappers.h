@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include <stddef.h>   // size_t
 #include <stdint.h>   // uint*_t
@@ -120,3 +121,5 @@ WARN_UNUSED_RESULT static inline bool hash_update_u32_le(cx_hash_t *hash_context
 WARN_UNUSED_RESULT static inline bool hash_digest(cx_hash_t *hash_context, uint8_t *out, size_t out_len) {
     return CX_OK == cx_hash_no_throw(hash_context, CX_LAST, NULL, 0, out, out_len);
 }
+
+#endif // HAVE_LIQUID

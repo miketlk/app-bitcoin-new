@@ -126,9 +126,9 @@ static void test_format_amount(void **state) {
         memset(out, 0xEE, sizeof(out));
 
         format_amount(sats_testcases[i].coin,
-                           sats_testcases[i].amount,
-                           sats_testcases[i].decimals,
-                           out);
+                      sats_testcases[i].amount,
+                      sats_testcases[i].decimals,
+                      out);
         out[sizeof(out) - 1] = '\0';
         assert_string_equal((char *) out, sats_testcases[i].expected);
 

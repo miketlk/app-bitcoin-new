@@ -1,6 +1,6 @@
 /*****************************************************************************
  *   Ledger App Bitcoin.
- *   (c) 2021 Ledger SAS.
+ *   (c) 2024 Ledger SAS.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@
 #include "cx_stubs.h"
 #include "cx_ecfp.h"
 #include "ox_ec.h"
+#include "cx_ram.h"
+#include "lcx_ripemd160.h"
+#include "cx_ripemd160.h"
+#include "lib_standard_app/crypto_helpers.h"
 #endif
 
 #include "common/base58.h"
@@ -33,18 +37,12 @@
 #include "common/read.h"
 #include "common/write.h"
 
+#include "cxram_stash.h"
+#include "debug-helpers/debug.h"
+
 #include "crypto.h"
 
-#ifndef SKIP_FOR_CMOCKA
-#include "cx_ram.h"
-#include "lcx_ripemd160.h"
-#include "cx_ripemd160.h"
-#include "../../cxram_stash.h"
-#endif
-
 #include "util.h"
-
-#ifndef SKIP_FOR_CMOCKA
 
 /**
  * Generator for secp256k1, value 'g' defined in "Standards for Efficient Cryptography"
@@ -87,6 +85,9 @@ const uint8_t secp256k1_sqr_exponent[] = {
     /* BIP0341 tags for computing the tagged hashes when tweaking public keys */
     static const uint8_t BIP0341_taptweak_tag[] = {'T', 'a', 'p', 'T', 'w', 'e', 'a', 'k'};
 #endif
+
+static const uint8_t BIP0341_tapbranch_tag[] = {'T', 'a', 'p', 'B', 'r', 'a', 'n', 'c', 'h'};
+static const uint8_t BIP0341_tapleaf_tag[] = {'T', 'a', 'p', 'L', 'e', 'a', 'f'};
 
 static int secp256k1_point(const uint8_t scalar[static 32], uint8_t out[static 65]);
 
@@ -206,32 +207,19 @@ void crypto_hash_update_zeros(cx_hash_t *hash_context, size_t n_zeros) {
     }
 }
 
-#ifndef _NR_cx_hash_ripemd160
-/** Missing in some SDKs, we implement it using the cxram section if needed. */
-static size_t cx_hash_ripemd160(const uint8_t *in, size_t in_len, uint8_t *out, size_t out_len) {
-    PRINT_STACK_POINTER();
-
-    if (out_len < CX_RIPEMD160_SIZE) {
-        return 0;
-    }
-    LEDGER_ASSERT(cx_ripemd160_init_no_throw((cx_ripemd160_t *) &G_cx) == CX_OK, "It never fails");
-    LEDGER_ASSERT(cx_ripemd160_update((cx_ripemd160_t *) &G_cx, in, in_len) == CX_OK,
-                  "It never fails");
-    LEDGER_ASSERT(cx_ripemd160_final((cx_ripemd160_t *) &G_cx, out) == CX_OK, "It never fails");
-    explicit_bzero((cx_ripemd160_t *) &G_cx, sizeof(cx_sha256_t));
-    return CX_RIPEMD160_SIZE;
-}
-#endif  // _NR_cx_hash_ripemd160
-
 void crypto_ripemd160(const uint8_t *in, uint16_t inlen, uint8_t out[static 20]) {
-    cx_hash_ripemd160(in, inlen, out, 20);
+    int res = cx_ripemd160_hash(in, inlen, out);
+    LEDGER_ASSERT(res == CX_OK, "Unexpected error in ripemd160 computation. Returned: %d", res);
 }
 
 void crypto_hash160(const uint8_t *in, uint16_t inlen, uint8_t out[static 20]) {
     PRINT_STACK_POINTER();
 
     uint8_t buffer[32];
-    cx_hash_sha256(in, inlen, buffer, 32);
+    int res = cx_hash_sha256(in, inlen, buffer, 32);
+    LEDGER_ASSERT(res == CX_SHA256_SIZE,
+                  "Unexpected error in sha256 computation. Returned: %d",
+                  res);
     crypto_ripemd160(buffer, 32, out);
 }
 
@@ -278,37 +266,22 @@ bool crypto_get_compressed_pubkey_at_path(const uint32_t bip32_path[],
                                           uint8_t bip32_path_len,
                                           uint8_t pubkey[static 33],
                                           uint8_t chain_code[]) {
-    struct {
-        uint8_t prefix;
-        uint8_t raw_public_key[64];
-        uint8_t chain_code[32];
-    } keydata;
+    uint8_t raw_public_key[65];
 
-    cx_ecfp_private_key_t private_key = {0};
-    cx_ecfp_public_key_t public_key;
-
-    bool ok = true;
-
-    keydata.prefix = 0x04;  // uncompressed public keys always start with 04
-    // derive private key according to BIP32 path
-    ok = ok && 0 == crypto_derive_private_key(&private_key, keydata.chain_code, bip32_path, bip32_path_len);
-
-    if (ok && chain_code != NULL) {
-        memmove(chain_code, keydata.chain_code, 32);
+    if (bip32_derive_get_pubkey_256(CX_CURVE_256K1,
+                                    bip32_path,
+                                    bip32_path_len,
+                                    raw_public_key,
+                                    chain_code,
+                                    CX_SHA512) != CX_OK) {
+        return false;
     }
 
-    // generate corresponding public key
-    ok = ok && CX_OK == cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &public_key, &private_key, 1);
-    memmove(keydata.raw_public_key, public_key.W + 1, sizeof(keydata.raw_public_key));
+    if (crypto_get_compressed_pubkey(raw_public_key, pubkey) < 0) {
+        return false;
+    }
 
-    // compute compressed public key
-    ok = ok && 0 == crypto_get_compressed_pubkey((uint8_t *) &keydata, pubkey);
-
-    // delete sensitive data
-    explicit_bzero(keydata.chain_code, 32);
-    explicit_bzero(&private_key, sizeof(private_key));
-
-    return ok;
+    return true;
 }
 
 uint32_t crypto_get_key_fingerprint(const uint8_t pub_key[static 33]) {
@@ -332,7 +305,7 @@ bool crypto_derive_symmetric_key(const char *label, size_t label_len, uint8_t ke
     //       is not aligned.
     uint8_t label_copy[32] __attribute__((aligned(4)));
 
-    memcpy(label_copy, label, MIN(label_len, sizeof(label_copy)));
+    memcpy(label_copy, label, label_len);
     uint8_t raw_privkey[64]; // Needed because in the new SDK derived key could be up to 64 bytes long
 
     bool res = CX_OK == os_derive_bip32_with_seed_no_throw(HDW_SLIP21,
@@ -350,13 +323,10 @@ bool crypto_derive_symmetric_key(const char *label, size_t label_len, uint8_t ke
     return res;
 }
 
-// TODO: Split serialization from key derivation?
-//       It might be difficult to have a clean API without wasting memory, as the checksum
-//       needs to be concatenated to the data before base58 serialization.
-int get_serialized_extended_pubkey_at_path(const uint32_t bip32_path[],
-                                           uint8_t bip32_path_len,
-                                           uint32_t bip32_pubkey_version,
-                                           char out[static MAX_SERIALIZED_PUBKEY_LENGTH + 1]) {
+int get_extended_pubkey_at_path(const uint32_t bip32_path[],
+                                uint8_t bip32_path_len,
+                                uint32_t bip32_pubkey_version,
+                                serialized_extended_pubkey_t *out_pubkey) {
     // find parent key's fingerprint and child number
     uint32_t parent_fingerprint = 0;
     uint32_t child_number = 0;
@@ -365,7 +335,10 @@ int get_serialized_extended_pubkey_at_path(const uint32_t bip32_path[],
         // for the response, in order to save memory
 
         uint8_t parent_pubkey[33];
-        if (!crypto_get_compressed_pubkey_at_path(bip32_path, bip32_path_len - 1, parent_pubkey, NULL)) {
+        if (!crypto_get_compressed_pubkey_at_path(bip32_path,
+                                                  bip32_path_len - 1,
+                                                  parent_pubkey,
+                                                  NULL)) {
             return -1;
         }
 
@@ -373,33 +346,19 @@ int get_serialized_extended_pubkey_at_path(const uint32_t bip32_path[],
         child_number = bip32_path[bip32_path_len - 1];
     }
 
-    struct {
-        serialized_extended_pubkey_t ext_pubkey;
-        uint8_t checksum[4];
-    } ext_pubkey_check;  // extended pubkey and checksum
-
-    serialized_extended_pubkey_t *ext_pubkey = &ext_pubkey_check.ext_pubkey;
-
-    write_u32_be(ext_pubkey->version, 0, bip32_pubkey_version);
-    ext_pubkey->depth = bip32_path_len;
-    write_u32_be(ext_pubkey->parent_fingerprint, 0, parent_fingerprint);
-    write_u32_be(ext_pubkey->child_number, 0, child_number);
+    write_u32_be(out_pubkey->version, 0, bip32_pubkey_version);
+    out_pubkey->depth = bip32_path_len;
+    write_u32_be(out_pubkey->parent_fingerprint, 0, parent_fingerprint);
+    write_u32_be(out_pubkey->child_number, 0, child_number);
 
     if (!crypto_get_compressed_pubkey_at_path(bip32_path,
                                               bip32_path_len,
-                                              ext_pubkey->compressed_pubkey,
-                                              ext_pubkey->chain_code)) {
+                                              out_pubkey->compressed_pubkey,
+                                              out_pubkey->chain_code)) {
         return -1;
     }
-    crypto_get_checksum((uint8_t *) ext_pubkey, 78, ext_pubkey_check.checksum);
 
-    int serialized_pubkey_len =
-        base58_encode((uint8_t *) &ext_pubkey_check, 78 + 4, out, MAX_SERIALIZED_PUBKEY_LENGTH);
-
-    if (serialized_pubkey_len > 0) {
-        out[serialized_pubkey_len] = '\0';
-    }
-    return serialized_pubkey_len;
+    return 0;
 }
 
 int base58_encode_address(const uint8_t in[20], uint32_t version, char *out, size_t out_len) {
@@ -423,29 +382,56 @@ int base58_encode_address(const uint8_t in[20], uint32_t version, char *out, siz
 }
 
 int crypto_ecdsa_sign_sha256_hash_with_key(const uint32_t bip32_path[],
-                                           size_t bip32_path_len,
+                                           uint8_t bip32_path_len,
                                            const uint8_t hash[static 32],
+                                           uint8_t *pubkey,
                                            uint8_t out[static MAX_DER_SIG_LEN],
                                            uint32_t *info) {
     cx_ecfp_private_key_t private_key = {0};
-    uint8_t chain_code[32] = {0};
+    cx_ecfp_public_key_t public_key;
     uint32_t info_internal = 0;
 
     size_t sig_len = MAX_DER_SIG_LEN;
+    bool error = true;
 
-    bool ok = 0 == crypto_derive_private_key(&private_key, chain_code, bip32_path, bip32_path_len);
-    ok = ok && CX_OK == cx_ecdsa_sign_no_throw(&private_key,
-                                               CX_RND_RFC6979,
-                                               CX_SHA256,
-                                               hash,
-                                               32,
-                                               out,
-                                               &sig_len,
-                                               &info_internal);
+    if (bip32_derive_init_privkey_256(CX_CURVE_256K1,
+                                      bip32_path,
+                                      bip32_path_len,
+                                      &private_key,
+                                      NULL) != CX_OK) {
+        goto end;
+    }
 
+    if (cx_ecdsa_sign_no_throw(&private_key,
+                               CX_RND_RFC6979,
+                               CX_SHA256,
+                               hash,
+                               32,
+                               out,
+                               &sig_len,
+                               &info_internal) != CX_OK) {
+        goto end;
+    }
+
+    if (pubkey != NULL) {
+        // Generate associated pubkey
+        if (cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1, &public_key, &private_key, true) !=
+            CX_OK) {
+            goto end;
+        }
+
+        // compute compressed public key
+        if (crypto_get_compressed_pubkey(public_key.W, pubkey) < 0) {
+            goto end;
+        }
+    }
+
+    error = false;
+
+end:
     explicit_bzero(&private_key, sizeof(private_key));
 
-    if (!ok) {
+    if (error) {
         // unexpected error when signing
         return -1;
     }
@@ -454,7 +440,7 @@ int crypto_ecdsa_sign_sha256_hash_with_key(const uint32_t bip32_path[],
         *info = info_internal;
     }
 
-    return (int)sig_len;
+    return sig_len;
 }
 
 void crypto_tr_tagged_hash_init(cx_sha256_t *hash_context, const uint8_t *tag, uint16_t tag_len) {
@@ -470,18 +456,8 @@ void crypto_tr_tagged_hash_init(cx_sha256_t *hash_context, const uint8_t *tag, u
     crypto_hash_update(&hash_context->header, hashtag, sizeof(hashtag));
 }
 
-static void crypto_tr_tagged_hash(const uint8_t *tag,
-                                  uint16_t tag_len,
-                                  const uint8_t *data,
-                                  uint16_t data_len,
-                                  uint8_t out[static 32]) {
-    cx_sha256_t hash_context;
-    cx_sha256_init(&hash_context);
-
-    crypto_tr_tagged_hash_init(&hash_context, tag, tag_len);
-
-    crypto_hash_update(&hash_context.header, data, data_len);
-    crypto_hash_digest(&hash_context.header, out, 32);
+void crypto_tr_tapleaf_hash_init(cx_sha256_t *hash_context) {
+    crypto_tr_tagged_hash_init(hash_context, BIP0341_tapleaf_tag, sizeof(BIP0341_tapleaf_tag));
 }
 
 static int crypto_tr_lift_x(const uint8_t x[static 32], uint8_t out[static 65]) {
@@ -493,29 +469,25 @@ static int crypto_tr_lift_x(const uint8_t x[static 32], uint8_t out[static 65]) 
     // c = x^3 (mod p)
     uint8_t e = 3;
     if (CX_OK != cx_math_powm_no_throw(c, x, &e, 1, secp256k1_p, 32)) {
-        return -1;
+        return -1;  // c = x^3 (mod p)
     }
-
-    // c = x^3 + 7 (mod p)
     uint8_t scalar[32] = {0};
     scalar[31] = 7;
     if (CX_OK != cx_math_addm_no_throw(c, c, scalar, secp256k1_p, 32)) {
-        return -1;
+        return -1;  // c = x^3 + 7 (mod p)
     }
 
-    // y = sqrt(x^3 + 7) (mod p)
     if (CX_OK != cx_math_powm_no_throw(y, c, secp256k1_sqr_exponent, 32, secp256k1_p, 32)) {
-        return -1;
+        return -1;  // y = sqrt(x^3 + 7) (mod p)
     }
 
     // sanity check: fail if y * y % p != x^3 + 7
     uint8_t y_2[32];
     e = 2;
-    if (CX_OK != cx_math_powm_no_throw(y_2, y, &e, 1, secp256k1_p, 32)) { // y^2 (mod p)
-        return -1;
+    if (CX_OK != cx_math_powm_no_throw(y_2, y, &e, 1, secp256k1_p, 32)) {
+        return -1;  // y^2 (mod p)
     }
-
-    int diff = 1;
+    int diff;
     if (CX_OK != cx_math_cmp_no_throw(y_2, c, 32, &diff) || diff != 0) {
         return -1;
     }
@@ -534,12 +506,66 @@ static int crypto_tr_lift_x(const uint8_t x[static 32], uint8_t out[static 65]) 
     return 0;
 }
 
-// Like taproot_tweak_pubkey of BIP0341, with empty string h
-// TODO: should it recycle pubkey also for the output (like crypto_tr_tweak_seckey below)?
-int crypto_tr_tweak_pubkey(uint8_t pubkey[static 32], uint8_t *y_parity, uint8_t out[static 32]) {
+// Computes a tagged hash according to BIP-340.
+// If data2_len > 0, then data2 must be non-NULL and the `data` and `data2` arrays are concatenated.
+static void crypto_tr_tagged_hash(const uint8_t *tag,
+                                  uint16_t tag_len,
+                                  const uint8_t *data,
+                                  uint16_t data_len,
+                                  const uint8_t *data2,
+                                  uint16_t data2_len,
+                                  uint8_t out[static CX_SHA256_SIZE]) {
+    // First compute hashtag, reuse out buffer for that
+    cx_sha256_hash(tag, tag_len, out);
+
+    cx_iovec_t iovec[4] = {{.iov_base = out, .iov_len = CX_SHA256_SIZE},
+                           {.iov_base = out, .iov_len = CX_SHA256_SIZE},
+                           {.iov_base = data, .iov_len = data_len},
+                           {.iov_base = data2, .iov_len = data2_len}};
+    if (data2_len > 0) {
+        cx_sha256_hash_iovec(iovec, 4, out);
+    } else {
+        cx_sha256_hash_iovec(iovec, 3, out);
+    }
+}
+
+void crypto_tr_combine_taptree_hashes(const uint8_t left_h[static 32],
+                                      const uint8_t right_h[static 32],
+                                      uint8_t out[static 32]) {
+    if (memcmp(left_h, right_h, 32) < 0) {
+        crypto_tr_tagged_hash(BIP0341_tapbranch_tag,
+                              sizeof(BIP0341_tapbranch_tag),
+                              left_h,
+                              32,
+                              right_h,
+                              32,
+                              out);
+    } else {
+        crypto_tr_tagged_hash(BIP0341_tapbranch_tag,
+                              sizeof(BIP0341_tapbranch_tag),
+                              right_h,
+                              32,
+                              left_h,
+                              32,
+                              out);
+    }
+}
+
+// Like taproot_tweak_pubkey of BIP0341
+int crypto_tr_tweak_pubkey(const uint8_t pubkey[static 32],
+                           const uint8_t *h,
+                           size_t h_len,
+                           uint8_t *y_parity,
+                           uint8_t out[static 32]) {
     uint8_t t[32];
 
-    crypto_tr_tagged_hash(BIP0341_taptweak_tag, sizeof(BIP0341_taptweak_tag), pubkey, 32, t);
+    crypto_tr_tagged_hash(BIP0341_taptweak_tag,
+                          sizeof(BIP0341_taptweak_tag),
+                          pubkey,
+                          32,
+                          h,
+                          h_len,
+                          t);
 
     // fail if t is not smaller than the curve order
     int diff = 1;
@@ -568,66 +594,54 @@ int crypto_tr_tweak_pubkey(uint8_t pubkey[static 32], uint8_t *y_parity, uint8_t
     return 0;
 }
 
-// Like taproot_tweak_seckey of BIP0341, with empty string h
-int crypto_tr_tweak_seckey(uint8_t seckey[static 32]) {
+// Like taproot_tweak_seckey of BIP0341
+int crypto_tr_tweak_seckey(const uint8_t seckey[static 32],
+                           const uint8_t *h,
+                           size_t h_len,
+                           uint8_t out[static 32]) {
     uint8_t P[65];
 
-    bool ok = 0 == secp256k1_point(seckey, P);
+    int ret = -1;
+    do {  // loop to break out in case of error
+        if (0 > secp256k1_point(seckey, P)) {
+            break;
+        }
 
-    if (P[64] & 1) {
-        // odd y, negate the secret key
-        ok = ok && CX_OK == cx_math_sub_no_throw(seckey, secp256k1_n, seckey, 32);
-    }
+        memmove(out, seckey, 32);
 
-    uint8_t t[32];
-    crypto_tr_tagged_hash(BIP0341_taptweak_tag,
-                            sizeof(BIP0341_taptweak_tag),
-                            &P[1],  // P[1:33] is x(P)
-                            32,
-                            t);
+        if (P[64] & 1) {
+            // odd y, negate the secret key
+            if (CX_OK != cx_math_sub_no_throw(out, secp256k1_n, out, 32)) {
+                break;
+            }
+        }
 
-    // fail if t is not smaller than the curve order
-    int diff = 1;
-    ok = ok && CX_OK == cx_math_cmp_no_throw(t, secp256k1_n, 32, &diff);
-    ok = ok && diff < 0;
+        uint8_t t[32];
+        crypto_tr_tagged_hash(BIP0341_taptweak_tag,
+                              sizeof(BIP0341_taptweak_tag),
+                              &P[1],  // P[1:33] is x(P)
+                              32,
+                              h,
+                              h_len,
+                              t);
 
-    ok = ok && CX_OK == cx_math_addm_no_throw(seckey, seckey, t, secp256k1_n, 32);
+        // fail if t is not smaller than the curve order
+        int diff;
+        if (CX_OK != cx_math_cmp_no_throw(t, secp256k1_n, 32, &diff) || diff >= 0) {
+            break;
+        }
+
+        if (CX_OK != cx_math_addm_no_throw(out, out, t, secp256k1_n, 32)) {
+            break;
+        }
+
+        ret = 0;
+    } while (0);
+
     explicit_bzero(&P, sizeof(P));
 
-    return ok ? 0 : -1;
+    return ret;
 }
-
-bool crypto_generate_compressed_pubkey_pair(const uint8_t privkey[static 32],
-                                            uint8_t pubkey[static 33]) {
-    cx_ecfp_private_key_t privkey_inst;
-    cx_ecfp_public_key_t pubkey_inst;
-
-    // New private key instance from private key
-    bool ok = CX_OK == cx_ecfp_init_private_key_no_throw(CX_CURVE_256K1,
-                                                         privkey,
-                                                         32,
-                                                         &privkey_inst);
-
-    // Generate corresponding public key
-    ok = ok && CX_OK == cx_ecfp_generate_pair_no_throw(CX_CURVE_256K1,
-                                                       &pubkey_inst,
-                                                       &privkey_inst,
-                                                       1);
-
-    // Save produced public key in compressed format
-    if (ok) {
-        pubkey[0] = ((pubkey_inst.W[64] & 1) ? 0x03 : 0x02);
-        memcpy(pubkey + 1, pubkey_inst.W + 1, 32);
-    }
-
-    // Zeroize sensitive data
-    explicit_bzero(&privkey_inst, sizeof(privkey_inst));
-    explicit_bzero(&pubkey_inst, sizeof(pubkey_inst));
-
-    return ok;
-}
-
-#endif // SKIP_FOR_CMOCKA
 
 /*****************************************************************************
  * FUNTIONS COVERED BY CMOCKA UNIT TESTS
@@ -636,8 +650,15 @@ bool crypto_generate_compressed_pubkey_pair(const uint8_t privkey[static 32],
 // TODO: missing unit tests
 void crypto_get_checksum(const uint8_t *in, uint16_t in_len, uint8_t out[static 4]) {
     uint8_t buffer[32];
-    cx_hash_sha256(in, in_len, buffer, 32);
-    cx_hash_sha256(buffer, 32, buffer, 32);
+    size_t res;
+    res = cx_hash_sha256(in, in_len, buffer, 32);
+    LEDGER_ASSERT(res == CX_SHA256_SIZE,
+                  "Unexpected error in sha256 computation. Returned: %d",
+                  res);
+    res = cx_hash_sha256(buffer, 32, buffer, 32);
+    LEDGER_ASSERT(res == CX_SHA256_SIZE,
+                  "Unexpected error in sha256 computation. Returned: %d",
+                  res);
     memmove(out, buffer, 4);
 }
 

@@ -1,4 +1,4 @@
-from bitcoin_client.ledger_bitcoin import Client, AddressType, MultisigWallet, PolicyMapWallet
+from bitcoin_client.ledger_bitcoin import Client, AddressType, MultisigWallet, WalletPolicy
 from bitcoin_client.ledger_bitcoin.exception.errors import IncorrectDataError, NotSupportedError
 from bitcoin_client.ledger_bitcoin.exception import DenyError
 
@@ -119,7 +119,7 @@ def test_register_wallet_unsupported_policy(client: Client):
     # valid policise, but not supported (might change in the future)
 
     with pytest.raises(NotSupportedError):
-        client.register_wallet(PolicyMapWallet(
+        client.register_wallet(WalletPolicy(
             name="Unsupported",
             policy_map="sh(pkh(@0))",  # unusual script, not in the whitelist
             keys_info=[

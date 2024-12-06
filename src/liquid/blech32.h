@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include <stddef.h>   // size_t
 #include <stdint.h>   // uint*_t
@@ -54,3 +55,5 @@ WARN_UNUSED_RESULT int blech32_addr_decode(uint8_t *witver,
                                            size_t *witdata_len,
                                            const char *hrp,
                                            const char *addr);
+
+#endif // HAVE_LIQUID

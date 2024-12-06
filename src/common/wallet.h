@@ -1,102 +1,99 @@
 #pragma once
 
 #include <stdint.h>
+#include <assert.h>
 
 #include "ledger_assert.h"
 
 #include "common/bip32.h"
 #include "common/buffer.h"
-#include "common/wif.h"
 #include "../constants.h"
+#include "../crypto.h"
 
 #ifndef SKIP_FOR_CMOCKA
 #include "os.h"
 #include "cx.h"
 #endif
 
-/**
- * Wallet types
- */
-/// Wallet type: policy map
-#define WALLET_TYPE_POLICY_MAP 1
-
 #ifdef HAVE_LIQUID
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_COSIGNERS 7
-#else
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_COSIGNERS 5
+#include "liquid_wallet.h"
 #endif
 
-/// Maximum supported number of keys for a policy map.
-#define MAX_POLICY_MAP_KEYS MAX_POLICY_MAP_COSIGNERS
+// The maximum number of keys supported for CHECKMULTISIG{VERIFY}
+// bitcoin-core supports up to 20, but we limit to 16 as bigger pushes require special handling.
+#define MAX_PUBKEYS_PER_MULTISIG 16
 
-/// Maximum length of public key wildcard in characters
-#define MAX_POLICY_MAP_KEY_WILDCARD_LEN (sizeof("/<0;1>/*") - 1)
+#define WALLET_POLICY_VERSION_V1 1  // the legacy version of the first release
+#define WALLET_POLICY_VERSION_V2 2  // the current full version
 
 // The string describing a pubkey can contain:
 // - (optional) the key origin info, which we limit to 46 bytes (2 + 8 + 3*12 = 46 bytes)
 // - the xpub itself (up to 113 characters)
-// - optional, the wildcard suffix.
+// - optional, the "/**" suffix.
 // Therefore, the total length of the key info string is at most 162 bytes.
-/// Maximum length of key information string
-#define MAX_POLICY_KEY_INFO_LEN (46 + MAX_SERIALIZED_PUBKEY_LENGTH + \
-                                 MAX_POLICY_MAP_KEY_WILDCARD_LEN)
+#define MAX_POLICY_KEY_INFO_LEN_V1 (46 + MAX_SERIALIZED_PUBKEY_LENGTH + 3)
 
-#ifdef HAVE_LIQUID
-/// Maximum length of blinding key descriptor (length of Base58-encoded xpub)
-#define MAX_POLICY_MAP_BLINDING_KEY_LENGTH 112
-// Enough to store "ct(<BLINDING_KEY>,sh(wsh(sortedmulti(15,@0,@1,...,@n))))"
-/// Length of policy map string
-#define MAX_POLICY_MAP_STR_LENGTH ( sizeof("ct(,sh(wsh(sortedmulti(15))))") - 1 + \
-                                    MAX_POLICY_MAP_BLINDING_KEY_LENGTH + \
-                                    4 * MAX_POLICY_MAP_COSIGNERS )
+// In V1, there is no "/**" suffix, as that is no longer part of the key
+#define MAX_POLICY_KEY_INFO_LEN_V2 (46 + MAX_SERIALIZED_PUBKEY_LENGTH)
+
+#define MAX_POLICY_KEY_INFO_LEN MAX(MAX_POLICY_KEY_INFO_LEN_V1, MAX_POLICY_KEY_INFO_LEN_V2)
+
+// longest supported policy in V1 is "sh(wsh(sortedmulti(5,@0,@1,@2,@3,@4)))", 38 bytes
+#define MAX_DESCRIPTOR_TEMPLATE_LENGTH_V1 40
+
+#ifdef TARGET_NANOS
+// this amount should be enough for many useful policies
+#define MAX_DESCRIPTOR_TEMPLATE_LENGTH_V2 192
+// As the in-memory representation of wallet policy is implementation-specific, we would like
+// this limit not to be hit for descriptor templates below the maximum length
+// MAX_DESCRIPTOR_TEMPLATE_LENGTH_V2.
+// A policy requiring about 300 bytes after parsing was reported by developers working on the Liana
+// miniscript wallet. 320 = 64*5, so that it is a multiple of the NVRAM page size and fits all known
+// cases.
+#define MAX_WALLET_POLICY_BYTES 320
 #else
-// Enough to store "sh(wsh(sortedmulti(15,@0,@1,@2,@3,@4,@5,@6,@7,@8,@9,@10,@11,@12,@13,@14)))"
-/// Length of policy map string
-#define MAX_POLICY_MAP_STR_LENGTH 74
+// On larger devices, we can afford to reserve a lot more memory.
+// We do not expect these limits to be reached in practice any time soon, and the value
+// of MAX_WALLET_POLICY_BYTES is chosen so that MAX_DESCRIPTOR_TEMPLATE_LENGTH_V2 and
+// MAX_WALLET_POLICY_BYTES are approximately in the same proportion as defined on NanoS.
+#define MAX_DESCRIPTOR_TEMPLATE_LENGTH_V2 512
+#define MAX_WALLET_POLICY_BYTES           896
 #endif
 
-/// Maximum length of wallet policy
-#define MAX_POLICY_MAP_NAME_LENGTH 16
+#define MAX_DESCRIPTOR_TEMPLATE_LENGTH \
+    MAX(MAX_DESCRIPTOR_TEMPLATE_LENGTH_V1, MAX_DESCRIPTOR_TEMPLATE_LENGTH_V2)
 
-// at most 126 bytes
+// at most 92 bytes
 // wallet type (1 byte)
 // name length (1 byte)
-// name (max MAX_POLICY_MAP_NAME_LENGTH bytes)
+// name (max MAX_WALLET_NAME_LENGTH bytes)
 // policy length (1 byte)
-// policy (max MAX_POLICY_MAP_STR_LENGTH bytes)
+// policy (max MAX_DESCRIPTOR_TEMPLATE_LENGTH bytes)
 // n_keys (1 byte)
 // keys_merkle_root (32 bytes)
-/// Maximum length of serialized wallet policy
-#define MAX_POLICY_MAP_SERIALIZED_LENGTH \
-    (1 + 1 + MAX_POLICY_MAP_NAME_LENGTH + 1 + MAX_POLICY_MAP_STR_LENGTH + 1 + 32)
+#define MAX_WALLET_POLICY_SERIALIZED_LENGTH_V1 \
+    (1 + 1 + MAX_WALLET_NAME_LENGTH + 1 + MAX_DESCRIPTOR_TEMPLATE_LENGTH_V1 + 1 + 32)
 
-#ifdef HAVE_LIQUID
-/// Maximum size of a parsed policy map in memory
-#define MAX_POLICY_MAP_BYTES 208
+// at most 100 bytes
+// wallet type (1 byte)
+// name length (1 byte)
+// name (max MAX_WALLET_NAME_LENGTH bytes)
+// policy length (varint, up to 9 bytes)
+// policy hash 32
+// n_keys (varint, up to 9 bytes)
+// keys_merkle_root (32 bytes)
+#define MAX_WALLET_POLICY_SERIALIZED_LENGTH_V2 (1 + 1 + MAX_WALLET_NAME_LENGTH + 9 + 32 + 9 + 32)
+
+#define MAX_WALLET_POLICY_SERIALIZED_LENGTH \
+    MAX(MAX_WALLET_POLICY_SERIALIZED_LENGTH_V1, MAX_WALLET_POLICY_SERIALIZED_LENGTH_V2)
+
+// maximum depth of a taproot tree that we support
+// (here depth 1 means only the root of the taptree)
+#ifdef TARGET_NANOS
+#define MAX_TAPTREE_POLICY_DEPTH 4
 #else
-/// Maximum size of a parsed policy map in memory
-#define MAX_POLICY_MAP_BYTES 128
+#define MAX_TAPTREE_POLICY_DEPTH 9
 #endif
-
-// Currently only multisig is supported
-/// Maximum length of wallet policy
-#define MAX_POLICY_MAP_LEN MAX_MULTISIG_POLICY_MAP_LENGTH
-
-/// Public key wildcards defining the rules for child key derivation.
-typedef enum {
-    /// No wildcard.
-    KEY_WILDCARD_NONE = 0,
-    /// Any derivation is allowed: `/**`.
-    KEY_WILDCARD_ANY = 1,
-    /// Internal or external chain with an arbitrary address index: `/<0;1>/*`.
-    KEY_WILDCARD_STANDARD_CHAINS,
-    /// External chain with an arbitrary address index: `/0/*`.
-    KEY_WILDCARD_EXTERNAL_CHAIN,
-    /// Internal chain (change) with an arbitrary address index: `/1/*`.
-    KEY_WILDCARD_INTERNAL_CHAIN,
-} policy_map_key_wildcard_id_t;
 
 /// Public key information
 typedef struct {
@@ -108,44 +105,51 @@ typedef struct {
     uint8_t master_key_derivation_len;
     /// Set to 1 if key has origin data: master key fingerprint and derivation path
     uint8_t has_key_origin;
-    /// Wildcard terminating the key string, one of policy_map_key_wildcard_id_t constants.
-    /// Nonzero if the key ends with a wildcard.
-    uint8_t wildcard_id;
+    /// Wildcard flag: true iff the keys ends with the wildcard (/ followed by **)
+    uint8_t has_wildcard;
     /// Serialized extended public key
-    char ext_pubkey[MAX_SERIALIZED_PUBKEY_LENGTH + 1];
+    serialized_extended_pubkey_t ext_pubkey;
 } policy_map_key_info_t;
 
 /// Wallet header
 typedef struct {
-    /// Wallet type
-    uint8_t type;  // Currently the only supported value is WALLET_TYPE_POLICY_MAP
+    // Policy version, supported values: WALLET_POLICY_VERSION_V1 and WALLET_POLICY_VERSION_V2
+    uint8_t version;
     /// Length of wallet name
     uint8_t name_len;
+    /// Length of descriptor template
+    uint16_t descriptor_template_len;
     /// Wallet name
     char name[MAX_WALLET_NAME_LENGTH + 1];
-    /// Length of wallet policy map
-    uint16_t policy_map_len;
-    /// Wallet policy map as a string
-    char policy_map[MAX_POLICY_MAP_STR_LENGTH];
+    union {
+        /// Descriptor template
+        char descriptor_template[MAX_DESCRIPTOR_TEMPLATE_LENGTH_V1];  // used in V1
+        /// Hash of descriptor template
+        uint8_t descriptor_template_sha256[32];                       // used in V2
+    };
     /// Number of public keys
     size_t n_keys;
-    /// /// Merkle root of the vector of key descriptors
-    uint8_t keys_info_merkle_root[32];  // root of the Merkle tree of the keys information
+    /// Root of the Merkle tree of the keys information
+    uint8_t keys_info_merkle_root[32];
 } policy_map_wallet_header_t;
 
 /// Type of policy node
 typedef enum {
-    TOKEN_SH,          ///< Pay to script hash
-    TOKEN_WSH,         ///< Pay to witness script hash
-    // TOKEN_PK,       //   disabled, but it will be needed for taproot
-    TOKEN_PKH,         ///< Pay to public key hash
-    TOKEN_WPKH,        ///< Pay to witness public key hash
-    // TOKEN_COMBO     //   disabled, does not mix well with the script policy language
-    TOKEN_MULTI,       ///< Multisig
-    TOKEN_SORTEDMULTI, ///< Multisig with sorted keys
-    TOKEN_TR,          ///< Taproot
-    // TOKEN_ADDR,     //   unsupported
-    // TOKEN_RAW,      //   unsupported
+    TOKEN_SH,
+    TOKEN_WSH,
+    TOKEN_PK,
+    TOKEN_PKH,
+    TOKEN_WPKH,
+    // TOKEN_COMBO     // disabled, does not mix well with the script policy language
+    TOKEN_MULTI,
+    TOKEN_MULTI_A,
+    TOKEN_SORTEDMULTI,
+    TOKEN_SORTEDMULTI_A,
+    TOKEN_TR,
+    // TOKEN_ADDR,     // unsupported
+    // TOKEN_RAW,      // unsupported
+
+#ifdef HAVE_LIQUID
     TOKEN_CT,          ///< ELIP 150: confidential transaction top-level wrapper
     TOKEN_SLIP77,      ///< ELIP 150: SLIP-0077-derived master private blinding key
     TOKEN_HEX_PUB,     ///< ELIP 150: compressed public key, parsed from 66 hex string
@@ -153,190 +157,377 @@ typedef enum {
     TOKEN_XPUB,        ///< ELIP 150: compressed public key, parsed from xpub
     TOKEN_XPRV,        ///< ELIP 150: private key, parsed from xprv
     TOKEN_ELIP151,     ///< ELIP 151: elip151 tag indicating ELIP 151 blinding key derivation
+#endif
+
+    /* miniscript tokens */
+
+    TOKEN_0,
+    TOKEN_1,
+    TOKEN_PK_K,
+    TOKEN_PK_H,
+    TOKEN_OLDER,
+    TOKEN_AFTER,
+    TOKEN_SHA256,
+    TOKEN_HASH256,
+    TOKEN_RIPEMD160,
+    TOKEN_HASH160,
+    TOKEN_ANDOR,
+    TOKEN_AND_V,
+    TOKEN_AND_B,
+    TOKEN_AND_N,
+    TOKEN_OR_B,
+    TOKEN_OR_C,
+    TOKEN_OR_D,
+    TOKEN_OR_I,
+    TOKEN_THRESH,
+    // wrappers
+    TOKEN_A,
+    TOKEN_S,
+    TOKEN_C,
+    TOKEN_T,
+    TOKEN_D,
+    TOKEN_V,
+    TOKEN_J,
+    TOKEN_N,
+    TOKEN_L,
+    TOKEN_U,
+
+    TOKEN_INVALID = -1  // used to mark invalid tokens
 } PolicyNodeType;
 
-// TODO: the following structures are using size_t for all integers to avoid alignment problems;
-//       if memory is an issue, we could use a packed version instead, but care needs to be taken
-//       when accessing pointers, since they would be unaligned.
+typedef enum {
+    MINISCRIPT_CONTEXT_P2WSH,
+    MINISCRIPT_CONTEXT_TAPSCRIPT,
+} MiniscriptContext;
 
-/// Abstract type for all policy nodes
-typedef struct {
-    /// Type of this policy node
+// miniscript basic types
+#define MINISCRIPT_TYPE_B 0
+#define MINISCRIPT_TYPE_V 1
+#define MINISCRIPT_TYPE_K 2
+#define MINISCRIPT_TYPE_W 3
+
+// The various structures used to represent the wallet policy abstract syntax tree contain a lot
+// pointers; using a regular pointer would make each of them 4 bytes long, moreover causing
+// additional loss of memory due to padding. Instead, we use a 2-bytes relative pointer to point to
+// policy_nodes, representing a non-negative offset from the position of the structure itself.
+// This reduces the memory utilization of those pointers, and moreover it allows to reduce padding
+// in other structures, as they no longer contain 32-bit pointers.
+// Moreover, avoiding all pointers makes sure that the structure can be copied to a different
+// location if needed (making sure the destination is aligned due to the platform restrictions).
+// The following macro defines the data structure and the helper methods for a relative pointer to a
+// type. The code does not depend on the type, but this allows to keep strong types when dealing
+// with relative pointers, which otherwise would require numerous type casts.
+
+// Defines a relative pointer type for name##t, and the conversion functions to/from a relative
+// pointer and a pointer to name##_t.
+// Relative pointers use an uint16_t to represent the offset; therefore, the offset must be
+// non-negative and at most 65535.
+// An offset of 0 corresponds to a NULL pointer in the conversion (and vice-versa).
+#define DEFINE_REL_PTR(name, type)                                                               \
+    /*                                                                                           \
+     * Relative pointer structure for `type`.                                                    \
+     *                                                                                           \
+     * This structure holds an offset that is used to calculate the actual pointer               \
+     * to a `type` object.                                                                       \
+     */                                                                                          \
+    typedef struct rptr_##name##_s {                                                             \
+        uint16_t offset;                                                                         \
+    } rptr_##name##_t;                                                                           \
+                                                                                                 \
+    /*                                                                                           \
+     * Resolve a relative pointer to a `type` object.                                            \
+     *                                                                                           \
+     * @param ptr A pointer to the relative pointer structure.                                   \
+     * @return A pointer to the `type` object.                                                   \
+     */                                                                                          \
+    static inline type *r_##name(const rptr_##name##_t *ptr) {                                   \
+        if (ptr->offset == 0)                                                                    \
+            return NULL;                                                                         \
+        else                                                                                     \
+            return (type *) ((const uint8_t *) ptr + ptr->offset);                               \
+    }                                                                                            \
+                                                                                                 \
+    /*                                                                                           \
+     * Returns true when the offset of the relative pointer is 0 (equivalent to a NULL pointer). \
+     *                                                                                           \
+     * @param relative_ptr A relative pointer.                                                   \
+     */                                                                                          \
+    static inline bool isnull_##name(const rptr_##name##_t *ptr) {                               \
+        return ptr->offset == 0;                                                                 \
+    }                                                                                            \
+                                                                                                 \
+    /*                                                                                           \
+     * Initialize a relative pointer to a `type` object.                                         \
+     *                                                                                           \
+     * @param relative_ptr A pointer to the relative pointer structure to be initialized.        \
+     * @param obj A pointer to the `type` object.                                                \
+     */                                                                                          \
+    static inline void i_##name(rptr_##name##_t *relative_ptr, void *obj) {                      \
+        if (obj == NULL)                                                                         \
+            relative_ptr->offset = 0;                                                            \
+        else {                                                                                   \
+            int offset = (uint8_t *) obj - (uint8_t *) relative_ptr;                             \
+            LEDGER_ASSERT(offset >= 0 && offset < UINT16_MAX,                                    \
+                          "Relative pointer's offset must be between 0 and 65535");              \
+            relative_ptr->offset = (uint16_t) offset;                                            \
+        }                                                                                        \
+    }
+
+// 2 bytes
+typedef struct policy_node_s {
     PolicyNodeType type;
-    /// Data specific to subtype
-    void *node_data;  // subtypes will redefine this
+    struct {
+        unsigned int is_miniscript : 1;
+        unsigned int miniscript_type : 2;  // B, C, K or W
+        unsigned int miniscript_mod_z : 1;
+        unsigned int miniscript_mod_o : 1;
+        unsigned int miniscript_mod_n : 1;
+        unsigned int miniscript_mod_d : 1;
+        unsigned int miniscript_mod_u : 1;
+    } flags;  // 1 byte
 } policy_node_t;
 
-/// Policy node with script: sh(), wsh()
+DEFINE_REL_PTR(policy_node, policy_node_t)
+
+typedef struct miniscript_ops_s {
+    uint16_t count;  // non-push opcodes
+    int16_t sat;     // number of keys in possibly executed OP_CHECKMULTISIG(VERIFY)s to satisfy (-1
+                     // for "invalid")
+    int16_t dsat;    // number of keys in possibly executed OP_CHECKMULTISIG(VERIFY)s to dissatisfy
+                     // (-1 for "invalid")
+} miniscript_ops_t;
+
+typedef struct miniscript_stacksize_s {
+    int16_t sat;   // Maximum stack size to satisfy
+    int16_t dsat;  // Maximum stack size to dissatisfy
+} miniscript_stacksize_t;
+
+typedef struct policy_node_ext_info_s {
+    miniscript_ops_t ops;
+    miniscript_stacksize_t ss;
+    uint16_t script_size;
+
+    unsigned int s : 1;  // has a signature
+
+    unsigned int f : 1;  // forced
+    unsigned int e : 1;
+
+    unsigned int m : 1;  // non-malleable property
+
+    // flags related to timelocks
+    unsigned int g : 1;  // older: contains relative time timelock   (csv_time)
+    unsigned int h : 1;  // older: contains relative height timelock (csv_height)
+    unsigned int i : 1;  // after: contains time timelock   (cltv_time)
+    unsigned int j : 1;  // after: contains height timelock (cltv_height)
+    unsigned int k : 1;  // does not contain a combination of height and time locks
+
+    unsigned int x : 1;  // the last opcode is not EQUAL, CHECKSIG, or CHECKMULTISIG
+} policy_node_ext_info_t;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcomment"
+// The compiler doesn't like /** inside a block comment, so we disable this warning temporarily.
+
+/** Structure representing a key placeholder.
+ * In V1, it's the index of a key expression in the key informations array, which includes the final
+ * / ** step.
+ * In V2, it's the index of a key expression in the key informations array, plus the two
+ * numbers a, b in the /<NUM_a;NUM_b>/* derivation steps; here, the xpubs in the key informations
+ * array don't have extra derivation steps.
+ */
+#pragma GCC diagnostic pop
+// 12 bytes
 typedef struct {
-    /// Type of this policy node
-    PolicyNodeType type;  // == TOKEN_SH, == TOKEN_WSH
-    /// Innder script
-    policy_node_t *script;
+    // the following fields are only used in V2
+    uint32_t num_first;   // NUM_a of /<NUM_a,NUM_b>/*
+    uint32_t num_second;  // NUM_b of /<NUM_a,NUM_b>/*
+
+    // common between V1 and V2
+    int16_t key_index;  // index of the key
+} policy_node_key_placeholder_t;
+
+DEFINE_REL_PTR(policy_node_key_placeholder, policy_node_key_placeholder_t)
+
+// 4 bytes
+typedef struct {
+    struct policy_node_s base;
+} policy_node_constant_t;
+
+// 4 bytes
+typedef struct {
+    struct policy_node_s base;
+    rptr_policy_node_t script;
 } policy_node_with_script_t;
 
-/// Policy node with key: pk(), pkh(), wpkh()
+// 6 bytes
 typedef struct {
-    /// Type of this policy node
-    PolicyNodeType type;  // == TOKEN_PK, == TOKEN_PKH, == TOKEN_WPKH
-    /// Key index
-    size_t key_index;     // index of the key
+    struct policy_node_s base;
+    rptr_policy_node_t scripts[2];
+} policy_node_with_script2_t;
+
+// 8 bytes
+typedef struct {
+    struct policy_node_s base;
+    rptr_policy_node_t scripts[3];
+} policy_node_with_script3_t;
+
+// generic type with pointer for up to 3 (but constant) number of child scripts
+typedef policy_node_with_script3_t policy_node_with_scripts_t;
+
+// 4 bytes
+typedef struct {
+    struct policy_node_s base;
+    rptr_policy_node_key_placeholder_t key_placeholder;
 } policy_node_with_key_t;
 
-/// Multisig policy node: multi(), sortedmulti()
+// 8 bytes
 typedef struct {
-    /// Type of this policy node
-    PolicyNodeType type;  // == TOKEN_MULTI, == TOKEN_SORTEDMULTI
-    /// Threshold
-    size_t k;
-    /// Number of keys
-    size_t n;
-    /// Pointer to array of exactly n key indexes
-    size_t *key_indexes;
+    struct policy_node_s base;
+    uint32_t n;
+} policy_node_with_uint32_t;
+
+// 12 bytes
+typedef struct {
+    struct policy_node_s base;  // type is TOKEN_MULTI or TOKEN_SORTEDMULTI
+    int16_t k;                  // threshold
+    int16_t n;                  // number of keys
+    rptr_policy_node_key_placeholder_t
+        key_placeholders;  // pointer to array of exactly n key placeholders
 } policy_node_multisig_t;
 
-/// Policy node ct()
-typedef struct {
-    /// Type of this policy node
-    PolicyNodeType type;        // == TOKEN_CT
-    /// Master blinding key script, typically slip77()
-    policy_node_t *mbk_script;
-    /// Inner script
-    policy_node_t *script;
-} policy_node_ct_t;
+// 8 bytes
+struct policy_node_scriptlist_s;  // forward declaration, as the struct is recursive
 
-/// Policy node containing ELIP 150 blinding public key
-typedef struct {
-    /// Type of this policy node, one of: TOKEN_HEX_PUB, TOKEN_XPUB
-    PolicyNodeType type;
-    /// Compressed public key
-    uint8_t pubkey[33];
-} policy_node_blinding_pubkey_t;
+DEFINE_REL_PTR(policy_node_scriptlist, struct policy_node_scriptlist_s)
 
-/// Policy node containing ELIP 150 blinding private key
+typedef struct policy_node_scriptlist_s {
+    rptr_policy_node_scriptlist_t next;
+    rptr_policy_node_t script;
+} policy_node_scriptlist_t;
+
+// 12 bytes, (+ 8 bytes for every script)
 typedef struct {
-    /// Type of this policy node, one of: TOKEN_SLIP77, TOKEN_HEX_PRV, TOKEN_XPRV
-    PolicyNodeType type;
-    /// Private key
-    uint8_t privkey[32];
-} policy_node_blinding_privkey_t;
+    struct policy_node_s base;  // type is TOKEN_THRESH
+    int16_t k;                  // threshold
+    int16_t n;                  // number of child scripts
+    rptr_policy_node_scriptlist_t
+        scriptlist;  // pointer to array of exactly n pointers to child scripts
+} policy_node_thresh_t;
+
+typedef struct {
+    struct policy_node_s base;  // type is TOKEN_SHA160 or TOKEN_HASH160
+    uint8_t h[20];
+} policy_node_with_hash_160_t;
+
+typedef struct {
+    struct policy_node_s base;  // type is TOKEN_SHA256 or TOKEN_HASH256
+    uint8_t h[32];
+} policy_node_with_hash_256_t;
+
+struct policy_node_tree_s;  // forward declaration, as the struct is recursive
+DEFINE_REL_PTR(policy_node_tree, struct policy_node_tree_s)
+
+// a TREE is either a script, or a {TREE,TREE}
+typedef struct policy_node_tree_s {
+    bool is_leaf;  // if this is a leaf, then it contains a pointer to a SCRIPT;
+                   // otherwise, it contains two pointers to TREE expressions.
+    union {
+        rptr_policy_node_t script;  // pointer to a policy_node_with_script_t
+        struct {
+            rptr_policy_node_tree_t left_tree;   // pointer to a policy_node_tree_s
+            rptr_policy_node_tree_t right_tree;  // pointer to a policy_node_tree_s
+        };
+    };
+} policy_node_tree_t;
+
+typedef struct {
+    struct policy_node_s base;
+    rptr_policy_node_key_placeholder_t key_placeholder;
+    rptr_policy_node_tree_t tree;  // NULL if tr(KP)
+} policy_node_tr_t;
 
 /**
- * Checks if the policy node has a private (blinding) key.
+ * Parses the string in the `buffer` as a serialized policy map into `header`
  *
- * @param[in] node
- *   Pointer to policy node.
- *
- * @return true if given policy node has a private blinding key, false otherwise.
+ * @param buffer the pointer to the buffer_t to parse
+ * @param header the pointer to a `policy_map_wallet_header_t` structure
+ * @return a negative number on failure, 0 on success.
  */
-static inline bool policy_node_has_private_key(const policy_node_t *node) {
-    return ( node->type == TOKEN_SLIP77 ||
-             node->type == TOKEN_HEX_PRV ||
-             node->type == TOKEN_XPRV );
-}
+int read_wallet_policy_header(buffer_t *buffer, policy_map_wallet_header_t *header);
 
-/**
- * Checks if the policy node has a compressed public (blinding) key.
- *
- * @param[in] node
- *   Pointer to policy node.
- *
- * @return true if given policy node has a private blinding key, false otherwise.
- */
-static inline bool policy_node_has_public_key(const policy_node_t *node) {
-    return ( node->type == TOKEN_HEX_PUB ||
-             node->type == TOKEN_XPUB );
-}
-
-/**
- * Reads wallet policy from buffer and decodes wallet header.
- *
- * @param[in,out] buffer
- *   Pointer to buffer storing serialized wallet policy.
- * @param[out] header
- *   Pointer to structure instance receiving decoded wallet header.
- *
- * @return 0 if successful, a negative number on error.
- */
-int read_policy_map_wallet(buffer_t *buffer, policy_map_wallet_header_t *header);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcomment"
+// The compiler doesn't like /** inside a block comment, so we disable this warning temporarily.
 
 /**
  * Parses a string representing the key information for a policy map wallet.
- *
  * The string is compatible with the output descriptor format, except that the pubkey must _not_
  * have derivation steps (the key origin info, if present, does have derivation steps from the
  * master key fingerprint). The serialized base58check-encoded pubkey is _not_ validated.
  *
- * For example:
+ * For WALLET_POLICY_VERSION_V1, the final suffix /** must be present and is part of the key
+ * information. For WALLET_POLICY_VERSION_V2, parsing stops at the xpub.
+
+ * Example (V1):
+ * "[d34db33f/44'/0'/0']xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL/**"
+ * Example (V2):
  * "[d34db33f/44'/0'/0']xpub6ERApfZwUNrhLCkDtcHTcxd75RbzS1ed54G1LkBUHQVHQKqhMkhgbmJbZRkrgZw4koxb5JaHWkY4ALHY2grBGRjaDMzQLcgJvLJuZZvRcEL"
- *
- * @param[in,out] buffer
- *   Pointer to buffer storing serialized wallet policy.
- * @param[out] out
- *   Pointer to structure instance receiving parsed key information.
- *
- * @return 0 if successful, a negative number on error.
  */
-int parse_policy_map_key_info(buffer_t *buffer, policy_map_key_info_t *out);
+int parse_policy_map_key_info(buffer_t *buffer, policy_map_key_info_t *out, int version);
+
+#pragma GCC diagnostic pop
 
 /**
- * Parses a script expression from the input buffer.
+ * Parses `in_buf` as a wallet policy descriptor template, constructing the abstract syntax tree in
+ * the buffer `out` of size `out_len`.
  *
- * During parsing this function allocates the nodes and variables in the output buffer. The initial
- * pointer in output buffer will contain the root node of the script.
- *
- * @param[in,out] in_buf
- *   Input buffer with a script expression to parse.
- * @param[out] out
- *   Output buffer which receives a tree-like structure of nodes.
- * @param out_len
- *   Size of the output buffer.
- * @param bip32_pubkey_version
- *   Version prefix to use for the public key.
- * @param bip32_privkey_version
- *   Version prefix to use for the private key.
- *
- * @return 0 if successful, a negative number on error.
+ * When parsing descriptors containing miniscript, this fails if the miniscript is not correct,
+ * as defined by the miniscript type system.
+ * This does NOT check non-malleability of the miniscript.
+ * @param in_buf the buffer containing the policy map to parse
+ * @param out the pointer to the output buffer, which must be 4-byte aligned
+ * @param out_len the length of the output buffer
+ * @param version either WALLET_POLICY_VERSION_V1 or WALLET_POLICY_VERSION_V2
+ * @return The memory size of the parsed descriptor template (that is, the number of bytes consumed
+ * in the output buffer) on success; -1 in case of parsing error, if the output buffer is unaligned,
+ * or if the output buffer is too small.
  */
-int parse_policy_map(buffer_t *in_buf,
-                     void *out,
-                     size_t out_len,
-                     uint32_t bip32_pubkey_version,
-                     uint32_t bip32_privkey_version);
+int parse_descriptor_template(buffer_t *in_buf, void *out, size_t out_len, int version);
 
 /**
- * Checks if the policy specifies a multisignature wallet.
+ * Given a valid policy that the bitcoin app is able to sign, returns the segwit version.
+ * The result is undefined for a node that is not a valid root of a wallet policy that the bitcoin
+ * app is able to sign.
  *
- * @param[in] policy
- *   Pointer to wallet's top-level policy node.
- *
- * @return true if the wallet is multisig, false otherwise.
+ * @param policy the root node of the wallet policy
+ * @return -1 if it's a legacy policy, 0 if it is a policy for SegwitV0 (possibly nested), 1 for
+ * SegwitV1 (taproot).
  */
-bool policy_is_multisig(const policy_node_t *policy);
+int get_policy_segwit_version(const policy_node_t *policy);
+
+/**
+ * Computes additional properties of the given miniscript, to detect malleability and other security
+ * properties to assess if the miniscript is sane.
+ * The stack size limits are only valid for miniscript within wsh.
+ *
+ * @param policy_node a pointer to a miniscript policy node
+ * @param out pointer to the output policy_node_ext_info_t
+ * @param ctx either MINISCRIPT_CONTEXT_P2WSH or MINISCRIPT_CONTEXT_TAPSCRIPT
+ * @return a negative number on error; 0 on success.
+ */
+int compute_miniscript_policy_ext_info(const policy_node_t *policy_node,
+                                       policy_node_ext_info_t *out,
+                                       MiniscriptContext ctx);
 
 #ifndef SKIP_FOR_CMOCKA
 
 /**
- * Computes wallet identifier (sha256 of the serialization).
+ * Computes the id of the policy map wallet (commitment to header + policy map + keys_info), as per
+ * specifications.
  *
- * @param[in] wallet_header
- *   Wallet header.
- * @param[out] out
- *   Output buffer receiving a computed 32-byte wallet identifier.
+ * @param wallet_header
+ * @param out a pointer to a 32-byte array for the output
  */
-void get_policy_wallet_id(const policy_map_wallet_header_t *wallet_header, uint8_t out[static 32]);
-
-/**
- * Validates the public key stored in key information for a policy map wallet.
- *
- * @param[in] key_info
- *   Key information.
- * @param bip32_pubkey_version
- *   Version prefix to use for the public key.
- *
- * @return true if key is valid, false otherwise.
- */
-bool validate_policy_map_extended_pubkey(const policy_map_key_info_t *key_info,
-                                         uint32_t bip32_pubkey_version);
+void get_policy_wallet_id(policy_map_wallet_header_t *wallet_header, uint8_t out[static 32]);
 
 #endif

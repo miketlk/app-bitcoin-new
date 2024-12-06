@@ -104,7 +104,8 @@ WARN_UNUSED_RESULT int crypto_derive_private_key(cx_ecfp_private_key_t *private_
                                                  uint8_t bip32_path_len);
 
 /**
- * Initialize public key given private key.
+ * Generates the child extended public key, from a parent extended public key and non-hardened
+ * index.
  *
  * @param[in]  parent
  *   Pointer to the extended serialized pubkey of the parent.
@@ -122,7 +123,7 @@ WARN_UNUSED_RESULT int bip32_CKDpub(const serialized_extended_pubkey_t *parent,
                                     serialized_extended_pubkey_t *child);
 
 /**
- * Convenience wrapper for cx_hash to add some data to an initialized hash context.
+ * Convenience wrapper for cx_hash_no_throw to add some data to an initialized hash context.
  *
  * @param[in] hash_context
  *   The context of the hash, which must already be initialized.
@@ -132,12 +133,12 @@ WARN_UNUSED_RESULT int bip32_CKDpub(const serialized_extended_pubkey_t *parent,
  *   Size of the passed data.
  */
 static inline void crypto_hash_update(cx_hash_t *hash_context, const void *in, size_t in_len) {
-    int ret = cx_hash_no_throw(hash_context, 0, in, in_len, NULL, 0);
-    LEDGER_ASSERT(CX_OK == ret, "It should not fail");
+    int res = cx_hash_no_throw(hash_context, 0, in, in_len, NULL, 0);
+    LEDGER_ASSERT(res == CX_OK, "Unexpected error in sha256 computation. Returned: %d", res);
 }
 
 /**
- * Convenience wrapper for cx_hash to compute the final hash, without adding any extra data
+ * Convenience wrapper for cx_hash_no_throw to compute the final hash, without adding any extra data
  * to the hash context.
  *
  * @param[in] hash_context
@@ -148,8 +149,8 @@ static inline void crypto_hash_update(cx_hash_t *hash_context, const void *in, s
  *   Size of output buffer, which must be large enough to contain the result.
  */
 static inline void crypto_hash_digest(cx_hash_t *hash_context, uint8_t *out, size_t out_len) {
-    int ret = cx_hash_no_throw(hash_context, CX_LAST, NULL, 0, out, out_len);
-    LEDGER_ASSERT(CX_OK == ret, "It should not fail");
+    int res = cx_hash_no_throw(hash_context, CX_LAST, NULL, 0, out, out_len);
+    LEDGER_ASSERT(res == CX_OK, "Unexpected error in sha256 computation. Returned: %d", res);
 }
 
 /**
@@ -339,7 +340,7 @@ uint32_t crypto_get_key_fingerprint(const uint8_t pub_key[static 33]);
 uint32_t crypto_get_master_key_fingerprint(void);
 
 /**
- * Computes the base58check-encoded extended pubkey at a given path.
+ * Computes extended pubkey at a given path, serialized as per BIP32.
  *
  * @param[in]  bip32_path
  *   Pointer to 32-bit array of BIP-32 derivation steps.
@@ -347,20 +348,18 @@ uint32_t crypto_get_master_key_fingerprint(void);
  *   Number of steps in the BIP32 derivation.
  * @param[in]  bip32_pubkey_version
  *   Version prefix to use for the pubkey.
- * @param[out] out
- *   Pointer to the output buffer, which must be long enough to contain the result (including the
- * terminating null).
+ * @param[out] out_pubkey
+ *   A pointer to a serialized_extended_pubkey_t.
  *
- * @return the length of the output pubkey (not including the null character), or -1 on error.
+ * @return 0 on success, or -1 on error.
  */
-WARN_UNUSED_RESULT int get_serialized_extended_pubkey_at_path(const uint32_t bip32_path[],
-                                                              uint8_t bip32_path_len,
-                                                              uint32_t bip32_pubkey_version,
-                                                              char out[static MAX_SERIALIZED_PUBKEY_LENGTH + 1]);
+WARN_UNUSED_RESULT int get_extended_pubkey_at_path(const uint32_t bip32_path[],
+                                                   uint8_t bip32_path_len,
+                                                   uint32_t bip32_pubkey_version,
+                                                   serialized_extended_pubkey_t *out_pubkey);
 
 /**
  * Derives the level-1 symmetric key at the given label using SLIP-0021.
- * Must be wrapped in a TRY/FINALLY block to make sure that the output key is wiped after using it.
  *
  * @param[in]  label
  *   Pointer to the label. The first byte of the label must be 0x00 to comply with SLIP-0021.
@@ -404,6 +403,9 @@ WARN_UNUSED_RESULT int base58_encode_address(const uint8_t in[20], uint32_t vers
  *   Number of steps in the BIP32 derivation.
  * @param[in]  hash
  *   Pointer to a 32-byte SHA-256 hash digest.
+ * @param[out]  pubkey
+ *   Either NULL, or a pointer to a 33-bytes array that will receive the compressed pubkey
+ * corresponding to the private key used for signing.
  * @param[out]  out
  *   The pointer to the output array to contain the signature, that must be of length
  * `MAX_DER_SIG_LEN`.
@@ -413,8 +415,9 @@ WARN_UNUSED_RESULT int base58_encode_address(const uint8_t in[20], uint32_t vers
  * @return the length of the signature on success, or -1 in case of error.
  */
 WARN_UNUSED_RESULT int crypto_ecdsa_sign_sha256_hash_with_key(const uint32_t bip32_path[],
-                                                              size_t bip32_path_len,
+                                                              uint8_t bip32_path_len,
                                                               const uint8_t hash[static 32],
+                                                              uint8_t *pubkey,
                                                               uint8_t out[static MAX_DER_SIG_LEN],
                                                               uint32_t *info);
 
@@ -422,7 +425,7 @@ WARN_UNUSED_RESULT int crypto_ecdsa_sign_sha256_hash_with_key(const uint32_t bip
  * Initializes the "tagged" SHA256 hash with the given tag, as defined by BIP-0340.
  *
  * @param[out]  hash_context
- *   Pointer to 32-bit array of BIP-32 derivation steps.
+ *   Pointer to a sha256 hash context.
  * @param[in]  tag
  *   Pointer to an array containing the tag of the tagged hash.
  * @param[in]  tag_len
@@ -431,11 +434,37 @@ WARN_UNUSED_RESULT int crypto_ecdsa_sign_sha256_hash_with_key(const uint32_t bip
 void crypto_tr_tagged_hash_init(cx_sha256_t *hash_context, const uint8_t *tag, uint16_t tag_len);
 
 /**
- * Builds a tweaked public key from a BIP340 public key array.
+ * Initializes the "tagged" SHA256 hash with tag "TapLeaf", used for tapscript leaves.
+ *
+ * @param[out]  hash_context
+ *   Pointer to a sha256 hash context.
+ */
+void crypto_tr_tapleaf_hash_init(cx_sha256_t *hash_context);
+
+/**
+ * Computes the tagged hash with tagged hash of a tapbranch, given the hashes for the children.
+ *
+ * @param[in]  left_h
+ *   The hash of the left tapbranch/tapleaf.
+ * @param[in]  right_h
+ *   The hash of the right tapbranch/tapleaf.
+ * @param[out]  out
+ *   The combined hash for the tapbranch.
+ */
+void crypto_tr_combine_taptree_hashes(const uint8_t left_h[static 32],
+                                      const uint8_t right_h[static 32],
+                                      uint8_t out[static 32]);
+
+/**
+ * Computes the tweaked public key from a BIP340 public key array.
  * Implementation of taproot_tweak_pubkey of BIP341 with `h` set to the empty byte string.
  *
  * @param[in]  pubkey
  *   Pointer to the 32-byte to be used as public key.
+ * @param[in]  h
+ *   Pointer to the tweaking data.
+ * @param[in]  h_len
+ *   Length of `h`.
  * @param[out]  y_parity
  *   Pointer to a variable that will be set to 0/1 according to the parity of th y-coordinate of the
  * final tweaked pubkey.
@@ -444,19 +473,31 @@ void crypto_tr_tagged_hash_init(cx_sha256_t *hash_context, const uint8_t *tag, u
  *
  * @return 0 on success, or -1 in case of error.
  */
-WARN_UNUSED_RESULT int crypto_tr_tweak_pubkey(uint8_t pubkey[static 32], uint8_t *y_parity, uint8_t out[static 32]);
+WARN_UNUSED_RESULT int crypto_tr_tweak_pubkey(const uint8_t pubkey[static 32],
+                                              const uint8_t *h,
+                                              size_t h_len,
+                                              uint8_t *y_parity,
+                                              uint8_t out[static 32]);
 
 /**
- * Builds a tweaked public key from a BIP340 public key array.
+ * Computes the tweaked secret key from a BIP340 secret key.
  * Implementation of taproot_tweak_seckey of BIP341 with `h` set to the empty byte string.
  *
- * @param[in|out] seckey
- *   Pointer to the 32-byte containing the secret key; it will contain the output tweaked secret
- * key.
+ * @param[in] seckey
+ *   Pointer to the 32-byte containing the secret key.
+ * @param[out]  h
+ *   Pointer to the tweaking data.
+ * @param[out]  h_len
+ *   Length of `h`.
+ * @param[out]  out
+ *  Pointer to the a 32-byte array that will contain the tweaked secret key.
  *
  * @return 0 on success, or -1 in case of error.
  */
-WARN_UNUSED_RESULT int crypto_tr_tweak_seckey(uint8_t seckey[static 32]);
+WARN_UNUSED_RESULT int crypto_tr_tweak_seckey(const uint8_t seckey[static 32],
+                                              const uint8_t *h,
+                                              size_t h_len,
+                                              uint8_t out[static 32]);
 
 /**
  * Validates the Base58Check-encoded extended pubkey at a given path.

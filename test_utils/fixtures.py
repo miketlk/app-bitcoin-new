@@ -52,6 +52,8 @@ def pytest_addoption(parser):
     parser.addoption("--hid", action="store_true")
     parser.addoption("--headless", action="store_true")
     parser.addoption("--enableslowtests", action="store_true")
+    parser.addoption("--model", action="store", default="nanos")
+    parser.addoption('--speculos_api_port', action='store')
 
 
 @pytest.fixture(scope="module")
@@ -93,13 +95,18 @@ def enable_slow_tests(pytestconfig):
     return pytestconfig.getoption("enableslowtests")
 
 
+@pytest.fixture
+def model(pytestconfig):
+    return pytestconfig.getoption("model")
+
+
 @pytest.fixture(scope='session', autouse=True)
 def root_directory(request):
     return Path(str(request.config.rootdir))
 
 
 @pytest.fixture
-def comm(settings, root_directory, hid, headless, app_version: str) -> Union[TransportClient, SpeculosClient]:
+def comm(settings, root_directory, hid, headless, model, app_version: str) -> Union[TransportClient, SpeculosClient]:
     if hid:
         client = TransportClient("hid")
     else:
@@ -123,7 +130,7 @@ def comm(settings, root_directory, hid, headless, app_version: str) -> Union[Tra
 
         client = SpeculosClient(
             app_binary,
-            ['--sdk', '2.1', '--seed', f'{settings["mnemonic"]}']
+            ['--model', model, '--seed', f'{settings["mnemonic"]}']
             + ["--display", "qt" if not headless else "headless"]
             + lib_params
         )
@@ -170,3 +177,9 @@ def client(bitcoin_network: str, comm: Union[TransportClient, SpeculosClient]) -
 def speculos_globals(settings: dict, bitcoin_network: str) -> SpeculosGlobals:
 
     return SpeculosGlobals(mnemonic=settings["mnemonic"], network=bitcoin_network)
+
+
+@pytest.fixture
+def additional_speculos_arguments(pytestconfig):
+    api_port = pytestconfig.getoption("speculos_api_port")
+    return ["--api-port", api_port] if api_port else []

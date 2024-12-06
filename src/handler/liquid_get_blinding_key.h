@@ -1,4 +1,5 @@
 #pragma once
+#ifdef HAVE_LIQUID
 
 #include "../boilerplate/dispatcher.h"
 
@@ -15,3 +16,5 @@ typedef struct {
  *   Dispatcher context.
  */
 void handler_liquid_get_blinding_key(dispatcher_context_t *dispatcher_context);
+
+#endif // HAVE_LIQUID

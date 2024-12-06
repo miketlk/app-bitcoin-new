@@ -1,6 +1,6 @@
 /*****************************************************************************
  *   Ledger App Bitcoin.
- *   (c) 2021 Ledger SAS.
+ *   (c) 2024 Ledger SAS.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 
 #include "../boilerplate/dispatcher.h"
 #include "../boilerplate/sw.h"
+#include "../common/bip32.h"
 #include "../common/merkle.h"
 #include "../common/read.h"
 #include "../common/wallet.h"
@@ -34,236 +35,207 @@
 #include "../ui/display.h"
 #include "../ui/menu.h"
 
+#include "lib/get_merkle_leaf_element.h"
+#include "lib/get_preimage.h"
 #include "lib/policy.h"
 
 #include "client_commands.h"
 
-#include "register_wallet.h"
+#include "handlers.h"
 
-/**
- * Receives and parses the public key info asking the user to validate it.
- *
- * @param[in,out] dc
- *   Dispatcher context.
- */
-static void process_cosigner_info(dispatcher_context_t *dc);
+#ifdef HAVE_LIQUID
+#include "liquid.h"
+#endif
 
-/**
- * Goes to the next public key until all are processed.
- *
- * @param[in,out] dc
- *   Dispatcher context.
- */
-static void next_cosigner(dispatcher_context_t *dc);
-
-/**
- * Finalizes and sends response to the REGISTER_WALLET command.
- *
- * @param[in,out] dc
- *   Dispatcher context.
- */
-static void finalize_response(dispatcher_context_t *dc);
-
-/**
- * Checks whether wallet policy is acceptable.
- *
- * @param[in] policy
- *   Pointer to root policy node.
- *
- * @return true on success, false on error.
- */
 static bool is_policy_acceptable(const policy_node_t *policy);
-
-/**
- * Checks whether wallet policy name is acceptable.
- *
- * @param[in] name
- *   Wallet name, may not be null-terminated.
- * @param name_len
- *   Number of characters in wallet name.
- *
- * @return true on success, false on error.
- */
 static bool is_policy_name_acceptable(const char *name, size_t name_len);
+
+static const uint8_t BIP0341_NUMS_PUBKEY[] = {0x02, 0x50, 0x92, 0x9b, 0x74, 0xc1, 0xa0, 0x49, 0x54,
+                                              0xb7, 0x8b, 0x4b, 0x60, 0x35, 0xe9, 0x7a, 0x5e, 0x07,
+                                              0x8a, 0x5a, 0x0f, 0x28, 0xec, 0x96, 0xd5, 0x47, 0xbf,
+                                              0xee, 0x9a, 0xce, 0x80, 0x3a, 0xc0};
 
 /**
  * Validates the input, initializes the hash context and starts accumulating the wallet header in
  * it.
  */
-void handler_register_wallet(dispatcher_context_t *dc) {
-    register_wallet_state_t *state = (register_wallet_state_t *) &G_command_state;
+void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version) {
+    (void) protocol_version;
 
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
+    LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
-    // Device must be unlocked
-    if (os_global_pin_is_validated() != BOLOS_UX_OK) {
-        SEND_SW(dc, SW_SECURITY_STATUS_NOT_SATISFIED);
-        return;
-    }
+    policy_map_wallet_header_t wallet_header;
+
+    uint8_t wallet_id[32];
+    union {
+        uint8_t bytes[MAX_WALLET_POLICY_BYTES];
+        policy_node_t parsed;
+    } policy_map;
+
+    size_t n_internal_keys = 0;
 
     uint64_t serialized_policy_map_len;
     if (!buffer_read_varint(&dc->read_buffer, &serialized_policy_map_len)) {
         SEND_SW(dc, SW_WRONG_DATA_LENGTH);
         return;
     }
-    if (serialized_policy_map_len > MAX_POLICY_MAP_SERIALIZED_LENGTH) {
-        PRINTF("Policy map too long\n");
+
+    uint8_t policy_map_descriptor[MAX_DESCRIPTOR_TEMPLATE_LENGTH];
+    if (0 > read_and_parse_wallet_policy(dc,
+                                         &dc->read_buffer,
+                                         &wallet_header,
+                                         policy_map_descriptor,
+                                         policy_map.bytes,
+                                         sizeof(policy_map.bytes))) {
         SEND_SW(dc, SW_INCORRECT_DATA);
         return;
     }
 
-    if ((read_policy_map_wallet(&dc->read_buffer, &state->wallet_header)) < 0) {
-        PRINTF("Failed reading policy map\n");
-        SEND_SW(dc, SW_INCORRECT_DATA);
-        return;
-    }
-
-    buffer_t policy_map_buffer =
-        buffer_create(&state->wallet_header.policy_map, state->wallet_header.policy_map_len);
-    if (parse_policy_map(&policy_map_buffer,
-                         state->policy_map_bytes,
-                         sizeof(state->policy_map_bytes),
-                         BIP32_PUBKEY_VERSION,
-                         BIP32_PRIVKEY_VERSION) < 0) {
-        PRINTF("Failed parsing policy map\n");
+    if (count_distinct_keys_info(&policy_map.parsed) != (int) wallet_header.n_keys) {
+        PRINTF("Number of keys in descriptor template doesn't provided keys\n");
         SEND_SW(dc, SW_INCORRECT_DATA);
         return;
     }
 
     // Compute the wallet id (sha256 of the serialization)
-    get_policy_wallet_id(&state->wallet_header, state->wallet_id);
+    get_policy_wallet_id(&wallet_header, wallet_id);
 
     // Verify that the name is acceptable
-    if (!is_policy_name_acceptable(state->wallet_header.name, state->wallet_header.name_len)) {
+    if (!is_policy_name_acceptable(wallet_header.name, wallet_header.name_len)) {
+        PRINTF("Policy name is not acceptable\n");
         SEND_SW(dc, SW_INCORRECT_DATA);
         return;
     }
 
-    // check if policy is acceptable; only multisig is accepted at this time,
-    // and it must be one of the accepted patterns.
-    if (!is_policy_acceptable(&state->policy_map)) {
+    // check if policy is acceptable
+    if (!is_policy_acceptable(&policy_map.parsed)) {
+        PRINTF("Policy is not acceptable\n");
+
         SEND_SW(dc, SW_NOT_SUPPORTED);
         return;
     }
 
-    state->master_key_fingerprint = crypto_get_master_key_fingerprint();
+    // make sure that the policy is sane (especially if it contains miniscript)
+    if (0 > is_policy_sane(dc,
+                           &policy_map.parsed,
+                           wallet_header.version,
+                           wallet_header.keys_info_merkle_root,
+                           wallet_header.n_keys)) {
+        PRINTF("Policy is not sane\n");
 
-    state->next_pubkey_index = 0;
-
-    ui_display_wallet_header(dc, &state->wallet_header, process_cosigner_info);
-}
-
-/**
- * Receives and parses the next pubkey info.
- * Asks the user to validate the pubkey info.
- */
-static void process_cosigner_info(dispatcher_context_t *dc) {
-    register_wallet_state_t *state = (register_wallet_state_t *) &G_command_state;
-
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
-
-    int pubkey_info_len = call_get_merkle_leaf_element(dc,
-                                                       state->wallet_header.keys_info_merkle_root,
-                                                       state->wallet_header.n_keys,
-                                                       state->next_pubkey_index,
-                                                       state->next_pubkey_info,
-                                                       MAX_POLICY_KEY_INFO_LEN);
-
-    if (pubkey_info_len < 0) {
-        SEND_SW(dc, SW_INCORRECT_DATA);
-        return;
-    }
-
-    state->next_pubkey_info[pubkey_info_len] = 0;
-
-    // Make a sub-buffer for the pubkey info
-    buffer_t key_info_buffer = buffer_create(state->next_pubkey_info, pubkey_info_len);
-
-    policy_map_key_info_t key_info;
-    if (parse_policy_map_key_info(&key_info_buffer, &key_info) == -1) {
-        PRINTF("Incorrect policy map.\n");
-        SEND_SW(dc, SW_INCORRECT_DATA);
-        return;
-    }
-    if (!validate_policy_map_extended_pubkey(&key_info, BIP32_PUBKEY_VERSION)) {
-        SEND_SW(dc, SW_INCORRECT_DATA);
-        return;
-    }
-
-    // We refuse to register wallets without key origin information, or whose keys don't end with
-    // the wildcard ('/**'). The key origin information is necessary when signing to identify which
-    // one is our key. Using addresses without a wildcard could potentially be supported, but
-    // disabled for now (question to address: can only _some_ of the keys have a wildcard?).
-
-    if (!key_info.has_key_origin) {
-        PRINTF("Key info without origin unsupported.\n");
         SEND_SW(dc, SW_NOT_SUPPORTED);
         return;
     }
 
-    if (KEY_WILDCARD_NONE == key_info.wildcard_id) {
-        PRINTF("Key info without wildcard unsupported.\n");
-        SEND_SW(dc, SW_NOT_SUPPORTED);
+    if (!ui_display_register_wallet(dc, &wallet_header, (char *) policy_map_descriptor)) {
+        SEND_SW(dc, SW_DENY);
+        ui_post_processing_confirm_wallet_registration(dc, false);
         return;
     }
 
-    bool is_key_internal = false;
-    if (read_u32_be(key_info.master_key_fingerprint, 0) == state->master_key_fingerprint) {
-        // it could be a collision on the fingerprint; we verify that we can actually generate the
-        // same pubkey
-        char pubkey_derived[MAX_SERIALIZED_PUBKEY_LENGTH + 1];
-        int serialized_pubkey_len =
-            get_serialized_extended_pubkey_at_path(key_info.master_key_derivation,
-                                                   key_info.master_key_derivation_len,
-                                                   BIP32_PUBKEY_VERSION,
-                                                   pubkey_derived);
-        if (serialized_pubkey_len == -1) {
-            SEND_SW(dc, SW_BAD_STATE);
+    uint32_t master_key_fingerprint = crypto_get_master_key_fingerprint();
+
+    for (size_t cosigner_index = 0; cosigner_index < wallet_header.n_keys; cosigner_index++) {
+        /**
+         * Receives and parses the next pubkey info.
+         * Asks the user to validate the pubkey info.
+         */
+
+        uint8_t next_pubkey_info[MAX_POLICY_KEY_INFO_LEN + 1];
+        int pubkey_info_len = call_get_merkle_leaf_element(dc,
+                                                           wallet_header.keys_info_merkle_root,
+                                                           wallet_header.n_keys,
+                                                           cosigner_index,
+                                                           next_pubkey_info,
+                                                           MAX_POLICY_KEY_INFO_LEN);
+
+        if (pubkey_info_len < 0) {
+            SEND_SW(dc, SW_INCORRECT_DATA);
+            ui_post_processing_confirm_wallet_registration(dc, false);
             return;
         }
 
-        if (strncmp(key_info.ext_pubkey, pubkey_derived, MAX_SERIALIZED_PUBKEY_LENGTH) == 0) {
-            is_key_internal = true;
-            ++state->n_internal_keys;
+        next_pubkey_info[pubkey_info_len] = 0;
+
+        // Make a sub-buffer for the pubkey info
+        buffer_t key_info_buffer = buffer_create(next_pubkey_info, pubkey_info_len);
+
+        policy_map_key_info_t key_info;
+        if (parse_policy_map_key_info(&key_info_buffer, &key_info, wallet_header.version) == -1) {
+            PRINTF("Incorrect policy map.\n");
+            SEND_SW(dc, SW_INCORRECT_DATA);
+            ui_post_processing_confirm_wallet_registration(dc, false);
+            return;
+        }
+
+        if (read_u32_be(key_info.ext_pubkey.version, 0) != BIP32_PUBKEY_VERSION) {
+            PRINTF("Invalid pubkey version. Wrong network?\n");
+            SEND_SW(dc, SW_INCORRECT_DATA);
+            return;
+        }
+
+        // We refuse to register wallets without key origin information, or whose keys don't end
+        // with the wildcard ('/**'). The key origin information is necessary when signing to
+        // identify which one is our key. Using addresses without a wildcard could potentially be
+        // supported, but disabled for now (question to address: can only _some_ of the keys have a
+        // wildcard?).
+
+        key_type_e key_type;
+
+        if (memcmp(key_info.ext_pubkey.compressed_pubkey,
+                   BIP0341_NUMS_PUBKEY,
+                   sizeof(BIP0341_NUMS_PUBKEY)) == 0) {
+            // this public key is known to be unspendable
+            key_type = PUBKEY_TYPE_UNSPENDABLE;
+        } else {
+            key_type = PUBKEY_TYPE_EXTERNAL;
+
+            // if there is key origin information and the fingerprint matches, we make sure it's not
+            // a false positive (it could be wrong info, or a collision).
+            if (key_info.has_key_origin &&
+                read_u32_be(key_info.master_key_fingerprint, 0) == master_key_fingerprint) {
+                // we verify that we can actually generate the same pubkey
+                serialized_extended_pubkey_t pubkey_derived;
+                int serialized_pubkey_len =
+                    get_extended_pubkey_at_path(key_info.master_key_derivation,
+                                                key_info.master_key_derivation_len,
+                                                BIP32_PUBKEY_VERSION,
+                                                &pubkey_derived);
+                if (serialized_pubkey_len == -1) {
+                    SEND_SW(dc, SW_BAD_STATE);
+                    ui_post_processing_confirm_wallet_registration(dc, false);
+                    return;
+                }
+
+                if (memcmp(&key_info.ext_pubkey, &pubkey_derived, sizeof(pubkey_derived)) == 0) {
+                    key_type = PUBKEY_TYPE_INTERNAL;
+                    ++n_internal_keys;
+                }
+            }
+        }
+
+        if (!ui_display_policy_map_cosigner_pubkey(dc,
+                                                   (char *) next_pubkey_info,
+                                                   cosigner_index,  // 1-indexed for the UI
+                                                   wallet_header.n_keys,
+                                                   key_type)) {
+            SEND_SW(dc, SW_DENY);
+            return;
         }
     }
 
-    ui_display_policy_map_cosigner_pubkey(dc,
-                                          (char *) state->next_pubkey_info,
-                                          state->next_pubkey_index,  // 1-indexed for the UI
-                                          state->wallet_header.n_keys,
-                                          is_key_internal,
-                                          next_cosigner);
-}
-
-static void next_cosigner(dispatcher_context_t *dc) {
-    register_wallet_state_t *state = (register_wallet_state_t *) &G_command_state;
-
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
-
-    ++state->next_pubkey_index;
-    if (state->next_pubkey_index < state->wallet_header.n_keys) {
-        dc->next(process_cosigner_info);
-    } else {
-        dc->next(finalize_response);
-    }
-}
-
-static void finalize_response(dispatcher_context_t *dc) {
-    register_wallet_state_t *state = (register_wallet_state_t *) &G_command_state;
-
-    LOG_PROCESSOR(dc, __FILE__, __LINE__, __func__);
-
-    if (state->n_internal_keys != 1) {
-        // Unclear if there is any use case for multiple internal keys in the same wallet.
+    if (n_internal_keys < 1) {
+        // Unclear if there is any use case for registering policies with no internal keys.
         // We disallow that, might reconsider in future versions if needed.
-        SEND_SW(dc, SW_NOT_SUPPORTED);
+        PRINTF("Wallet policy with no internal keys\n");
+        SEND_SW(dc, SW_INCORRECT_DATA);
+        ui_post_processing_confirm_wallet_registration(dc, false);
         return;
-    }
-
-    // Ensure the device is unlocked before outputting the response
-    if (os_global_pin_is_validated() != BOLOS_UX_OK) {
-        SEND_SW(dc, SW_SECURITY_STATUS_NOT_SATISFIED);
+    } else if (n_internal_keys != 1 && wallet_header.version == WALLET_POLICY_VERSION_V1) {
+        // for legacy policies, we keep the restriction to exactly 1 internal key
+        PRINTF("V1 policies must have exactly 1 internal key\n");
+        SEND_SW(dc, SW_INCORRECT_DATA);
+        ui_post_processing_confirm_wallet_registration(dc, false);
         return;
     }
 
@@ -272,7 +244,7 @@ static void finalize_response(dispatcher_context_t *dc) {
         uint8_t hmac[32];
     } response;
 
-    memcpy(response.wallet_id, state->wallet_id, sizeof(response.wallet_id));
+    memcpy(response.wallet_id, wallet_id, sizeof(wallet_id));
 
     // TODO: we might want to add external info to be committed with the signature (e.g.: app
     // version).
@@ -283,65 +255,33 @@ static void finalize_response(dispatcher_context_t *dc) {
     //       And the signature would be on the concatenation of the wallet id and the metadata.
     //       The client must persist the metadata, together with the signature.
 
-    {
-        // sign wallet id and produce response
-        uint8_t key[32];
-        bool ok = crypto_derive_symmetric_key(WALLET_SLIP0021_LABEL,
-                                              WALLET_SLIP0021_LABEL_LEN,
-                                              (uint8_t*)key);
-
-        ok = ok && sizeof(response.hmac) == cx_hmac_sha256((uint8_t*)key,
-                                                           sizeof(key),
-                                                           state->wallet_id,
-                                                           sizeof(state->wallet_id),
-                                                           response.hmac,
-                                                           sizeof(response.hmac));
-
-        explicit_bzero((uint8_t*)key, sizeof(key));
-
-        if (!ok) {
-            SEND_SW(dc, SW_BAD_STATE);
-            return;
-        }
-    }
+    compute_wallet_hmac(wallet_id, response.hmac);
 
     SEND_RESPONSE(dc, &response, sizeof(response), SW_OK);
+    ui_post_processing_confirm_wallet_registration(dc, true);
 }
 
 static bool is_policy_acceptable(const policy_node_t *policy) {
-    policy_node_t *internal_script;
-
-    if (policy->type == TOKEN_SH) {
-        policy_node_t *child_node = ((policy_node_with_script_t *) policy)->script;
-        if (child_node->type == TOKEN_WSH) {
-            // sh(wsh({sorted}multi(@0)))
-            internal_script = ((policy_node_with_script_t *) child_node)->script;
-        } else {
-            // sh({sorted}multi(@0))
-            internal_script = child_node;
-        }
-    } else if (policy->type == TOKEN_WSH) {
-        // wsh({sorted}multi(@0))
-        internal_script = ((policy_node_with_script_t *) policy)->script;
-    } else if (policy->type == TOKEN_CT) {
+    PolicyNodeType policy_type = policy->type;
 #ifdef HAVE_LIQUID
+    if (policy->type == TOKEN_CT) {
         // ct(<BLINDING_KEY>, <DESCRIPTOR>)
         if(liquid_is_blinding_key_acceptable(policy)) {
-            internal_script = ((policy_node_ct_t *) policy)->script;
-            return is_policy_acceptable(internal_script);
+            policy_type = ((policy_node_ct_t *)policy)->script->type;
         }
-#endif // HAVE_LIQUID
-        return false;  // unexpected policy
-    } else {
-        return false;  // unexpected policy
+        else {
+            return false;
+        }
     }
+#endif // HAVE_LIQUID
 
-    return internal_script->type == TOKEN_MULTI || internal_script->type == TOKEN_SORTEDMULTI;
+    return policy_type == TOKEN_PKH || policy_type == TOKEN_WPKH || policy_type == TOKEN_SH ||
+           policy_type == TOKEN_WSH || policy_type == TOKEN_TR;
 }
 
 static bool is_policy_name_acceptable(const char *name, size_t name_len) {
-    // between 1 and MAX_POLICY_MAP_NAME_LENGTH characters
-    if (name_len == 0 || name_len > MAX_POLICY_MAP_NAME_LENGTH) return false;
+    // between 1 and MAX_WALLET_NAME_LENGTH characters
+    if (name_len == 0 || name_len > MAX_WALLET_NAME_LENGTH) return false;
 
     // first and last characters must not be whitespace
     if (name[0] == ' ' || name[name_len - 1] == ' ') return false;

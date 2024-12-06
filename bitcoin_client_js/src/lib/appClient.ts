@@ -1,4 +1,8 @@
+import * as descriptors from '@bitcoinerlab/descriptors';
+import * as secp256k1 from '@bitcoinerlab/secp256k1';
+const { Descriptor } = descriptors.DescriptorsFactory(secp256k1);
 import Transport from '@ledgerhq/hw-transport';
+import { networks } from 'bitcoinjs-lib';
 
 import { pathElementsToBuffer, pathStringToArray } from './bip32';
 import { ClientCommandInterpreter } from './clientCommands';
@@ -6,10 +10,12 @@ import { MerkelizedPsbt } from './merkelizedPsbt';
 import { hashLeaf, Merkle } from './merkle';
 import { WalletPolicy } from './policy';
 import { PsbtV2 } from './psbtv2';
-import { createVarint } from './varint';
+import { createVarint, parseVarint } from './varint';
 
 const CLA_BTC = 0xe1;
 const CLA_FRAMEWORK = 0xf8;
+
+const CURRENT_PROTOCOL_VERSION = 1; // supported from version 2.1.0 of the app
 
 enum BitcoinIns {
   GET_PUBKEY = 0x00,
@@ -22,6 +28,42 @@ enum BitcoinIns {
 
 enum FrameworkIns {
   CONTINUE_INTERRUPTED = 0x01,
+}
+
+/**
+ * This class represents a partial signature produced by the app during signing.
+ * It always contains the `signature` and the corresponding `pubkey` whose private key
+ * was used for signing; in the case of taproot script paths, it also contains the
+ * tapleaf hash.
+ */
+export class PartialSignature {
+  readonly pubkey: Buffer;
+  readonly signature: Buffer;
+  readonly tapleafHash?: Buffer;
+
+  constructor(pubkey: Buffer, signature: Buffer, tapleafHash?: Buffer) {
+    this.pubkey = pubkey;
+    this.signature = signature;
+    this.tapleafHash = tapleafHash;
+  }
+}
+
+/**
+ * Creates an instance of `PartialSignature` from the returned raw augmented pubkey and signature.
+ * @param pubkeyAugm the public key, concatenated with the tapleaf hash in the case of taproot script path spend.
+ * @param signature the signature
+ * @returns an instance of `PartialSignature`.
+ */
+function makePartialSignature(pubkeyAugm: Buffer, signature: Buffer): PartialSignature {
+  if (pubkeyAugm.length == 64) {
+    // tapscript spend: concatenation of 32-bytes x-only pubkey and 32-bytes tapleaf_hash
+    return new PartialSignature(pubkeyAugm.slice(0, 32), signature, pubkeyAugm.slice(32, 64));
+  } else if (pubkeyAugm.length == 32 || pubkeyAugm.length == 33) {
+    // legacy, segwit or taproot keypath spend: pubkeyAugm is just the pubkey
+    return new PartialSignature(pubkeyAugm, signature);
+  } else {
+    throw new Error(`Invalid length for pubkeyAugm: ${pubkeyAugm.length} bytes.`);
+  }
 }
 
 /**
@@ -44,7 +86,7 @@ export class AppClient {
       CLA_BTC,
       ins,
       0,
-      0,
+      CURRENT_PROTOCOL_VERSION,
       data,
       [0x9000, 0xe000]
     );
@@ -67,6 +109,34 @@ export class AppClient {
     }
     return response.slice(0, -2); // drop the status word (can only be 0x9000 at this point)
   }
+
+  /**
+   * Returns an object containing the currently running app's name, version and the device status flags.
+   *
+   * @returns an object with app name, version and device status flags.
+   */
+  public async getAppAndVersion(): Promise<{
+    name: string;
+    version: string;
+    flags: number | Buffer;
+  }> {
+    const r = await this.transport.send(0xb0, 0x01, 0x00, 0x00);
+    let i = 0;
+    const format = r[i++];
+    if (format !== 1) throw new Error("Unexpected response")
+
+    const nameLength = r[i++];
+    const name = r.slice(i, (i += nameLength)).toString("ascii");
+    const versionLength = r[i++];
+    const version = r.slice(i, (i += versionLength)).toString("ascii");
+    const flagLength = r[i++];
+    const flags = r.slice(i, (i += flagLength));
+    return {
+      name,
+      version,
+      flags,
+    };
+  };
 
   /**
    * Requests the BIP-32 extended pubkey to the hardware wallet.
@@ -109,14 +179,12 @@ export class AppClient {
   async registerWallet(
     walletPolicy: WalletPolicy
   ): Promise<readonly [Buffer, Buffer]> {
-    const serializedWalletPolicy = walletPolicy.serialize();
 
     const clientInterpreter = new ClientCommandInterpreter();
-    clientInterpreter.addKnownPreimage(serializedWalletPolicy);
-    clientInterpreter.addKnownList(
-      walletPolicy.keys.map((k) => Buffer.from(k, 'ascii'))
-    );
 
+    clientInterpreter.addKnownWalletPolicy(walletPolicy);
+
+    const serializedWalletPolicy = walletPolicy.serialize();
     const response = await this.makeRequest(
       BitcoinIns.REGISTER_WALLET,
       Buffer.concat([
@@ -131,8 +199,20 @@ export class AppClient {
         `Invalid response length. Expected 64 bytes, got ${response.length}`
       );
     }
+    const walletId = response.subarray(0, 32);
+    const walletHMAC = response.subarray(32);
 
-    return [response.subarray(0, 32), response.subarray(32)];
+    // sanity check: derive and validate the first address with a 3rd party
+    const firstAddrDevice = await this.getWalletAddress(
+      walletPolicy,
+      walletHMAC,
+      0,
+      0,
+      false
+    );
+    await this.validateAddress(firstAddrDevice, walletPolicy, 0, 0);
+
+    return [walletId, walletHMAC];
   }
 
   /**
@@ -163,10 +243,8 @@ export class AppClient {
     }
 
     const clientInterpreter = new ClientCommandInterpreter();
-    clientInterpreter.addKnownList(
-      walletPolicy.keys.map((k) => Buffer.from(k, 'ascii'))
-    );
-    clientInterpreter.addKnownPreimage(walletPolicy.serialize());
+
+    clientInterpreter.addKnownWalletPolicy(walletPolicy);
 
     const addressIndexBuffer = Buffer.alloc(4);
     addressIndexBuffer.writeUInt32BE(addressIndex, 0);
@@ -183,27 +261,41 @@ export class AppClient {
       clientInterpreter
     );
 
-    return response.toString('ascii');
+    const address = response.toString('ascii');
+    await this.validateAddress(address, walletPolicy, change, addressIndex);
+    return address;
   }
 
   /**
    * Signs a psbt using a (standard or registered) `WalletPolicy`. This is an interactive command, as user validation
    * is necessary using the device's secure screen.
    * On success, a map of input indexes and signatures is returned.
-   * @param psbt an instance of `PsbtV2`
+   * @param psbt a base64-encoded string, or a psbt in a binary Buffer. Using the `PsbtV2` type is deprecated.
    * @param walletPolicy the `WalletPolicy` to use for signing
    * @param walletHMAC the 32-byte hmac obtained during wallet policy registration, or `null` for a standard policy
    * @param progressCallback optionally, a callback that will be called every time a signature is produced during
    * the signing process. The callback does not receive any argument, but can be used to track progress.
-   * @returns a map from numbers to signatures. For each input index `i` that is a key of the returned map, the
-   * corresponding value is the signature for the `i`-th input of the `psbt`.
+   * @returns an array of of tuples with 2 elements containing:
+   *    - the index of the input being signed;
+   *    - an instance of PartialSignature
    */
   async signPsbt(
-    psbt: PsbtV2,
+    psbt: PsbtV2 | string | Buffer,
     walletPolicy: WalletPolicy,
     walletHMAC: Buffer | null,
     progressCallback?: () => void
-  ): Promise<Map<number, Buffer>> {
+  ): Promise<[number, PartialSignature][]> {
+
+    if (typeof psbt === 'string') {
+      psbt = Buffer.from(psbt, "base64");
+    }
+
+    if (Buffer.isBuffer(psbt)) {
+      const psbtObj = new PsbtV2()
+      psbtObj.deserialize(psbt);
+      psbt = psbtObj;
+    }
+
     const merkelizedPsbt = new MerkelizedPsbt(psbt);
 
     if (walletHMAC != null && walletHMAC.length != 32) {
@@ -213,10 +305,7 @@ export class AppClient {
     const clientInterpreter = new ClientCommandInterpreter(progressCallback);
 
     // prepare ClientCommandInterpreter
-    clientInterpreter.addKnownList(
-      walletPolicy.keys.map((k) => Buffer.from(k, 'ascii'))
-    );
-    clientInterpreter.addKnownPreimage(walletPolicy.serialize());
+    clientInterpreter.addKnownWalletPolicy(walletPolicy);
 
     clientInterpreter.addKnownMapping(merkelizedPsbt.globalMerkleMap);
     for (const map of merkelizedPsbt.inputMerkleMaps) {
@@ -251,9 +340,18 @@ export class AppClient {
 
     const yielded = clientInterpreter.getYielded();
 
-    const ret: Map<number, Buffer> = new Map();
+    const ret: [number, PartialSignature][] = [];
     for (const inputAndSig of yielded) {
-      ret.set(inputAndSig[0], inputAndSig.slice(1));
+      // inputAndSig contains:
+      // <inputIndex : varint> <pubkeyLen : 1 byte> <pubkey : pubkeyLen bytes (32 or 33)> <signature : variable length>
+      const [inputIndex, inputIndexLen] = parseVarint(inputAndSig, 0);
+      const pubkeyAugmLen = inputAndSig[inputIndexLen];
+      const pubkeyAugm = inputAndSig.subarray(inputIndexLen + 1, inputIndexLen + 1 + pubkeyAugmLen);
+      const signature = inputAndSig.subarray(inputIndexLen + 1 + pubkeyAugmLen)
+
+      const partialSig = makePartialSignature(pubkeyAugm, signature);
+
+      ret.push([Number(inputIndex), partialSig]);
     }
     return ret;
   }
@@ -307,6 +405,77 @@ export class AppClient {
     );
 
     return result.toString('base64');
+  }
+
+  /* Performs any additional check on the generated address before returning it.*/
+  private async validateAddress(
+    address: string,
+    walletPolicy: WalletPolicy,
+    change: number,
+    addressIndex: number
+  ) {
+    if (change !== 0 && change !== 1)
+      throw new Error('Change can only be 0 or 1');
+    const isChange: boolean = change === 1;
+    if (addressIndex < 0 || !Number.isInteger(addressIndex))
+      throw new Error('Invalid address index');
+    const appAndVer = await this.getAppAndVersion();
+    let network;
+    if (appAndVer.name === 'Bitcoin Test') {
+      network = networks.testnet;
+    } else if (appAndVer.name === 'Bitcoin') {
+      network = networks.bitcoin;
+    } else {
+      throw new Error(
+        `Invalid network: ${appAndVer.name}. Expected 'Bitcoin Test' or 'Bitcoin'.`
+      );
+    }
+    let expression = walletPolicy.descriptorTemplate;
+    // Replace change:
+    expression = expression.replace(/\/\*\*/g, `/<0;1>/*`);
+    const regExpMN = new RegExp(`/<(\\d+);(\\d+)>`, 'g');
+    let matchMN;
+    while ((matchMN = regExpMN.exec(expression)) !== null) {
+      const [M, N] = [parseInt(matchMN[1], 10), parseInt(matchMN[2], 10)];
+      expression = expression.replace(`/<${M};${N}>`, `/${isChange ? N : M}`);
+    }
+    // Replace index:
+    expression = expression.replace(/\/\*/g, `/${addressIndex}`);
+    // Replace origin in reverse order to prevent
+    // misreplacements, e.g., @10 being mistaken for @1 and leaving a 0.
+    for (let i = walletPolicy.keys.length - 1; i >= 0; i--)
+      expression = expression.replace(
+        new RegExp(`@${i}`, 'g'),
+        walletPolicy.keys[i]
+      );
+    let thirdPartyValidationApplicable = true;
+    let thirdPartyGeneratedAddress: string;
+    try {
+      thirdPartyGeneratedAddress = new Descriptor({
+        expression,
+        network
+      }).getAddress();
+    } catch (err) {
+      // Note: @bitcoinerlab/descriptors@1.0.x does not support Tapscript yet.
+      // These are the supported descriptors:
+      //  - pkh(KEY)
+      //  - wpkh(KEY)
+      //  - sh(wpkh(KEY))
+      //  - sh(SCRIPT)
+      //  - wsh(SCRIPT)
+      //  - sh(wsh(SCRIPT)), where
+      // SCRIPT is any of the (non-tapscript) fragments in: https://bitcoin.sipa.be/miniscript/
+      //
+      // Other expressions are not supported and third party validation would not be applicable:
+      thirdPartyValidationApplicable = false;
+    }
+    if (
+      thirdPartyValidationApplicable &&
+      address !== thirdPartyGeneratedAddress
+    )
+      throw new Error(
+        `Third party address validation mismatch: ${address} != ${thirdPartyGeneratedAddress}`
+      );
   }
 }
 

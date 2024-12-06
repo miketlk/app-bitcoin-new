@@ -1,3 +1,5 @@
+#ifdef HAVE_LIQUID
+
 #include <stdint.h>
 #include <string.h>
 
@@ -416,3 +418,4 @@ asset_metadata_status_t liquid_get_asset_metadata_by_leaf_index(
 }
 
 #endif // SKIP_FOR_CMOCKA
+#endif // HAVE_LIQUID

@@ -7,13 +7,17 @@
 #include "../../crypto.h"
 #include "../client_commands.h"
 
+#include "debug-helpers/debug.h"
+
+#include "cxram_stash.h"
+
 // TODO: refactor common code with stream_preimage.c
 
 int call_get_merkle_preimage(dispatcher_context_t *dispatcher_context,
                              const uint8_t hash[static 32],
                              uint8_t *out_ptr,
                              size_t out_ptr_len) {
-    // LOG_PROCESSOR(dispatcher_context, __FILE__, __LINE__, __func__);
+    // LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     PRINT_STACK_POINTER();
 
@@ -56,12 +60,19 @@ int call_get_merkle_preimage(dispatcher_context_t *dispatcher_context,
     uint8_t *data_ptr =
         dispatcher_context->read_buffer.ptr + dispatcher_context->read_buffer.offset;
 
-    cx_sha256_t hash_context;
+#ifdef USE_CXRAM_SECTION
+    // allocate buffers inside the cxram section to save memory
+    // this is safe as there are no syscalls here that use the cxram
+    cx_sha256_t *hash_context = (cx_sha256_t *) get_cxram_buffer();
+#else
+    cx_sha256_t hash_context_obj;
+    cx_sha256_t *hash_context = &hash_context_obj;
+#endif
 
-    cx_sha256_init(&hash_context);
+    cx_sha256_init(hash_context);
 
     // update hash
-    crypto_hash_update(&hash_context.header, data_ptr, partial_data_len);
+    crypto_hash_update(&hash_context->header, data_ptr, partial_data_len);
 
     buffer_t out_buffer = buffer_create(out_ptr, out_ptr_len);
 
@@ -97,7 +108,7 @@ int call_get_merkle_preimage(dispatcher_context_t *dispatcher_context,
 
         // update hash
         crypto_hash_update(
-            &hash_context.header,
+            &hash_context->header,
             dispatcher_context->read_buffer.ptr + dispatcher_context->read_buffer.offset,
             n_bytes);
 
@@ -109,9 +120,9 @@ int call_get_merkle_preimage(dispatcher_context_t *dispatcher_context,
 
     // hack: we pass the address of the final accumulator inside cx_sha256_t, so we don't need
     // an additional variable in the stack to store the final hash.
-    crypto_hash_digest(&hash_context.header, (uint8_t *) &hash_context.acc, 32);
+    crypto_hash_digest(&hash_context->header, (uint8_t *) &hash_context->acc, 32);
 
-    if (memcmp(hash_context.acc, hash, 32) != 0) {
+    if (memcmp(hash_context->acc, hash, 32) != 0) {
         PRINTF("Hash mismatch.\n");
         return -10;
     }

@@ -10,7 +10,7 @@ int call_get_preimage(dispatcher_context_t *dispatcher_context,
                       const uint8_t hash[static 32],
                       uint8_t *out,
                       size_t out_len) {
-    // LOG_PROCESSOR(dispatcher_context, __FILE__, __LINE__, __func__);
+    // LOG_PROCESSOR(__FILE__, __LINE__, __func__);
 
     uint8_t cmd = CCMD_GET_PREIMAGE;
     dispatcher_context->add_to_response(&cmd, 1);
@@ -86,13 +86,12 @@ int call_get_preimage(dispatcher_context_t *dispatcher_context,
             return -8;
         }
 
-        uint8_t *data_ptr2 =
-            dispatcher_context->read_buffer.ptr + dispatcher_context->read_buffer.offset;
+        data_ptr = dispatcher_context->read_buffer.ptr + dispatcher_context->read_buffer.offset;
 
         // update hash
-        crypto_hash_update(&hash_context.header, data_ptr2, n_bytes);
+        crypto_hash_update(&hash_context.header, data_ptr, n_bytes);
 
-        buffer_write_bytes(&buffer_out, data_ptr2, n_bytes);
+        buffer_write_bytes(&buffer_out, data_ptr, n_bytes);
 
         bytes_remaining -= n_bytes;
     }

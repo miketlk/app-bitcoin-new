@@ -1,3 +1,5 @@
+#ifdef HAVE_LIQUID
+
 #include <stdint.h>
 #include <string.h>
 #include "crypto.h"
@@ -6,8 +8,6 @@
 #include "../common/wif.h"
 #include "../common/script.h"
 #include "tests.h"
-
-#ifdef HAVE_LIQUID
 
 #ifdef SKIP_FOR_CMOCKA
 // disable problematic macros when compiling unit tests with CMOCKA

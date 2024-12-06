@@ -1,4 +1,5 @@
 #include <string.h>
+#include <stdint.h>
 
 #include "handle_get_printable_amount.h"
 

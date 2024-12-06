@@ -2,19 +2,39 @@
   "version": 1,
   "rules": [
     {
-      "regexp": "Spend from|Review|Amount|Address|Confirm|Fees",
+      "regexp": "Spend from|Wallet name|Review|Amount|Address|Confirm|Fees",
       "actions": [
         ["button", 2, true],
         ["button", 2, false]
       ]
     },
     {
-      "regexp": "Approve|Accept",
+      "regexp": "Hold to sign",
+      "actions": [
+        ["finger", 55, 550, true]
+      ]
+    },
+    {
+      "regexp": "Tap to continue",
+      "actions": [
+        ["finger", 55, 550, true],
+        ["finger", 55, 550, false]
+      ]
+    },
+    {
+      "regexp": "Approve|Accept|Confirm",
       "actions": [
         [ "button", 1, true ],
         [ "button", 2, true ],
         [ "button", 2, false ],
-        [ "button", 1, false ]
+        [ "button", 1, false ],
+        ["finger", 55, 550, true]
+      ]
+    },
+    {
+      "regexp": "Processing",
+      "actions": [
+        ["finger", 55, 550, false]
       ]
     }
   ]
