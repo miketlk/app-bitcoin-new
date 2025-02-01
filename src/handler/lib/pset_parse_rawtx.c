@@ -946,12 +946,12 @@ static int parse_in_witness_vector_elements(parse_in_witness_state_t *state, buf
 
 /// Table of steps of input witness parser
 static const parsing_step_t parse_in_witness_steps[] = {
-    (parsing_step_t) parse_in_witness_proofs_init,
-    (parsing_step_t) parse_in_witness_proof_length,  // size of amount proof
-    (parsing_step_t) parse_in_witness_proof,         // amount proof
-    (parsing_step_t) parse_in_witness_proof_length,  // size of token proof
-    (parsing_step_t) parse_in_witness_proof,         // token proof
-    (parsing_step_t) parse_in_witness_vectors_init,
+    (parsing_step_t) parse_in_witness_proofs_init,      // initialize processing of input witnesses
+    (parsing_step_t) parse_in_witness_proof_length,     // size of amount proof
+    (parsing_step_t) parse_in_witness_proof,            // amount proof
+    (parsing_step_t) parse_in_witness_proof_length,     // size of token proof
+    (parsing_step_t) parse_in_witness_proof,            // token proof
+    (parsing_step_t) parse_in_witness_vectors_init,     // initialize parsing of script witness
     (parsing_step_t) parse_in_witness_vector_size,      // number of elements in script witness
     (parsing_step_t) parse_in_witness_vector_elements,  // elements of script witness
     (parsing_step_t) parse_in_witness_vector_size,      // number of elements in pegin witness
@@ -1048,7 +1048,7 @@ static int parse_out_witness_proof(parse_out_witness_state_t *state, buffer_t *b
 
 /// Table of steps of output witness parser
 static const parsing_step_t parse_out_witness_steps[] = {
-    (parsing_step_t) parse_out_witness_proofs_init,
+    (parsing_step_t) parse_out_witness_proofs_init,   // initialize parsing
     (parsing_step_t) parse_out_witness_proof_length,  // size of surjection proof
     (parsing_step_t) parse_out_witness_proof,         // surjection proof
     (parsing_step_t) parse_out_witness_proof_length,  // size of range proof
@@ -1397,19 +1397,21 @@ static int parse_rawtx_out_witnesses(parse_rawtx_state_t *state, buffer_t *buffe
 }
 
 /// Table of steps of a full transaction
-static const parsing_step_t parse_rawtx_steps[] = {(parsing_step_t) parse_rawtx_version,
-                                                   (parsing_step_t) parse_rawtx_check_segwit,
-                                                   (parsing_step_t) parse_rawtx_input_count,
-                                                   (parsing_step_t) parse_rawtx_inputs_init,
-                                                   (parsing_step_t) parse_rawtx_inputs,
-                                                   (parsing_step_t) parse_rawtx_output_count,
-                                                   (parsing_step_t) parse_rawtx_outputs_init,
-                                                   (parsing_step_t) parse_rawtx_outputs,
-                                                   (parsing_step_t) parse_rawtx_locktime,
-                                                   (parsing_step_t) parse_rawtx_in_witnesses_init,
-                                                   (parsing_step_t) parse_rawtx_in_witnesses,
-                                                   (parsing_step_t) parse_rawtx_out_witnesses_init,
-                                                   (parsing_step_t) parse_rawtx_out_witnesses};
+static const parsing_step_t parse_rawtx_steps[] = {
+    (parsing_step_t) parse_rawtx_version,             // version field
+    (parsing_step_t) parse_rawtx_check_segwit,        // check if there is  a segregated witness
+    (parsing_step_t) parse_rawtx_input_count,         // number of transaction inputs
+    (parsing_step_t) parse_rawtx_inputs_init,         // initialize input parsing
+    (parsing_step_t) parse_rawtx_inputs,              // parse transaction inputs
+    (parsing_step_t) parse_rawtx_output_count,        // number of transaction outputs
+    (parsing_step_t) parse_rawtx_outputs_init,        // initialize output parsing
+    (parsing_step_t) parse_rawtx_outputs,             // parse transaction outputs
+    (parsing_step_t) parse_rawtx_locktime,            // Locktime
+    (parsing_step_t) parse_rawtx_in_witnesses_init,   // initialize input witness parsing
+    (parsing_step_t) parse_rawtx_in_witnesses,        // input witnesses
+    (parsing_step_t) parse_rawtx_out_witnesses_init,  // initialize output witness parsing
+    (parsing_step_t) parse_rawtx_out_witnesses        // output witnesses
+};
 
 /// Number of steps of a full transaction
 const int n_parse_rawtx_steps = sizeof(parse_rawtx_steps) / sizeof(parse_rawtx_steps[0]);

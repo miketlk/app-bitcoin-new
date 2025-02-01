@@ -431,38 +431,54 @@ typedef struct {
     char prefix[TOKEN_PREFIX_LEN + 1];  ///< Token prefix
 } blinding_key_signature_t;
 
+// clang-format off
 /// Table of known blinding key signatures
 static const blinding_key_signature_t BLINDING_KEY_SIGNATURES[] = {
-    {.prefix = "slip77",
-     .min_len = 72,
-     .max_len = 72,
-     .charset = CHARSET_ALPHANUM_LOW | CHARSET_BRACKETS,
-     .parser = parse_ct_slip77},
-    {.prefix = "xpub",
-     .min_len = 111,
-     .max_len = 112,
-     .charset = CHARSET_ALPHANUM,
-     .parser = parse_ct_xpub},
-    {.prefix = "xprv",
-     .min_len = 111,
-     .max_len = 112,
-     .charset = CHARSET_ALPHANUM,
-     .parser = parse_ct_xprv},
-    {.prefix = "elip151",
-     .min_len = 7,
-     .max_len = 7,
-     .charset = CHARSET_ALPHANUM_LOW,
-     .parser = parse_ct_elip151},
-    {.prefix = "",
-     .min_len = 64,
-     .max_len = 64,
-     .charset = CHARSET_HEX_LOW,
-     .parser = parse_ct_hex_privkey},
-    {.prefix = "",
-     .min_len = 66,
-     .max_len = 66,
-     .charset = CHARSET_HEX_LOW,
-     .parser = parse_ct_hex_pubkey}};
+    {
+        .prefix = "slip77",
+        .min_len = 72,
+        .max_len = 72,
+        .charset = CHARSET_ALPHANUM_LOW|CHARSET_BRACKETS,
+        .parser = parse_ct_slip77
+    },
+    {
+        .prefix = "xpub",
+        .min_len = 111,
+        .max_len = 112,
+        .charset = CHARSET_ALPHANUM,
+        .parser = parse_ct_xpub
+    },
+    {
+        .prefix = "xprv",
+        .min_len = 111,
+        .max_len = 112,
+        .charset = CHARSET_ALPHANUM,
+        .parser = parse_ct_xprv
+    },
+    {
+        .prefix = "elip151",
+        .min_len = 7,
+        .max_len = 7,
+        .charset = CHARSET_ALPHANUM_LOW,
+        .parser = parse_ct_elip151
+    },
+    {
+        .prefix = "",
+        .min_len = 64,
+        .max_len = 64,
+        .charset = CHARSET_HEX_LOW,
+        .parser = parse_ct_hex_privkey
+    },
+    {
+        .prefix = "",
+        .min_len = 66,
+        .max_len = 66,
+        .charset = CHARSET_HEX_LOW,
+        .parser = parse_ct_hex_pubkey
+    }
+};
+// clang-format on
+
 /// Number of records in the table of known blinding key signatures
 static const size_t N_BLINDING_KEY_SIGNATURES =
     sizeof(BLINDING_KEY_SIGNATURES) / sizeof(BLINDING_KEY_SIGNATURES[0]);

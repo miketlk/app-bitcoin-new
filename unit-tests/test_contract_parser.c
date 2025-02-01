@@ -21,62 +21,106 @@ typedef struct {
     asset_info_ext_t asset;
 } parser_outputs_t;
 
+// clang-format off
 static const contract_test_data_t contract_test_data[] = {
     // tether.to USDt (Tether USD)
-    {.contract_str =
-         "{\"entity\":{\"domain\":\"tether.to\"},"
-         "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
-         "\"name\":\"Tether USD\","
-         "\"precision\":8,"
-         "\"ticker\":\"USDt\","
-         "\"version\":0}",
-     .hash = {0x3c, 0x7f, 0x0a, 0x53, 0xc2, 0xff, 0x5b, 0x99, 0x59, 0x06, 0x20,
-              0xd7, 0xf6, 0x60, 0x4a, 0x7a, 0x3a, 0x7b, 0xfb, 0xaa, 0xa6, 0xaa,
-              0x61, 0xf7, 0xbf, 0xc7, 0x83, 0x3c, 0xa0, 0x3c, 0xde, 0x82},
-     .asset = {.info = {.ticker = "USDt", .decimals = 8},
-               .name = "Tether USD",
-               .domain = "tether.to"}},
+    {
+        .contract_str =
+            "{\"entity\":{\"domain\":\"tether.to\"},"\
+            "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
+            "\"name\":\"Tether USD\","\
+            "\"precision\":8,"\
+            "\"ticker\":\"USDt\","\
+            "\"version\":0}",
+        .hash = {
+            0x3c, 0x7f, 0x0a, 0x53, 0xc2, 0xff, 0x5b, 0x99,
+            0x59, 0x06, 0x20, 0xd7, 0xf6, 0x60, 0x4a, 0x7a,
+            0x3a, 0x7b, 0xfb, 0xaa, 0xa6, 0xaa, 0x61, 0xf7,
+            0xbf, 0xc7, 0x83, 0x3c, 0xa0, 0x3c, 0xde, 0x82
+        },
+        .asset = {
+            .info = {
+                .ticker = "USDt",
+                .decimals = 8
+            },
+            .name = "Tether USD",
+            .domain = "tether.to"
+        }
+    },
     // liquid.beer ASP (Atomic Swap Pint)
-    {.contract_str =
-         "{\"entity\":{\"domain\":\"liquid.beer\"},"
-         "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","
-         "\"name\":\"Atomic Swap Pint\","
-         "\"precision\":2,"
-         "\"ticker\":\"ASP\","
-         "\"version\":0}",
-     .hash = {0x0b, 0xba, 0x2b, 0x02, 0xe5, 0xa9, 0x39, 0xf3, 0xcb, 0xdc, 0x87,
-              0xc7, 0x0b, 0xa0, 0x9b, 0x3d, 0x64, 0xeb, 0x43, 0x4e, 0xef, 0x25,
-              0xb3, 0xf3, 0x14, 0xaf, 0xcf, 0x0c, 0x0a, 0xd7, 0x07, 0x3f},
-     .asset = {.info = {.ticker = "ASP", .decimals = 2},
-               .name = "Atomic Swap Pint",
-               .domain = "liquid.beer"}},
+    {
+        .contract_str =
+            "{\"entity\":{\"domain\":\"liquid.beer\"},"\
+            "\"issuer_pubkey\":\"02436437ab5ecb6966b7dea1333fad14a658ae185d8ced00aa598af5997b55cd24\","\
+            "\"name\":\"Atomic Swap Pint\","\
+            "\"precision\":2,"\
+            "\"ticker\":\"ASP\","\
+            "\"version\":0}",
+        .hash = {
+            0x0b, 0xba, 0x2b, 0x02, 0xe5, 0xa9, 0x39, 0xf3,
+            0xcb, 0xdc, 0x87, 0xc7, 0x0b, 0xa0, 0x9b, 0x3d,
+            0x64, 0xeb, 0x43, 0x4e, 0xef, 0x25, 0xb3, 0xf3,
+            0x14, 0xaf, 0xcf, 0x0c, 0x0a, 0xd7, 0x07, 0x3f
+        },
+        .asset = {
+            .info = {
+                .ticker = "ASP",
+                .decimals = 2
+            },
+            .name = "Atomic Swap Pint",
+            .domain = "liquid.beer"
+        }
+    },
     // ciao.it TTT
-    {.contract_str =
-         "{\"entity\":{\"domain\":\"ciao.it\"},"
-         "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","
-         "\"name\":\"name\","
-         "\"precision\":8,"
-         "\"ticker\":\"TTT\","
-         "\"version\":0}",
-     .hash = {0x25, 0x2a, 0x3a, 0xb4, 0x07, 0x19, 0x58, 0x3c, 0xaa, 0x5e, 0x88,
-              0x5c, 0x27, 0xe0, 0xa2, 0xa3, 0xe6, 0x2e, 0x32, 0xe7, 0x1d, 0xad,
-              0xf0, 0xb6, 0x50, 0xf8, 0xca, 0xee, 0x55, 0x87, 0x81, 0x53},
-     .asset = {.info = {.ticker = "TTT", .decimals = 8}, .name = "name", .domain = "ciao.it"}},
+    {
+        .contract_str =
+            "{\"entity\":{\"domain\":\"ciao.it\"},"\
+            "\"issuer_pubkey\":\"0337cceec0beea0232ebe14cba0197a9fbd45fcf2ec946749de920e71434c2b904\","\
+            "\"name\":\"name\","\
+            "\"precision\":8,"\
+            "\"ticker\":\"TTT\","\
+            "\"version\":0}",
+        .hash = {
+            0x25, 0x2a, 0x3a, 0xb4, 0x07, 0x19, 0x58, 0x3c,
+            0xaa, 0x5e, 0x88, 0x5c, 0x27, 0xe0, 0xa2, 0xa3,
+            0xe6, 0x2e, 0x32, 0xe7, 0x1d, 0xad, 0xf0, 0xb6,
+            0x50, 0xf8, 0xca, 0xee, 0x55, 0x87, 0x81, 0x53
+        },
+        .asset = {
+            .info = {
+                .ticker = "TTT",
+                .decimals = 8
+            },
+            .name = "name",
+            .domain = "ciao.it"
+        }
+    },
     // ELIP 100: example.com TEST (Testcoin)
-    {.contract_str =
-         "{\"entity\":{\"domain\":\"example.com\"},"
-         "\"issuer_pubkey\":\"03455ee7cedc97b0ba435b80066fc92c963a34c600317981d135330c4ee43ac7a3\","
-         "\"name\":\"Testcoin\","
-         "\"precision\":2,"
-         "\"ticker\":\"TEST\","
-         "\"version\":0}",
-     .hash = {0xd4, 0x0c, 0x36, 0x4f, 0x8b, 0x94, 0x3e, 0x43, 0x4f, 0x68, 0x27,
-              0x55, 0x6a, 0x5a, 0x04, 0xb3, 0x37, 0xbc, 0x62, 0x7b, 0x90, 0x4a,
-              0x04, 0x39, 0x5f, 0xee, 0xd0, 0x6d, 0x13, 0xae, 0x30, 0x37},
-     .asset = {.info = {.ticker = "TEST", .decimals = 2},
-               .name = "Testcoin",
-               .domain = "example.com"}},
+    {
+        .contract_str =
+            "{\"entity\":{\"domain\":\"example.com\"},"\
+            "\"issuer_pubkey\":\"03455ee7cedc97b0ba435b80066fc92c963a34c600317981d135330c4ee43ac7a3\","\
+            "\"name\":\"Testcoin\","\
+            "\"precision\":2,"\
+            "\"ticker\":\"TEST\","\
+            "\"version\":0}",
+        .hash = {
+            0xd4, 0x0c, 0x36, 0x4f, 0x8b, 0x94, 0x3e, 0x43,
+            0x4f, 0x68, 0x27, 0x55, 0x6a, 0x5a, 0x04, 0xb3,
+            0x37, 0xbc, 0x62, 0x7b, 0x90, 0x4a, 0x04, 0x39,
+            0x5f, 0xee, 0xd0, 0x6d, 0x13, 0xae, 0x30, 0x37
+        },
+        .asset = {
+            .info = {
+                .ticker = "TEST",
+                .decimals = 2
+            },
+            .name = "Testcoin",
+            .domain = "example.com"
+        }
+    },
 };
+// clang-format on
 
 static bool parse_contract(const char *contract, parser_outputs_t *outs) {
     contract_parser_context_t ctx;

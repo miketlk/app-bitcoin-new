@@ -356,6 +356,7 @@ static int hash_outputs(dispatcher_context_t *dc,
  non-witness-utxo does not match the one pointed by expected_prevout_hash. Returns -1 on failure, 0
  on success.
 */
+// clang-format off
 static int __attribute__((noinline)) get_amount_scriptpubkey_from_psbt_nonwitness(
     dispatcher_context_t *dc,
     const merkleized_map_commitment_t *input_map,
@@ -363,7 +364,10 @@ static int __attribute__((noinline)) get_amount_scriptpubkey_from_psbt_nonwitnes
     uint8_t *scriptPubKey,
     size_t *scriptPubKey_len,
     size_t scriptPubKey_max_size,
-    const uint8_t *expected_prevout_hash LIQUID_PARAM(tx_asset_t *asset)) {
+    const uint8_t *expected_prevout_hash
+    LIQUID_PARAM(tx_asset_t *asset)
+    ) {
+    // clang-format on
     LOG_PROCESSOR();
     // If there is no witness-utxo, it must be the case that this is a legacy input.
     // In this case, we can only retrieve the prevout amount and scriptPubKey by parsing
@@ -538,13 +542,15 @@ get_amount_scriptpubkey_from_psbt_witness(dispatcher_context_t *dc,
  from the non-witness-utxo.
  Returns -1 on failure, 0 on success.
 */
+// clang-format off
 static int get_amount_scriptpubkey_from_psbt(dispatcher_context_t *dc,
                                              const merkleized_map_commitment_t *input_map,
                                              tx_amount_t *amount,
                                              uint8_t *scriptPubKey,
                                              size_t *scriptPubKey_len,
                                              size_t scriptPubKey_max_size
-                                                 LIQUID_PARAM(tx_asset_t *asset)) {
+                                             LIQUID_PARAM(tx_asset_t *asset)) {
+    // clang-format on
     int ret = get_amount_scriptpubkey_from_psbt_witness(dc,
                                                         input_map,
                                                         amount,
@@ -884,9 +890,12 @@ static bool set_in_out_asset(dispatcher_context_t *dc,
 }
 #endif  // HAVE_LIQUID
 
+// clang-format off
 static bool __attribute__((noinline))
 init_global_state(dispatcher_context_t *dc,
-                  sign_psbt_state_t *st LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                  sign_psbt_state_t *st
+                  LIQUID_PARAM(asset_cache_t *asset_cache)) {
+    // clang-format on
     LOG_PROCESSOR();
 
 #ifdef HAVE_LIQUID  // TODO: verify if really needed
@@ -1378,11 +1387,14 @@ static bool __attribute__((noinline)) confirm_asset_if_unknown(dispatcher_contex
 
 #endif  // HAVE_LIQUID
 
+// clang-format off
 static bool __attribute__((noinline)) preprocess_inputs(
     dispatcher_context_t *dc,
     sign_psbt_state_t *st,
-    uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)] LIQUID_PARAM(
-        asset_cache_t *asset_cache)) {
+    uint8_t internal_inputs[static BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN)]
+    LIQUID_PARAM(asset_cache_t *asset_cache)) {
+    // clang-format on
+
     LOG_PROCESSOR();
 
     memset(internal_inputs, 0, BITVECTOR_REAL_SIZE(MAX_N_INPUTS_CAN_SIGN));
@@ -2130,10 +2142,13 @@ check_output_commitments(dispatcher_context_t *dc, in_out_info_t *in_out_info) {
 
 #endif  // HAVE_LIQUID
 
+// clang-format off
 static bool read_outputs(dispatcher_context_t *dc,
                          sign_psbt_state_t *st,
                          placeholder_info_t *placeholder_info,
-                         bool dry_run LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                         bool dry_run
+                         LIQUID_PARAM(asset_cache_t *asset_cache)) {
+    // clang-format on
     // the counter used when showing outputs to the user, which ignores change outputs
     // (0-indexed here, although the UX starts with 1)
     int external_outputs_count = 0;
@@ -2264,9 +2279,12 @@ static bool read_outputs(dispatcher_context_t *dc,
     return true;
 }
 
+// clang-format off
 static bool __attribute__((noinline))
 process_outputs(dispatcher_context_t *dc,
-                sign_psbt_state_t *st LIQUID_PARAM(asset_cache_t *asset_cache)) {
+                sign_psbt_state_t *st
+                LIQUID_PARAM(asset_cache_t *asset_cache)) {
+    // clang-format on
     /** OUTPUTS VERIFICATION FLOW
      *
      *  For each output, check if it's a change address.

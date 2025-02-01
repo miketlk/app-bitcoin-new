@@ -101,7 +101,6 @@ int base58_decode(const char *in, size_t in_len, uint8_t *out, size_t out_len) {
     /**************************************************************************
      *  Original code for reference
      *
-     *  ```
      *   for (uint8_t i = 0; i < in_len; i++) {
      *      if (in[i] >= sizeof(BASE58_TABLE)) {
      *          return -1;
@@ -113,7 +112,6 @@ int base58_decode(const char *in, size_t in_len, uint8_t *out, size_t out_len) {
      *          return -1;
      *      }
      *  }
-     *  ```
      *************************************************************************/
 
     while ((zero_count < in_len) && (tmp[zero_count] == 0)) {

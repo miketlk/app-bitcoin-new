@@ -2,6 +2,7 @@
 #include <string.h>
 #include <limits.h>
 
+#include "../liquid/liquid.h"
 #include "../common/base58.h"
 #include "../common/bip32.h"
 #include "../common/buffer.h"
@@ -227,11 +228,7 @@ static bool is_alphanumeric(char c) {
  *
  * @return true if the character is a lowercase hexadecimal digit, false otherwise.
  */
-#ifndef HAVE_LIQUID
-static
-#endif
-    bool
-    is_lowercase_hex(char c) {
+IF_NOT_LIQUID(static) bool is_lowercase_hex(char c) {
     return is_digit(c) || ('a' <= c && c <= 'f');
 }
 
@@ -243,11 +240,7 @@ static
  *
  * @return integer corresponding to the given hexadecimal digit.
  */
-#ifndef HAVE_LIQUID
-static
-#endif
-    uint8_t
-    lowercase_hex_to_int(char c) {
+IF_NOT_LIQUID(static) uint8_t lowercase_hex_to_int(char c) {
     return (uint8_t) (is_digit(c) ? c - '0' : c - 'a' + 10);
 }
 
