@@ -1683,7 +1683,7 @@ static bool __attribute__((noinline)) preprocess_inputs(
         // and the witness utxo must be absent.
         // (This assumption is later relied on when signing).
         if (segwit_version == -1) {
-            if (!input.has_nonWitnessUtxo || input.has_witnessUtxo) {
+            if ((!IS_LIQUID && !input.has_nonWitnessUtxo) || input.has_witnessUtxo) {
                 PRINTF("Legacy inputs must have the non-witness utxo, but no witness utxo.\n");
                 SEND_SW(dc, SW_INCORRECT_DATA);
                 return false;
