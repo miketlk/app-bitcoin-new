@@ -1,0 +1,4 @@
+doc/bitcoin.md merge=ours
+doc/v0/bitcoin.md merge=ours
+doc/v0/wallet.md merge=ours
+doc/wallet.md merge=ours
