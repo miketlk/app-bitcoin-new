@@ -1,23 +1,23 @@
 # Liquid application : Technical Specifications
 
-<!-- TODO: List all the technical limitation for each command (max limits, etc.) -->
+This page details the protocol implemented since version 2.1.0 of the app.
 
 
 ## Framework
 
 ### APDUs
 
-The messaging format of the app is compatible with the [APDU protocol](https://developers.ledger.com/docs/nano-app/application-structure/#apdu-interpretation-loop). The `P1` and `P2` fields are reserved for future use and must be set to `0` in all messages.
+The messaging format of the app is compatible with the [APDU protocol](https://developers.ledger.com/docs/nano-app/application-structure/#apdu-interpretation-loop). The `P1` field is reserved for future use and must be set to `0` in all messages. The `P2` field is used as a protocol version identifier; the current version is `1`, while version `0` is still supported. No other value must be used.
 
 The main commands use `CLA = 0xE1`, unlike the legacy Bitcoin application that used `CLA = 0xE0`.
 
 | CLA | INS | COMMAND NAME                   | DESCRIPTION |
 |-----|-----|--------------------------------|-------------|
 |  E1 |  00 | GET_EXTENDED_PUBKEY            | Return (and optionally show on screen) extended pubkey |
-|  E1 |  02 | REGISTER_WALLET                | Registers a wallet on the device (with user's approval) |
+|  E1 |  02 | REGISTER_WALLET                | Register a wallet policy on the device (with user's approval) |
 |  E1 |  03 | GET_WALLET_ADDRESS             | Return and show on screen an address for a registered or default wallet |
-|  E1 |  04 | SIGN_PSBT                      | Signs a PSET with a registered or default wallet |
-|  E1 |  05 | GET_MASTER_FINGERPRINT         | Return the master public key fingerprint |
+|  E1 |  04 | SIGN_PSBT                      | Sign a PSET with a registered or default wallet |
+|  E1 |  05 | GET_MASTER_FINGERPRINT         | Return the fingerprint of the master public key |
 |  E1 |  10 | SIGN_MESSAGE                   | Sign a message with a key from a BIP32 path (Bitcoin Message Signing) |
 |  E1 |  E1 | LIQUID_GET_MASTER_BLINDING_KEY | Return master private blinding key (with user's approval) |
 |  E1 |  E3 | LIQUID_GET_BLINDING_KEY        | Return private blinding key depending on scriptPubKey |
@@ -66,7 +66,21 @@ Once the user approves, the `REGISTER_WALLET` returns to the client a 32-byte HM
 | 0xE000 | `SW_INTERRUPTED_EXECUTION`   | The command is interrupted, and requires the client's response |
 | 0x9000 | `SW_OK`                      | Success |
 
-<!-- TODO: add an introduction section explaining the comand reference notations (e.g. the Bitcoin style varint) -->
+
+## Command Reference Notations
+
+This section explains the notations used in the command reference tables throughout this document:
+
+- **CLA**: The Class byte of the APDU command.
+- **INS**: The Instruction byte of the APDU command.
+- **P1**: The first parameter byte of the APDU command (reserved for future use).
+- **P2**: The second parameter byte of the APDU command (used as a protocol version identifier).
+- `<variable>`: Represents a variable length field, the specifics of which are described in the command's encoding section.
+- `<var>`: Short for `<variable>`.
+- Bitcoin-style **varint**: A variable-length integer encoding used in several places throughout this document to represent integers that may be larger than can be represented in a single byte. The specifics of the encoding are described [here](https://en.bitcoin.it/wiki/Protocol_specification#Variable_length_integer).
+- **SHA256** hash: A 32-byte value representing the result of hashing some data using the SHA-256 algorithm.
+- **Merkle tree**: A binary tree in which every non-leaf node is the cryptographic hash of its child nodes' values, with the leaves as the hashes of the individual data elements. More details can be found [here](merkle.md).
+- **Merkle root**: The value at the root of a Merkle tree (a single hash that represents the entire tree).
 
 ## Commands
 
@@ -87,7 +101,7 @@ Returns an extended public key at the given derivation path, serialized as per B
 | Length | Name              | Description |
 |--------|-------------------|-------------|
 | `1`    | `display`         | `0` or `1`  |
-| `1`    | `n`               | Number of derivation steps (maximum 6) |
+| `1`    | `n`               | Number of derivation steps (maximum 8) |
 | `4`    | `bip32_path[0]`   | First derivation step (big endian) |
 | `4`    | `bip32_path[1]`   | Second derivation step (big endian) |
 |        | ...               |             |
@@ -128,7 +142,7 @@ Registers a wallet policy on the device, after validating it with the user.
 | `<variable>`    | `policy_length` | The length of the policy (unsigned varint) |
 | `policy_length` | `policy`        | The serialized wallet policy |
 
-The `policy` is serialized as described [here](liquid_wallet.md). At this time, no policy can be longer than 220 bytes, therefore the `policy_length` field is always encoded as 1 byte.
+The `policy` is serialized as described [here](liquid_wallet.md). At this time, no policy can be longer than 252 bytes, therefore the `policy_length` field is always encoded as 1 byte.
 
 **Output data**
 
@@ -144,6 +158,8 @@ This command allows to register a wallet policy on the device. The wallet's name
 After user's validation is completed successfully, the application returns the `wallet_id` (sha256 of the wallet serialization), and the `hmac` for this wallet.
 
 #### Client commands
+
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the sha256 hash of its descriptor template.
 
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries related to the Merkle tree of the list of keys information.
 
@@ -188,7 +204,7 @@ If the `display` parameter is `1`, the resulting wallet address is also shown on
 
 #### Client commands
 
-`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`.
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the sha256 hash of its descriptor template.
 
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries related to the Merkle tree of the list of keys information.
 
@@ -213,9 +229,9 @@ Given a PSET and a registered wallet (or a standard one), sign all the inputs th
 | `<var>` | `global_map_size`      | The number of key/value pairs of the global map of the psbt |
 | `32`    | `global_map_keys_root` | The Merkle root of the keys of the global map |
 | `32`    | `global_map_vals_root` | The Merkle root of the values of the global map |
-| `<var>` | `n_inputs`             | The number of inputs of the psbt |
+| `<var>` | `n_inputs`             | The number of inputs of the PSET |
 | `32`    | `inputs_maps_root`     | The Merkle root of the vector of Merkleized map commitments for the input maps |
-| `<var>` | `n_outputs`            | The number of outputs of the psbt |
+| `<var>` | `n_outputs`            | The number of outputs of the PSET |
 | `32`    | `outputs_maps_root`    | The Merkle root of the vector of Merkleized map commitments for the output maps |
 | `32`    | `wallet_id`            | The id of the wallet |
 | `32`    | `wallet_hmac`          | The hmac of a registered wallet, or exactly 32 0 bytes |
@@ -226,16 +242,23 @@ No output data; the signature are returned using the YIELD client command.
 
 #### Description
 
-Using the information in the PSET and the wallet description, this command verifies what inputs are internal and what output matches the pattern for a change address. After validating all the external outputs and the transaction fee with the user, it signs each of the internal inputs; each signature is sent to the client using the YIELD command, encoded as `<input_index> <signature>`, where the `input_index` is a Bitcoin style varint (currently, always 1 byte).
+Using the information in the PSET and the wallet description, this command verifies what inputs are internal and what outputs match the pattern for a change address. After validating all the external outputs and the transaction fee with the user, it signs each of the internal inputs; each signature is sent to the client using the YIELD command, in the format described below. If multiple key placeholders of the wallet policy are internal, the process is repeated for each of them.
+
+The results yielded via the YIELD command respect the following format: `<input_index> <pubkey_augm_len> <pubkey_augm> <signature>`, where:
+- `input_index` is a Bitcoin style varint, the index input of the input being signed (starting from 0);
+- `pubkey_augm_len` is an unsigned byte equal to the length of `pubkey_augm`;
+- `pubkey_augm` is the `pubkey` used for signing for legacy, segwit or taproot script path spends (a compressed pubkey if non-taproot, a 32-byte x-only pubkey if taproot); for taproot script path spends, it is the concatenation of the `x-only` pubkey and the 32-byte *tapleaf hash* as defined in [BIP-0341](https://github.com/bitcoin/bips/blob/master/bip-0341.mediawiki);
+- `signature` is the returned signature, possibly concatenated with the sighash byte (as it would be pushed on the stack).
+
+If `P2` is `0` (version `0` of the protocol), `pubkey_augm_len` and `pubkey_augm` are omitted in the YIELD messages.
 
 For a registered wallet, the hmac must be correct.
 
 For a default wallet, `hmac` must be equal to 32 bytes `0`.
 
-
 #### Client commands
 
-`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`.
+`GET_PREIMAGE` must know and respond for the full serialized wallet policy whose sha256 hash is `wallet_id`; moreover, it must know and respond for the SHA256 hash of its descriptor template.
 
 The client must respond to the `GET_PREIMAGE`, `GET_MERKLE_LEAF_PROOF` and `GET_MERKLE_LEAF_INDEX` queries for all the Merkle trees in the input, including each of the Merkle trees for keys and values of the Merkleized map commitments of each of the inputs/outputs maps of the psbt.
 
@@ -290,7 +313,7 @@ The device shows on its secure screen the BIP-32 path used for signing, and the 
 
 | Length  | Name              | Description |
 |---------|-------------------|-------------|
-| `1`     | `n`               | Number of derivation steps (maximum 6) |
+| `1`     | `n`               | Number of derivation steps (maximum 8) |
 | `4`     | `bip32_path[0]`   | First derivation step (big endian) |
 | `4`     | `bip32_path[1]`   | Second derivation step (big endian) |
 |         | ...               |             |
@@ -402,7 +425,7 @@ The `YIELD` client command is sent to the client to communicate some result duri
 
 The client must respond with an empty message.
 
-### 40 GET_PREIMAGE
+### GET_PREIMAGE
 
 **Command code**: 0x40
 
