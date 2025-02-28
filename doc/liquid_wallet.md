@@ -14,7 +14,7 @@ output script descriptors.
 
 A _wallet policy_ is composed by a _wallet descriptor template_, together with a vector of _key information items_.
 
-### Wallet descriptor template ====
+### Wallet descriptor template
 
 A wallet descriptor template is a `SCRIPT` expression, described as follows:
 
