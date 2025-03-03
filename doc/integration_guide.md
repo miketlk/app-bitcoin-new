@@ -73,19 +73,18 @@ The algorithm used to compute the digital signature for the user-provided hash c
 
 HWW app uses wallet descriptors based on the specification of Bitcoin wallet descriptors, available [here](https://github.com/bitcoin/bitcoin/blob/master/doc/descriptors.md). However, there are some important differences:
 
-* limited support of script expressions
-* `ct()` top-level function used for wallets with blinding key derivation
-* `slip77(mbk)` expression indicating that master blinding key is derived according to SLIP-0077
-* keys are moved outside of wallet descriptor and replaced with references @0, @1, @2 ...
-* only serialized extended public keys ("xpubs") are supported
-* key origin information is compulsory
-* it is followed by a `/**` prefix, implying the last two steps of derivation
+- limited support of script expressions
+- `ct()` top-level function used for wallets with blinding key derivation
+- keys are moved outside of wallet descriptor and replaced with references @0, @1, @2 ...
+- only serialized extended public keys ("xpubs") are supported
+- key origin information is compulsory
+- it is followed by a `/**` prefix or a `/<NUM;NUM>/*` string, implying the last two steps of derivation
 
 Command APDUs operating with wallet descriptors like `REGISTER_WALLET` are taking a composite parameter named **wallet policy**. The wallet policy includes:
 
-* wallet name (optional)
-* wallet descriptor with numbered references instead of actual keys
-* a vector of keys in the form of a Merkle tree
+- wallet name (optional)
+- wallet descriptor in the form of a Merkle tree, having numbered references instead of actual public keys
+- a vector of public keys in the form of a Merkle tree
 
 For the Merkle tree of keys, the host app provides initially just the number of keys and the Merkle tree root (a hash code). As the HWW app progresses through the descriptor, it requests actual keys as needed using an asynchronous mechanism described in the Interaction Protocol section.
 
@@ -97,9 +96,9 @@ The HWW app uses a special representation of PSET in form of a [Merkle tree](mer
 
 More precisely, the host app converts a single PSET file into 4 distinct Merkle trees:
 
-* Two Merkle trees corresponding to the global fields of PSET: keys and values
-* Merkle tree of a list of inputs of the PSET
-* Merkle tree of a list of outputs of the PSET
+- Two Merkle trees corresponding to the global fields of PSET: keys and values
+- Merkle tree of a list of inputs of the PSET
+- Merkle tree of a list of outputs of the PSET
 
 As for the arguments of `SIGN_PSBT` command, the host app provides 4 roots of these Merkle trees, and the number of elements in each of these tree category (for global fields a single number defines size of trees of keys and values). When the HWW app begins parsing the PSET it starts requesting the actual Merkle tree elements. Each element in the tree of the global fields is an individual PSET field within the global scope. But for the trees of inputs and outputs there is a two-layer structure. An element of these trees is a composite field holding number of elements and two Merkle tree roots. Simply speaking, for PSET inputs and outputs each Merkle tree leaf is a set of another two Merkle trees coding input's or output's key-value records.
 
@@ -109,14 +108,14 @@ As for the arguments of `SIGN_PSBT` command, the host app provides 4 roots of th
 
 The HWW app expects that PSET contains all obligatory fields as any entity with Signer role. But besides that, some specific fields are required to verify commitments of confidential transactions. This is especially true because limitations of the Nano S platform do not allow the HWW device to process full-sized rangeproof fields. From the HWW app perspective, all these fields are *mandatory*:
 
-* `PSBT_ELEMENTS_IN_EXPLICIT_VALUE` - this explicit value for the input being spent is always needed unless it could be decoded from non-witness UTXO.
-* `PSBT_ELEMENTS_IN_VALUE_PROOF` - a single-value rangeproof, used by HWW app to verify the value commitment of a confidential transaction.
-* `PSBT_ELEMENTS_IN_EXPLICIT_ASSET` - this explicit asset for the input being spent is always needed unless it could be decoded from non-witness UTXO.
-* `PSBT_ELEMENTS_IN_ASSET_PROOF` - an asset surjection proof used to verify this input's asset commitment.
-* `PSBT_OUT_AMOUNT` (`PSBT_OUT_VALUE`) - the output's explicit value, always required, even if blinded value is provided.
-* `PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF` - an explicit value rangeproof that proves that the value commitment matches the explicit value.
-* `PSBT_ELEMENTS_OUT_ASSET` - the explicit asset tag for this output.
-* `PSBT_ELEMENTS_OUT_BLIND_ASSET_PROOF` - an asset surjection proof used to verify this output's asset commitment.
+- `PSBT_ELEMENTS_IN_EXPLICIT_VALUE` - this explicit value for the input being spent is always needed unless it could be decoded from non-witness UTXO.
+- `PSBT_ELEMENTS_IN_VALUE_PROOF` - a single-value rangeproof, used by HWW app to verify the value commitment of a confidential transaction.
+- `PSBT_ELEMENTS_IN_EXPLICIT_ASSET` - this explicit asset for the input being spent is always needed unless it could be decoded from non-witness UTXO.
+- `PSBT_ELEMENTS_IN_ASSET_PROOF` - an asset surjection proof used to verify this input's asset commitment.
+- `PSBT_OUT_AMOUNT` (`PSBT_OUT_VALUE`) - the output's explicit value, always required, even if blinded value is provided.
+- `PSBT_ELEMENTS_OUT_BLIND_VALUE_PROOF` - an explicit value rangeproof that proves that the value commitment matches the explicit value.
+- `PSBT_ELEMENTS_OUT_ASSET` - the explicit asset tag for this output.
+- `PSBT_ELEMENTS_OUT_BLIND_ASSET_PROOF` - an asset surjection proof used to verify this output's asset commitment.
 
 At the time of writing, the full PSET specification is available at:
 
@@ -130,9 +129,12 @@ The global PSET field `PSBT_ELEMENTS_HWW_GLOBAL_ASSET_METADATA` contains the met
 
 ## Tests and Reference Implementation
 
-The repository of the HWW app includes a set of integration tests available in the directory:
+The repository of the HWW app includes a set of integration tests available in the directories:
 
-`/tests_liquid`
+```shell
+/tests_liquid
+/tests_liquid_main
+````
 
 These tests are running on the host system via [pytest](https://pytest.org) using the reference implementation of the client located in the directory:
 
@@ -142,13 +144,13 @@ The reference client code is written in Python in the form of a library to be ca
 
 The reference client implements many important features of the host app, including:
 
-* Top-level implementation of protocol commands: `client.py`
-* APDU creation and response parsing: `command_builder.py`
-* Handling requests from the HWW app: `client_command.py`
-* Transport communication layer: `client_base.py`
-* PSET parsing and coding: `pset.py`, `psbt.py`
-* Parsing and coding of network transactions: `elements_tx.py`, `tx.py`
-* Working with wallet descriptors: `wallet.py`, `descriptor.py`
-* Merkle tree implementation used to represent collections of simple or key-value items: `merkle.py`
+- Top-level implementation of protocol commands: `client.py`
+- APDU creation and response parsing: `command_builder.py`
+- Handling requests from the HWW app: `client_command.py`
+- Transport communication layer: `client_base.py`
+- PSET parsing and coding: `pset.py`, `psbt.py`
+- Parsing and coding of network transactions: `elements_tx.py`, `tx.py`
+- Working with wallet descriptors: `wallet.py`, `descriptor.py`
+- Merkle tree implementation used to represent collections of simple or key-value items: `merkle.py`
 
 The easiest way to start studying the reference client code is possibly beginning with `client.py`. It defines the `NewClient` class having the methods named by APDU commands specified [here](liquid.md), each implementing the corresponding command. There is also an abstract interface to these methods defined in the base class, Client, in source file `client_base.py`. It is also a base class for *legacy protocol* implementation `LegacyClient` (`client_legacy.py`). However, this legacy protocol, also named **BTChip** is not currently supported by the Liquid HWW app and is kept for compatibility with Bitcoin app that can be built from the same codebase.
