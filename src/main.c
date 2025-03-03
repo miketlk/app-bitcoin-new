@@ -1,6 +1,6 @@
 /*****************************************************************************
- *   Ledger App Bitcoin.
- *   (c) 2024 Ledger SAS.
+ *   Ledger App for Liquid Network.
+ *   (c) 2025 Blockstream.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ void app_main() {
                         &cmd);
 
         if (G_swap_state.called_from_swap && G_swap_state.should_exit) {
-            // Bitcoin app will keep listening as long as it does not receive a valid TX
+            // Bitcoin / Liquid Network app will keep listening as long as it does not receive a valid TX
             finalize_exchange_sign_transaction(true);
         }
     }
