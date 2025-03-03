@@ -8,14 +8,12 @@ on:
       - develop
       - liquid_develop
       - liquid_release
-      - tmp_liquid_release_cleanup # TODO: remove this line before this branch is merged
   pull_request:
     branches:
       - master
       - develop
       - liquid_develop
       - liquid_release
-      - tmp_liquid_release_cleanup # TODO: remove this line before this branch is merged
 
 jobs:
   analyse:
