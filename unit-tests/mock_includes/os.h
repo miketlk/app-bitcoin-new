@@ -494,14 +494,16 @@ void svc_nvm_write_page(unsigned char WIDE *page_adr);
 #define CPP_CONCAT(x, y)   CPP_CONCAT_x(x, y)
 #define CPP_CONCAT_x(x, y) x##y
 
-SUDOCALL PERMISSION(APPLICATION_FLAG_NONE) try_context_t *try_context_get(void);
+SUDOCALL PERMISSION(APPLICATION_FLAG_NONE)
+try_context_t *try_context_get(void);
 try_context_t *svc_try_context_get(void);
 // set the new try context and retrieve the previous one
 // SECURITY NOTE: no PLENGTH(sizeof(try_context_t)) set because the value is
 // never dereferenced within the SUDOCALL.
 //                and is checked before being used in all SYSCALL that would use
 //                it.
-SUDOCALL PERMISSION(APPLICATION_FLAG_NONE) try_context_t *try_context_set(try_context_t *context);
+SUDOCALL PERMISSION(APPLICATION_FLAG_NONE)
+try_context_t *try_context_set(try_context_t *context);
 try_context_t *svc_try_context_set(try_context_t *tryctx);
 
 // -----------------------------------------------------------------------
@@ -1239,11 +1241,13 @@ SYSCALL bolos_bool_t os_global_pin_is_validated(void);
  * alternate)
  * @return BOLOS_UX_OK if pin validated
  */
-SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) bolos_bool_t
-    os_global_pin_check(unsigned char *pin_buffer PLENGTH(pin_length), unsigned char pin_length);
+SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN)
+bolos_bool_t os_global_pin_check(unsigned char *pin_buffer PLENGTH(pin_length),
+                                 unsigned char pin_length);
 SYSCALL
 PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) void os_global_pin_invalidate(void);
-SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN) unsigned int os_global_pin_retries(void);
+SYSCALL PERMISSION(APPLICATION_FLAG_GLOBAL_PIN)
+unsigned int os_global_pin_retries(void);
 
 SYSCALL
 PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_count(void);
@@ -1297,7 +1301,8 @@ SYSCALL void os_lib_throw(unsigned int exception);
 #define OS_FLAG_PIN_VALIDATED   128
 //#define OS_FLAG_CUSTOM_UX       4
 /* Enable application to retrieve OS current running options */
-SYSCALL PERMISSION(APPLICATION_FLAG_NONE) unsigned int os_flags(void);
+SYSCALL PERMISSION(APPLICATION_FLAG_NONE)
+unsigned int os_flags(void);
 SYSCALL unsigned int os_version(unsigned char *version PLENGTH(maxlength), unsigned int maxlength);
 /* Grab the SE serial number */
 SYSCALL unsigned int os_serial(unsigned char *serial PLENGTH(maxlength), unsigned int maxlength);
@@ -1354,10 +1359,10 @@ typedef enum os_setting_e {
  * Retrieve the value of a setting in a user specified buffer, with a max
  * length, and return the effective returned length.
  */
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_SETTINGS) unsigned int os_setting_get(
-    unsigned int setting_id,
-    unsigned char *value PLENGTH(maxlen),
-    unsigned int maxlen);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_SETTINGS)
+unsigned int os_setting_get(unsigned int setting_id,
+                            unsigned char *value PLENGTH(maxlen),
+                            unsigned int maxlen);
 
 /**
  * Define a setting's value from a user buffer and its length. In case of error,
@@ -1426,13 +1431,13 @@ SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) void os_get_memory_info(
  * @param maxlength Size of the buffer to be compared OR to be retrieved
  * (trimmed depending the TLV effective length).
  */
-SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX) unsigned int os_registry_get_tag(
-    unsigned int appidx,
-    unsigned int *tlvoffset,
-    unsigned int tag,
-    unsigned int value_offset,
-    void *buffer PLENGTH(maxlength),
-    unsigned int maxlength);
+SYSCALL PERMISSION(APPLICATION_FLAG_BOLOS_UX)
+unsigned int os_registry_get_tag(unsigned int appidx,
+                                 unsigned int *tlvoffset,
+                                 unsigned int tag,
+                                 unsigned int value_offset,
+                                 void *buffer PLENGTH(maxlength),
+                                 unsigned int maxlength);
 
 // Copy the currently running application tag from its install parameters to the
 // given user buffer. Only APPNAME/APPVERSION/DERIVEPATH/ICON tags are
@@ -1542,8 +1547,8 @@ SYSCALL bolos_bool_t os_sched_is_running(unsigned int task_idx);
 /**
  * Retrieve the last status issued by a task using either yield or exit.
  */
-SUDOCALL PERMISSION(APPLICATION_FLAG_NONE) bolos_task_status_t
-    os_sched_last_status(unsigned int task_idx);
+SUDOCALL PERMISSION(APPLICATION_FLAG_NONE)
+bolos_task_status_t os_sched_last_status(unsigned int task_idx);
 bolos_task_status_t svc_os_sched_last_status(unsigned int task_idx);
 
 /**

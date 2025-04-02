@@ -30,6 +30,13 @@ project(unit_tests
   DESCRIPTION "Unit tests for Ledger Nano application"
   LANGUAGES C)
 
+# Detect strlcpy availability and include fallback if necessary
+include(CheckFunctionExists)
+check_function_exists(strlcpy HAVE_STRLCPY)
+if(NOT HAVE_STRLCPY)
+  add_compile_options(-include libs/fallback_strlcpy.h)
+endif()
+
 # guard against bad build-type strings
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug")
