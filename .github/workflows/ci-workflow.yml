@@ -7,6 +7,7 @@ on:
     - master
     - develop
     - liquid_develop
+    - tmp_ci_test
   pull_request:
     branches:
     - master
