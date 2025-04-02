@@ -472,7 +472,7 @@ The request contains:
 - `32` bytes: the leaf hash.
 
 The response contains:
-- `1` byte: `1` if the leaf is found, `0` if matching leaf exists;
+- `1` byte: `1` if the leaf is found, `0` if matching leaf not exists;
 - `<var>`: the index of the leaf, encoded as a Bitcoin-style varint.
 
 ### GET_MORE_ELEMENTS
