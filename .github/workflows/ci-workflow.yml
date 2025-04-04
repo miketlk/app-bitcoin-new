@@ -41,6 +41,8 @@ jobs:
           make DEBUG=0 COIN=liquid BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-bin/
           make clean
           make DEBUG=0 COIN=liquid_regtest BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-regtest-bin/
+          make clean
+          make DEBUG=0 COIN=liquid_testnet BOLOS_SDK=${{ matrix.SDK }} && mv bin/ liquid-testnet-bin/
       - name: Upload Liquid app binary
         uses: actions/upload-artifact@v4
         with:
@@ -52,6 +54,12 @@ jobs:
         with:
           name: liquid-regtest-app-${{ matrix.model }}
           path: liquid-regtest-bin
+
+      - name: Upload Liquid Testnet app binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: liquid-testnet-app-${{ matrix.model }}
+          path: liquid-testnet-bin
 
   job_unit_test:
     name: Unit test

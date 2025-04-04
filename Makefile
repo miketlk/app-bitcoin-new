@@ -78,7 +78,7 @@ endif
 
 # Setting to allow building variant applications
 VARIANT_PARAM = COIN
-VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid
+VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid_testnet liquid
 
 ########################################
 #     Application custom permissions   #
@@ -126,13 +126,29 @@ DEFINES   += COIN_P2PKH_VERSION=111
 DEFINES   += COIN_P2SH_VERSION=75
 DEFINES   += COIN_PREFIX_CONFIDENTIAL=4
 DEFINES   += HAVE_LIQUID
-DEFINES   += HAVE_LIQUID_TEST
-DEFINES   += COIN_BLINDED_VERSION=4
+DEFINES   += LIQUID_NET_REGTEST
 DEFINES   += COIN_COINID_SHORT=\"L-BTC\"
 DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ert\"
 DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"el\"
 
 APPNAME = "Liquid Regtest"
+
+else ifeq ($(COIN),liquid_testnet)
+
+# Liquid testnet
+DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
+DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
+DEFINES   += BIP44_COIN_TYPE=1
+DEFINES   += COIN_P2PKH_VERSION=36
+DEFINES   += COIN_P2SH_VERSION=19
+DEFINES   += COIN_PREFIX_CONFIDENTIAL=4
+DEFINES   += HAVE_LIQUID
+DEFINES   += LIQUID_NET_TESTNET
+DEFINES   += COIN_COINID_SHORT=\"L-BTC\"
+DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tex\"
+DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"tlq\"
+
+APPNAME = "Liquid Testnet"
 
 else ifeq ($(COIN),liquid)
 
@@ -144,7 +160,7 @@ DEFINES   += COIN_P2PKH_VERSION=57
 DEFINES   += COIN_P2SH_VERSION=39
 DEFINES   += COIN_PREFIX_CONFIDENTIAL=12
 DEFINES   += HAVE_LIQUID
-DEFINES   += COIN_BLINDED_VERSION=12
+DEFINES   += LIQUID_NET_MAINNET
 DEFINES   += COIN_COINID_SHORT=\"L-BTC\"
 DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ex\"
 DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"lq\"
@@ -153,7 +169,7 @@ APPNAME = "Liquid"
 
 else
 ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid)
+$(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_testnet, liquid)
 endif
 endif
 
