@@ -48,57 +48,6 @@
 #include "liquid.h"
 #endif
 
-#ifdef HAVE_LIQUID
-/// State of the callback function obtaining `scriptPubKey` of the processed descriptor.
-typedef struct {
-    /// Dispatcher context.
-    dispatcher_context_t *dc;
-    /// Pointer to the root node of the policy
-    const policy_node_t *policy;
-    /// Pointer to wallet header structure.
-    const policy_map_wallet_header_t *wallet_header;
-} get_script_callback_state_t;
-
-/**
- * Callback function obtaining `scriptPubKey` of the processed descriptor.
- *
- * @param[in,out] state
- *   Callback state, stores necessary properties of the processed descriptor.
- * @param[in] descriptor_idx
- *   Descriptor index in the in the multipath scheme.
- * @param[in] bip44_address_index
- *   Address index element of the derivation path, defined according to BIP 44.
- * @param[out] out_buffer
- *   Buffer receiving `scriptPubKey`.
- *
- * @return true if successful, false if error.
- */
-static bool get_script_callback(void *state_in,
-                                uint32_t descriptor_idx,
-                                uint32_t bip44_address_index,
-                                buffer_t *out_buffer) {
-    if (!state_in || descriptor_idx > 1 || !out_buffer ||
-        buffer_remaining(out_buffer) < MAX_SCRIPT_LEN) {
-        return false;
-    }
-
-    get_script_callback_state_t *state = (get_script_callback_state_t *) state_in;
-
-    int script_len = get_wallet_script(
-        state->dc,
-        state->policy,
-        &(wallet_derivation_info_t){.wallet_version = state->wallet_header->version,
-                                    .keys_merkle_root = state->wallet_header->keys_info_merkle_root,
-                                    .n_keys = state->wallet_header->n_keys,
-                                    .change = !!descriptor_idx,
-                                    .address_index = bip44_address_index},
-        buffer_get_cur(out_buffer));
-
-    return script_len > 0 && buffer_seek_cur(out_buffer, script_len);
-}
-
-#endif
-
 void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_version) {
     (void) protocol_version;
 
@@ -272,13 +221,16 @@ void handler_get_wallet_address(dispatcher_context_t *dc, uint8_t protocol_versi
         if (liquid_policy_is_blinded(&wallet_policy_map.parsed)) {
             // Derive blinding public key from script
             uint8_t blinding_pubkey[33];
-            get_script_callback_state_t callback_state = {.dc = dc,
-                                                          .policy = &wallet_policy_map.parsed,
-                                                          .wallet_header = &wallet_header};
+            get_wallet_script_callback_state_t callback_state = {
+                .dc = dc,
+                .policy = &wallet_policy_map.parsed,
+                .wallet_version = wallet_header.version,
+                .keys_merkle_root = wallet_header.keys_info_merkle_root,
+                .n_keys = wallet_header.n_keys};
             if (!liquid_get_blinding_public_key(&wallet_policy_map.parsed,
                                                 script,
                                                 script_len,
-                                                get_script_callback,
+                                                get_wallet_script_callback,
                                                 &callback_state,
                                                 blinding_pubkey)) {
                 explicit_bzero(blinding_pubkey, sizeof(blinding_pubkey));
