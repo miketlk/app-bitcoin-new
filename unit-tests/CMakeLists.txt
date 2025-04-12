@@ -67,6 +67,7 @@ add_compile_definitions(TEST DEBUG=0 SKIP_FOR_CMOCKA PRINTF=printf)
 if(NOT DEFINED HAVE_LIQUID OR HAVE_LIQUID GREATER_EQUAL 1)
   set(HAVE_LIQUID 1)
   add_compile_definitions(HAVE_LIQUID)
+  add_compile_definitions(LIQUID_NET_REGTEST)
 endif()
 
 if(HAVE_LIQUID)
