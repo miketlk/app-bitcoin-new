@@ -1,4 +1,5 @@
 #pragma once
+// clang-format off
 
 /*******************************************************************************
  *   Ledger Nano S - Secure firmware
@@ -1764,3 +1765,4 @@ SYSCALL void io_i2c_dumpstate(void);
 #endif  // SYSCALL_GENERATE
 
 #endif  // OS_H
+// clang-format on
