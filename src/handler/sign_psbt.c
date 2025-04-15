@@ -105,7 +105,7 @@ typedef struct {
     uint8_t asset_commitment[LIQUID_COMMITMENT_LEN];
     /// Asset tag
     uint8_t asset_tag[LIQUID_ASSET_TAG_LEN];
-    /// Information about the asset: ticher and precision
+    /// Information about the asset: ticker and precision
     asset_info_t asset_info;
     /// If true the asset is defined in internal asset list
     uint8_t built_in_asset;
@@ -1864,6 +1864,61 @@ static void output_keys_callback(dispatcher_context_t *dc,
     }
 }
 
+#ifdef HAVE_LIQUID
+
+/**
+ * Computes the confidential or unconfidential address corresponding to the given output.
+ *
+ * The termination character is added.
+ *
+ * @param[in,out] dc
+ *   Dispatcher state.
+ * @param[in] output
+ *   The current output being processed.
+ * @param[out] address
+ *   The destination buffer for the computed address.
+ * @param[in] address_len
+ *   The length of the destination buffer.
+ *
+ * @return the length of the computed address on success; -1 if the script is invalid, if it does
+ * not have an associated address (e.g. OP_RETURN), or the resulting address is too long to fit in
+ * out.
+ */
+static int __attribute__((noinline)) get_liquid_script_address(dispatcher_context_t *dc,
+                                                               const output_info_t *output,
+                                                               char *address,
+                                                               size_t address_len) {
+    if (output->in_out.key_presence & HAS_BLINDING_PUBKEY) {
+        // Get blinding public key from PSET
+        uint8_t blinding_pubkey[33];
+        if (sizeof(blinding_pubkey) !=
+            call_get_merkleized_map_value(dc,
+                                          &output->in_out.map,
+                                          PSBT_ELEMENTS_OUT_BLINDING_PUBKEY,
+                                          sizeof(PSBT_ELEMENTS_OUT_BLINDING_PUBKEY),
+                                          blinding_pubkey,
+                                          sizeof(blinding_pubkey))) {
+            PRINTF("Error fetching blinding pubkey\n");
+            return -1;
+        }
+        int result = liquid_get_script_confidential_address(output->in_out.scriptPubKey,
+                                                            output->in_out.scriptPubKey_len,
+                                                            &G_liquid_network_config,
+                                                            blinding_pubkey,
+                                                            sizeof(blinding_pubkey),
+                                                            address,
+                                                            address_len);
+
+        explicit_bzero(blinding_pubkey, sizeof(blinding_pubkey));
+        return result;
+    } else {
+        return get_script_address(output->in_out.scriptPubKey,
+                                  output->in_out.scriptPubKey_len,
+                                  address,
+                                  address_len);
+    }
+}
+#endif
 static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
                                                      sign_psbt_state_t *st,
                                                      int cur_output_index,
@@ -1873,10 +1928,16 @@ static bool __attribute__((noinline)) display_output(dispatcher_context_t *dc,
 
     // show this output's address
     char output_address[MAX(MAX_ADDRESS_LENGTH_STR + 1, MAX_OPRETURN_OUTPUT_DESC_SIZE)];
+
+#ifdef HAVE_LIQUID
+    int address_len = get_liquid_script_address(dc, output, output_address, sizeof(output_address));
+#else
     int address_len = get_script_address(output->in_out.scriptPubKey,
                                          output->in_out.scriptPubKey_len,
                                          output_address,
                                          sizeof(output_address));
+#endif
+
     if (address_len < 0) {
         // script does not have an address; check if OP_RETURN
 #ifdef HAVE_LIQUID

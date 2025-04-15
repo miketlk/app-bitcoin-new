@@ -1165,6 +1165,32 @@ int get_wallet_script(dispatcher_context_t *dispatcher_context,
     return -1;
 }
 
+#ifdef HAVE_LIQUID
+bool get_wallet_script_callback(void *state,
+                                uint32_t descriptor_idx,
+                                uint32_t bip44_address_index,
+                                buffer_t *out_buffer) {
+    if (!state || descriptor_idx > 1 || !out_buffer ||
+        buffer_remaining(out_buffer) < MAX_SCRIPT_LEN) {
+        return false;
+    }
+
+    get_wallet_script_callback_state_t *st = (get_wallet_script_callback_state_t *) (state);
+
+    int script_len =
+        get_wallet_script(st->dc,
+                          st->policy,
+                          &(wallet_derivation_info_t){.wallet_version = st->wallet_version,
+                                                      .keys_merkle_root = st->keys_merkle_root,
+                                                      .n_keys = st->n_keys,
+                                                      .change = !!descriptor_idx,
+                                                      .address_index = bip44_address_index},
+                          buffer_get_cur(out_buffer));
+
+    return script_len > 0 && buffer_seek_cur(out_buffer, script_len);
+}
+#endif  // HAVE_LIQUID
+
 __attribute__((noinline)) int get_wallet_internal_script_hash(
     dispatcher_context_t *dispatcher_context,
     const policy_node_t *policy,
