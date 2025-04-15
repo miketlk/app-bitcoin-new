@@ -7,11 +7,13 @@ on:
     - master
     - develop
     - liquid_develop
+    - liquid_release
   pull_request:
     branches:
     - master
     - develop
     - liquid_develop
+    - liquid_release
 
 jobs:
   job_build:
