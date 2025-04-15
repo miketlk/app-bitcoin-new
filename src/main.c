@@ -206,7 +206,8 @@ void coin_main() {
     _Static_assert(sizeof(cx_sha256_t) <= 108, "cx_sha256_t too large");
     _Static_assert(sizeof(policy_map_key_info_t) <= 156, "policy_map_key_info_t too large");
     // Ensure that the coin name is no longer than supported asset ticker length.
-    _Static_assert(sizeof(COIN_COINID_SHORT) <= (MAX_ASSET_TICKER_LENGTH + 1), "COIN_COINID_SHORT too large");
+    _Static_assert(sizeof(COIN_COINID_SHORT) <= (MAX_ASSET_TICKER_LENGTH + 1),
+                   "COIN_COINID_SHORT too large");
 
 #if defined(HAVE_PRINT_STACK_POINTER) && defined(HAVE_BOLOS_APP_STACK_CANARY)
     PRINTF("STACK CANARY ADDRESS: %08x\n", &app_stack_canary);
