@@ -73,7 +73,7 @@ typedef struct {
     uint8_t write_idx;
 } asset_cache_t;
 
-/// Asset tag of L-BTC or TL-BTC depending on build
+/// Asset tag of LBTC or tLBTC depending on build
 extern const uint8_t liquid_bitcoin_tag[LIQUID_ASSET_TAG_LEN];
 
 /**
@@ -86,7 +86,7 @@ extern const uint8_t liquid_bitcoin_tag[LIQUID_ASSET_TAG_LEN];
 const asset_info_t *liquid_get_asset_info(const uint8_t tag[static LIQUID_ASSET_TAG_LEN]);
 
 /**
- * Checks wether the given asset tag corresponds to L-BTC (or TL-BTC for tentnet build)
+ * Checks wether the given asset tag corresponds to LBTC (or tLBTC for tentnet build)
  *
  * @param[in] tag asset tag for look-up
  * @return true
