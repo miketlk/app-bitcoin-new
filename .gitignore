@@ -17,6 +17,7 @@ tests/.test_bitcoin
 tests/snapshots-tmp
 tests_liquid/snapshots-tmp
 tests_liquid_main/snapshots-tmp
+tests_liquid_testnet/snapshots-tmp
 
 # Fuzzing
 fuzzing/build/

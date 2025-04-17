@@ -17,7 +17,8 @@ on:
       # Temporarily disabled until PR #285 is merged to `github.com/LedgerHQ/ledger-app-database`
       # - liquid_develop
       # - liquid_release
-  pull_request:
+  # Temporarily disabled until PR #285 is merged to `github.com/LedgerHQ/ledger-app-database`
+  # pull_request:
 
 jobs:
   guidelines_enforcer:

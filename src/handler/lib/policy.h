@@ -50,6 +50,22 @@ typedef struct {
     bool change;            // whether a change address or a receive address is derived
 } wallet_derivation_info_t;
 
+#ifdef HAVE_LIQUID
+/// State of the callback function obtaining `scriptPubKey` of the processed descriptor.
+typedef struct {
+    /// Dispatcher context.
+    dispatcher_context_t *dc;
+    /// Pointer to the root node of the policy
+    const policy_node_t *policy;
+    /// The wallet policy version, either WALLET_POLICY_VERSION_V1 or WALLET_POLICY_VERSION_V2
+    int wallet_version;
+    /// Pointer to the Merkle root of the tree of key informations in the policy
+    const uint8_t *keys_merkle_root;
+    /// The number of key information placeholders in the policy
+    uint32_t n_keys;
+} get_wallet_script_callback_state_t;
+#endif  // HAVE_LIQUID
+
 /**
  * Computes the hash of a taptree, to be used as tweak for the internal key per BIP-0341;
  * The returned hash is the second value in the tuple returned by taproot_tree_helper in
@@ -92,6 +108,27 @@ __attribute__((warn_unused_result)) int get_wallet_script(dispatcher_context_t *
                                                           const policy_node_t *policy,
                                                           const wallet_derivation_info_t *wdi,
                                                           uint8_t out[static MAX_SCRIPT_LEN]);
+
+#ifdef HAVE_LIQUID
+/**
+ * A general purpose callback function obtaining `scriptPubKey` of the processed descriptor.
+ *
+ * @param[in,out] state
+ *   Callback state, an instance of `get_wallet_script_callback_state_t`.
+ * @param[in] descriptor_idx
+ *   Descriptor index in the in the multipath scheme.
+ * @param[in] bip44_address_index
+ *   Address index element of the derivation path, defined according to BIP 44.
+ * @param[out] out_buffer
+ *   Buffer receiving `scriptPubKey`.
+ *
+ * @return true if successful, false if error.
+ */
+__attribute__((warn_unused_result)) bool get_wallet_script_callback(void *state,
+                                                                    uint32_t descriptor_idx,
+                                                                    uint32_t bip44_address_index,
+                                                                    buffer_t *out_buffer);
+#endif  // HAVE_LIQUID
 
 /**
  * Computes the script corresponding to a wallet policy, for a certain change and address index.

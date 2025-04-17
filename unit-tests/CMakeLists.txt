@@ -67,23 +67,31 @@ add_compile_definitions(TEST DEBUG=0 SKIP_FOR_CMOCKA PRINTF=printf)
 if(NOT DEFINED HAVE_LIQUID OR HAVE_LIQUID GREATER_EQUAL 1)
   set(HAVE_LIQUID 1)
   add_compile_definitions(HAVE_LIQUID)
+  add_compile_definitions(LIQUID_NET_REGTEST)
 endif()
 
 if(HAVE_LIQUID)
   message("${BoldCyan}** LIQUID SUPPORT ENABLED **${ColourReset}")
 endif()
 
+# Include directories
 include_directories(../src)
 include_directories(../src/common)
 include_directories(mock_includes)
+include_directories(libs)
 include_directories(lib/sha-2)
+
+# Detect strlcpy availability and include fallback if necessary
+include(CheckFunctionExists)
+check_function_exists(strlcpy HAVE_STRLCPY)
+if(NOT HAVE_STRLCPY)
+  add_compile_options(-include fallback_strlcpy.h)
+endif()
 
 if(CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
   include_directories(/usr/local/include)
   link_directories(/usr/local/lib)
 endif()
-
-include_directories(libs)
 
 add_executable(test_apdu_parser test_apdu_parser.c)
 add_executable(test_base58 test_base58.c)
