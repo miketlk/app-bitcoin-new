@@ -15,13 +15,11 @@ on:
 
 jobs:
   job_build:
-    name: Compilation for NanoS, X, and S+
+    name: Compilation for Nano X, and S+
 
     strategy:
       matrix:
         include:
-          - model: nanos
-            SDK: "$NANOS_SDK"
           - model: nanox
             SDK: "$NANOX_SDK"
           - model: nanosp
