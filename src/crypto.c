@@ -321,13 +321,15 @@ uint32_t crypto_get_key_fingerprint(const uint8_t pub_key[static 33]) {
     return read_u32_be(key_rip, 0);
 }
 
-uint32_t crypto_get_master_key_fingerprint(void) {
-    uint8_t master_pub_key[33];
-    uint32_t bip32_path[] = {};
+uint32_t crypto_get_master_key_fingerprint() {
+    uint8_t master_key_identifier[CX_RIPEMD160_SIZE] = {0};
+
+    int res = os_perso_get_master_key_identifier(master_key_identifier, CX_RIPEMD160_SIZE);
     LEDGER_ASSERT(
-        CX_OK == crypto_get_compressed_pubkey_at_path(bip32_path, 0, master_pub_key, NULL),
-        "It never fails");
-    return crypto_get_key_fingerprint(master_pub_key);
+        res == CX_OK,
+        "Unexpected error in os_perso_get_master_key_identifier computation. Returned: %d",
+        res);
+    return read_u32_be(master_key_identifier, 0);
 }
 
 bool crypto_derive_symmetric_key(const char *label, size_t label_len, uint8_t key[static 32]) {

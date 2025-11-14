@@ -27,34 +27,8 @@ ifeq ($(BOLOS_SDK),)
 $(error Environment variable BOLOS_SDK is not set)
 endif
 
-include $(BOLOS_SDK)/Makefile.defines
-
-# TODO: Compile with the right path restrictions
-#
-#       The right path restriction would be something like
-#         --path "*'/0'"
-#       for mainnet, and
-#         --path "*'/1'"
-#       for testnet.
-#
-#       That is, restrict the BIP-44 coin_type, but not the purpose.
-#       However, such wildcards are not currently supported by the OS.
-#
-#       Note that the app still requires explicit user approval before exporting
-#       any xpub outside of a small set of allowed standard paths.
-
 # Application allowed derivation curves.
 CURVE_APP_LOAD_PARAMS = secp256k1
-
-# Application allowed derivation paths.
-#
-#       If there would be a dedicated SDK function returning master key
-#       fingerprint without the need to derive the root pubkey, the proper path
-#       configuration should be:
-#
-#       PATH_APP_LOAD_PARAMS = "44'/1'" "48'/1'" "49'/1'" "84'/1'" "86'/1'"
-#
-PATH_APP_LOAD_PARAMS = ""
 
 # Allowed SLIP21 paths
 PATH_SLIP21_APP_LOAD_PARAMS = "LEDGER-Wallet policy"
@@ -83,94 +57,111 @@ VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid_testnet liquid
 ########################################
 #     Application custom permissions   #
 ########################################
-HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
 HAVE_APPLICATION_FLAG_GLOBAL_PIN = 1
 HAVE_APPLICATION_FLAG_BOLOS_SETTINGS = 1
 ifneq (,$(findstring bitcoin,$(COIN)))
 HAVE_APPLICATION_FLAG_LIBRARY = 1
 endif
 
-
 ifeq ($(COIN),bitcoin_testnet)
+    # Application allowed derivation paths (testnet).
+    PATH_APP_LOAD_PARAMS = "*/1'"
 
-# Bitcoin testnet, no legacy support
-DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
-DEFINES   += BIP44_COIN_TYPE=1
-DEFINES   += COIN_P2PKH_VERSION=111
-DEFINES   += COIN_P2SH_VERSION=196
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tb\"
-DEFINES   += COIN_COINID_SHORT=\"TEST\"
+    # Bitcoin testnet, no legacy support
+    DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
+    DEFINES   += BIP44_COIN_TYPE=1
+    DEFINES   += COIN_P2PKH_VERSION=111
+    DEFINES   += COIN_P2SH_VERSION=196
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tb\"
+    DEFINES   += COIN_COINID_SHORT=\"TEST\"
 
-APPNAME = "Bitcoin Test"
-DISPLAYED_APPNAME = "Bitcoin Testnet"
+    APPNAME = "Bitcoin Test"
+    DISPLAYED_APPNAME = "Bitcoin Testnet"
 
 else ifeq ($(COIN),bitcoin)
+    # Application allowed derivation paths (mainnet).
+    PATH_APP_LOAD_PARAMS = "*/0'"
 
-# Bitcoin mainnet, no legacy support
-DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
-DEFINES   += BIP44_COIN_TYPE=0
-DEFINES   += COIN_P2PKH_VERSION=0
-DEFINES   += COIN_P2SH_VERSION=5
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"bc\"
-DEFINES   += COIN_COINID_SHORT=\"BTC\"
+    # the version for performance tests automatically approves all requests
+    # there is no reason to ever compile the mainnet app with this flag
+    ifneq ($(AUTOAPPROVE_FOR_PERF_TESTS),0)
+        $(error Use testnet app for performance tests)
+    endif
 
-APPNAME = "Bitcoin"
+    # Bitcoin mainnet, no legacy support
+    DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
+    DEFINES   += BIP44_COIN_TYPE=0
+    DEFINES   += COIN_P2PKH_VERSION=0
+    DEFINES   += COIN_P2SH_VERSION=5
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"bc\"
+    DEFINES   += COIN_COINID_SHORT=\"BTC\"
+
+    APPNAME = "Bitcoin"
 
 else ifeq ($(COIN),liquid_regtest)
+    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
+    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
+    PATH_APP_LOAD_PARAMS = ""
 
-# Liquid regtest
-DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
-DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
-DEFINES   += BIP44_COIN_TYPE=1
-DEFINES   += COIN_P2PKH_VERSION=111
-DEFINES   += COIN_P2SH_VERSION=75
-DEFINES   += COIN_PREFIX_CONFIDENTIAL=4
-DEFINES   += HAVE_LIQUID
-DEFINES   += LIQUID_NET_REGTEST
-DEFINES   += COIN_COINID_SHORT=\"tLBTC\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ert\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"el\"
+    # Liquid regtest
+    DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
+    DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
+    DEFINES   += BIP44_COIN_TYPE=1
+    DEFINES   += COIN_P2PKH_VERSION=111
+    DEFINES   += COIN_P2SH_VERSION=75
+    DEFINES   += COIN_PREFIX_CONFIDENTIAL=4
+    DEFINES   += HAVE_LIQUID
+    DEFINES   += LIQUID_NET_REGTEST
+    DEFINES   += COIN_COINID_SHORT=\"tLBTC\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ert\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"el\"
 
-APPNAME = "Liquid Regtest"
+    APPNAME = "Liquid Regtest"
 
 else ifeq ($(COIN),liquid_testnet)
+    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
+    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
+    PATH_APP_LOAD_PARAMS = ""
 
-# Liquid testnet
-DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
-DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
-DEFINES   += BIP44_COIN_TYPE=1
-DEFINES   += COIN_P2PKH_VERSION=36
-DEFINES   += COIN_P2SH_VERSION=19
-DEFINES   += COIN_PREFIX_CONFIDENTIAL=23
-DEFINES   += HAVE_LIQUID
-DEFINES   += LIQUID_NET_TESTNET
-DEFINES   += COIN_COINID_SHORT=\"tLBTC\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tex\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"tlq\"
+    # Liquid testnet
+    DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
+    DEFINES   += BIP32_PRIVKEY_VERSION=0x04358394
+    DEFINES   += BIP44_COIN_TYPE=1
+    DEFINES   += COIN_P2PKH_VERSION=36
+    DEFINES   += COIN_P2SH_VERSION=19
+    DEFINES   += COIN_PREFIX_CONFIDENTIAL=23
+    DEFINES   += HAVE_LIQUID
+    DEFINES   += LIQUID_NET_TESTNET
+    DEFINES   += COIN_COINID_SHORT=\"tLBTC\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tex\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"tlq\"
 
-APPNAME = "Liquid Testnet"
+    APPNAME = "Liquid Testnet"
 
 else ifeq ($(COIN),liquid)
+    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
+    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
+    PATH_APP_LOAD_PARAMS = ""
 
-# Liquid
-DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
-DEFINES   += BIP32_PRIVKEY_VERSION=0x0488ADE4
-DEFINES   += BIP44_COIN_TYPE=1776
-DEFINES   += COIN_P2PKH_VERSION=57
-DEFINES   += COIN_P2SH_VERSION=39
-DEFINES   += COIN_PREFIX_CONFIDENTIAL=12
-DEFINES   += HAVE_LIQUID
-DEFINES   += LIQUID_NET_MAINNET
-DEFINES   += COIN_COINID_SHORT=\"LBTC\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ex\"
-DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"lq\"
+    # Liquid
+    DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
+    DEFINES   += BIP32_PRIVKEY_VERSION=0x0488ADE4
+    DEFINES   += BIP44_COIN_TYPE=1776
+    DEFINES   += COIN_P2PKH_VERSION=57
+    DEFINES   += COIN_P2SH_VERSION=39
+    DEFINES   += COIN_PREFIX_CONFIDENTIAL=12
+    DEFINES   += HAVE_LIQUID
+    DEFINES   += LIQUID_NET_MAINNET
+    DEFINES   += COIN_COINID_SHORT=\"LBTC\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"ex\"
+    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX_CONFIDENTIAL=\"lq\"
 
-APPNAME = "Liquid"
+    APPNAME = "Liquid"
 
 else
-ifeq ($(filter clean,$(MAKECMDGOALS)),)
-$(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_testnet, liquid)
-endif
+    ifeq ($(filter clean,$(MAKECMDGOALS)),)
+        $(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_testnet, liquid)
+    endif
 endif
 
 ifneq (,$(findstring liquid,$(COIN)))
