@@ -139,12 +139,13 @@ void handler_get_extended_pubkey(dispatcher_context_t *dc, uint8_t protocol_vers
     }
 
     serialized_extended_pubkey_check_t pubkey_check;
-    if (0 > get_extended_pubkey_at_path(bip32_path,
-                                        bip32_path_len,
-                                        BIP32_PUBKEY_VERSION,
-                                        &pubkey_check.serialized_extended_pubkey)) {
-        PRINTF("Failed getting bip32 pubkey\n");
-        SEND_SW(dc, SW_BAD_STATE);
+    uint16_t sw =
+        cx_err_to_sw(get_extended_pubkey_at_path(bip32_path,
+                                                 bip32_path_len,
+                                                 BIP32_PUBKEY_VERSION,
+                                                 &pubkey_check.serialized_extended_pubkey));
+    if (SW_OK != sw) {
+        SEND_SW(dc, sw);
         return;
     }
 

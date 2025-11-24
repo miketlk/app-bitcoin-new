@@ -1174,10 +1174,10 @@ fill_placeholder_info_if_internal(dispatcher_context_t *dc,
     {
         // it could be a collision on the fingerprint; we verify that we can actually generate
         // the same pubkey
-        if (0 > get_extended_pubkey_at_path(key_info.master_key_derivation,
-                                            key_info.master_key_derivation_len,
-                                            BIP32_PUBKEY_VERSION,
-                                            &placeholder_info->pubkey)) {
+        if (CX_OK != get_extended_pubkey_at_path(key_info.master_key_derivation,
+                                                 key_info.master_key_derivation_len,
+                                                 BIP32_PUBKEY_VERSION,
+                                                 &placeholder_info->pubkey)) {
             SEND_SW(dc, SW_BAD_STATE);
             return false;
         }

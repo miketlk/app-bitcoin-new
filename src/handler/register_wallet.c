@@ -196,13 +196,13 @@ void handler_register_wallet(dispatcher_context_t *dc, uint8_t protocol_version)
                 read_u32_be(key_info.master_key_fingerprint, 0) == master_key_fingerprint) {
                 // we verify that we can actually generate the same pubkey
                 serialized_extended_pubkey_t pubkey_derived;
-                int serialized_pubkey_len =
-                    get_extended_pubkey_at_path(key_info.master_key_derivation,
-                                                key_info.master_key_derivation_len,
-                                                BIP32_PUBKEY_VERSION,
-                                                &pubkey_derived);
-                if (serialized_pubkey_len == -1) {
-                    SEND_SW(dc, SW_BAD_STATE);
+                uint16_t sw =
+                    cx_err_to_sw(get_extended_pubkey_at_path(key_info.master_key_derivation,
+                                                             key_info.master_key_derivation_len,
+                                                             BIP32_PUBKEY_VERSION,
+                                                             &pubkey_derived));
+                if (SW_OK != sw) {
+                    SEND_SW(dc, sw);
                     (void) ui_post_processing_confirm_wallet_registration(dc, false);
                     return;
                 }

@@ -1501,10 +1501,10 @@ bool is_wallet_policy_standard(dispatcher_context_t *dispatcher_context,
 
     // generate pubkey and check if it matches
     serialized_extended_pubkey_t derived_pubkey;
-    if (0 > get_extended_pubkey_at_path(key_info.master_key_derivation,
-                                        key_info.master_key_derivation_len,
-                                        BIP32_PUBKEY_VERSION,
-                                        &derived_pubkey)) {
+    if (CX_OK != get_extended_pubkey_at_path(key_info.master_key_derivation,
+                                             key_info.master_key_derivation_len,
+                                             BIP32_PUBKEY_VERSION,
+                                             &derived_pubkey)) {
         PRINTF("Failed to derive pubkey\n");
         return false;
     }
