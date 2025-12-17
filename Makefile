@@ -99,9 +99,8 @@ else ifeq ($(COIN),bitcoin)
     APPNAME = "Bitcoin"
 
 else ifeq ($(COIN),liquid_regtest)
-    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
-    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
-    PATH_APP_LOAD_PARAMS = ""
+    # Application allowed derivation paths (Liquid testnet/regtest).
+    PATH_APP_LOAD_PARAMS = "*/1'"   # purpose=* / coin_type=Testnet(1)
 
     # Liquid regtest
     DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
@@ -119,9 +118,8 @@ else ifeq ($(COIN),liquid_regtest)
     APPNAME = "Liquid Regtest"
 
 else ifeq ($(COIN),liquid_testnet)
-    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
-    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
-    PATH_APP_LOAD_PARAMS = ""
+    # Application allowed derivation paths (Liquid testnet/regtest).
+    PATH_APP_LOAD_PARAMS = "*/1'"   # purpose=* / coin_type=Testnet(1)
 
     # Liquid testnet
     DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
@@ -139,9 +137,8 @@ else ifeq ($(COIN),liquid_testnet)
     APPNAME = "Liquid Testnet"
 
 else ifeq ($(COIN),liquid)
-    # TODO: Remove this when master key fingerprint is properly implemented in Liquid
-    HAVE_APPLICATION_FLAG_DERIVE_MASTER = 1
-    PATH_APP_LOAD_PARAMS = ""
+    # Application allowed derivation paths (Liquid main network, liquidv1).
+    PATH_APP_LOAD_PARAMS = "*/1776'"   # purpose=* / coin_type=Liquid(1776)
 
     # Liquid
     DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
