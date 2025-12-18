@@ -112,10 +112,8 @@ int handle_check_address(check_address_parameters_t* params) {
         return false;
     }
 
-    if (!crypto_get_compressed_pubkey_at_path(path.path,
-                                              path.length,
-                                              compressed_public_key,
-                                              NULL)) {
+    if (CX_OK !=
+        crypto_get_compressed_pubkey_at_path(path.path, path.length, compressed_public_key, NULL)) {
         return 0;
     }
     char address[MAX_ADDRESS_LENGTH_STR + 1];
