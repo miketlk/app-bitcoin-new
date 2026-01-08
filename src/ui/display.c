@@ -70,12 +70,31 @@ static bool io_ui_process(dispatcher_context_t *context, bool set_dirty) {
     // We are not waiting for the client's input, nor we are doing computations on the device
     io_clear_processing_timeout();
 
+#ifdef TARGET_NANOS
     io_seproxyhal_general_status();
     do {
         io_seproxyhal_spi_recv(G_io_seproxyhal_spi_buffer, sizeof(G_io_seproxyhal_spi_buffer), 0);
         io_seproxyhal_handle_event();
         io_seproxyhal_general_status();
     } while (io_seproxyhal_spi_is_status_sent() && !g_ux_flow_ended);
+#else   // TARGET_NANOS
+    do {
+        int status = os_io_rx_evt(G_io_rx_buffer, sizeof(G_io_rx_buffer), NULL, true);
+        if (status > 1 && (size_t) (status - 1) <= sizeof(G_io_seproxyhal_spi_buffer)) {
+            switch (G_io_rx_buffer[0]) {
+                case OS_IO_PACKET_TYPE_SE_EVT:
+                case OS_IO_PACKET_TYPE_SEPH:
+                    memcpy(G_io_seproxyhal_spi_buffer, &G_io_rx_buffer[1], status - 1);
+                    io_event(CHANNEL_APDU);
+                    break;
+
+                default:
+                    // Drop received APDUs silently during modal UI
+                    break;
+            }
+        }
+    } while (!g_ux_flow_ended);
+#endif  // TARGET_NANOS
 
     // We're back at work, we want to show the "Processing..." screen when appropriate
     io_start_processing_timeout();

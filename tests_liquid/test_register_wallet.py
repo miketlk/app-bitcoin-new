@@ -349,7 +349,7 @@ def test_register_unusual_singlesig_accounts(navigator: Navigator, firmware: Fir
     run_register_test(navigator, client, speculos_globals, WalletPolicy(
         name="Unusual Legacy",
         descriptor_template="pkh(@0/**)",
-        keys_info=["[f5acc2fd/1'/2'/3']tpubDCsHVWwqALkDzorr5zdc91Wj93zR3so1kUEH6LWsPrLtC9MVPjb8NEQwCzhPM4TEFP6KbgmTb7xAsyrbf3oEBh31Q7iAKhzMHj2FZ5YGNrr"]
+        keys_info=["[f5acc2fd/44'/1'/10']tpubDCwYjpDhUdPGp21gSpVay2QPJVh6WNySWMXPhbcu1DsxH31dF7mY18oibbu5RxCLBc1Szerjscuc3D5HyvfYqfRvc9mesewnFqGmPjney4d"]
     ),
         instructions=register_wallet_instruction_approve_unusual(firmware),
         test_name=f"{test_name}_Unusual_Legacy")
@@ -357,7 +357,7 @@ def test_register_unusual_singlesig_accounts(navigator: Navigator, firmware: Fir
     run_register_test(navigator, client, speculos_globals, WalletPolicy(
         name="Unusual Nested SegWit",
         descriptor_template="sh(wpkh(@0/**))",
-        keys_info=["[f5acc2fd/1'/2'/3']tpubDCsHVWwqALkDzorr5zdc91Wj93zR3so1kUEH6LWsPrLtC9MVPjb8NEQwCzhPM4TEFP6KbgmTb7xAsyrbf3oEBh31Q7iAKhzMHj2FZ5YGNrr"]
+        keys_info=["[f5acc2fd/49'/1'/0']tpubDC871vGLAiKPcwAw22EjhKVLk5L98UGXBEcGR8gpcigLQVDDfgcYW24QBEyTHTSFEjgJgbaHU8CdRi9vmG4cPm1kPLmZhJEP17FMBdNheh3"]
     ),
         instructions=register_wallet_instruction_approve_unusual(firmware),
         test_name=f"{test_name}_Unusual_Nested_Segwit")
@@ -365,7 +365,7 @@ def test_register_unusual_singlesig_accounts(navigator: Navigator, firmware: Fir
     run_register_test(navigator, client, speculos_globals, WalletPolicy(
         name="Unusual Native SegWit",
         descriptor_template="wpkh(@0/**)",
-        keys_info=["[f5acc2fd/1'/2'/3']tpubDCsHVWwqALkDzorr5zdc91Wj93zR3so1kUEH6LWsPrLtC9MVPjb8NEQwCzhPM4TEFP6KbgmTb7xAsyrbf3oEBh31Q7iAKhzMHj2FZ5YGNrr"]
+        keys_info=["[f5acc2fd/84'/1'/0']tpubDCtKfsNyRhULjZ9XMS4VKKtVcPdVDi8MKUbcSD9MJDyjRu1A2ND5MiipozyyspBT9bg8upEp7a8EAgFxNxXn1d7QkdbL52Ty5jiSLcxPt1P"]
     ),
         instructions=register_wallet_instruction_approve_unusual(firmware),
         test_name=f"{test_name}_Unusual_Native_Segwit")
@@ -373,7 +373,7 @@ def test_register_unusual_singlesig_accounts(navigator: Navigator, firmware: Fir
     run_register_test(navigator, client, speculos_globals, WalletPolicy(
         name="Unusual Taproot",
         descriptor_template="tr(@0/**)",
-        keys_info=["[f5acc2fd/1'/2'/3']tpubDCsHVWwqALkDzorr5zdc91Wj93zR3so1kUEH6LWsPrLtC9MVPjb8NEQwCzhPM4TEFP6KbgmTb7xAsyrbf3oEBh31Q7iAKhzMHj2FZ5YGNrr"]
+        keys_info=["[f5acc2fd/86'/1'/0']tpubDDKYE6BREvDsSWMazgHoyQWiJwYaDDYPbCFjYxN3HFXJP5fokeiK4hwK5tTLBNEDBwrDXn8cQ4v9b2xdW62Xr5yxoQdMu1v6c7UDXYVH27U"]
     ),
         instructions=register_wallet_instruction_approve_unusual(firmware),
         test_name=f"{test_name}_Unusual_Taproot")
