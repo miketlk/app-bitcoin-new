@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * Instruction class of the Bitcoin application.
+ * Instruction class of the Bitcoin / Liquid Network application.
  */
 #define CLA_APP 0xE1
 

@@ -16,6 +16,7 @@ on:
       - develop
       # Temporarily disabled until PR #285 is merged to `github.com/LedgerHQ/ledger-app-database`
       # - liquid_develop
+      # - liquid_release
   # Temporarily disabled until PR #285 is merged to `github.com/LedgerHQ/ledger-app-database`
   # pull_request:
 

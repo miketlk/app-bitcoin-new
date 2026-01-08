@@ -1,6 +1,6 @@
 # ****************************************************************************
-#    Ledger App for Bitcoin
-#    (c) 2024 Ledger SAS.
+#    Ledger App for Liquid Network
+#    (c) 2025 Blockstream
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -52,53 +52,15 @@ endif
 
 # Setting to allow building variant applications
 VARIANT_PARAM = COIN
-VARIANT_VALUES = bitcoin_testnet bitcoin liquid_regtest liquid_testnet liquid
+VARIANT_VALUES = liquid_regtest liquid_testnet liquid
 
 ########################################
 #     Application custom permissions   #
 ########################################
 HAVE_APPLICATION_FLAG_GLOBAL_PIN = 1
 HAVE_APPLICATION_FLAG_BOLOS_SETTINGS = 1
-ifneq (,$(findstring bitcoin,$(COIN)))
-HAVE_APPLICATION_FLAG_LIBRARY = 1
-endif
 
-ifeq ($(COIN),bitcoin_testnet)
-    # Application allowed derivation paths (testnet).
-    PATH_APP_LOAD_PARAMS = "*/1'"
-
-    # Bitcoin testnet, no legacy support
-    DEFINES   += BIP32_PUBKEY_VERSION=0x043587CF
-    DEFINES   += BIP44_COIN_TYPE=1
-    DEFINES   += COIN_P2PKH_VERSION=111
-    DEFINES   += COIN_P2SH_VERSION=196
-    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"tb\"
-    DEFINES   += COIN_COINID_SHORT=\"TEST\"
-
-    APPNAME = "Bitcoin Test"
-    DISPLAYED_APPNAME = "Bitcoin Testnet"
-
-else ifeq ($(COIN),bitcoin)
-    # Application allowed derivation paths (mainnet).
-    PATH_APP_LOAD_PARAMS = "*/0'"
-
-    # the version for performance tests automatically approves all requests
-    # there is no reason to ever compile the mainnet app with this flag
-    ifneq ($(AUTOAPPROVE_FOR_PERF_TESTS),0)
-        $(error Use testnet app for performance tests)
-    endif
-
-    # Bitcoin mainnet, no legacy support
-    DEFINES   += BIP32_PUBKEY_VERSION=0x0488B21E
-    DEFINES   += BIP44_COIN_TYPE=0
-    DEFINES   += COIN_P2PKH_VERSION=0
-    DEFINES   += COIN_P2SH_VERSION=5
-    DEFINES   += COIN_NATIVE_SEGWIT_PREFIX=\"bc\"
-    DEFINES   += COIN_COINID_SHORT=\"BTC\"
-
-    APPNAME = "Bitcoin"
-
-else ifeq ($(COIN),liquid_regtest)
+ifeq ($(COIN),liquid_regtest)
     # Application allowed derivation paths (Liquid testnet/regtest).
     PATH_APP_LOAD_PARAMS = "*/1'"   # purpose=* / coin_type=Testnet(1)
 
@@ -157,7 +119,7 @@ else ifeq ($(COIN),liquid)
 
 else
     ifeq ($(filter clean,$(MAKECMDGOALS)),)
-        $(error Unsupported COIN - use bitcoin_testnet, bitcoin, liquid_regtest, liquid_testnet, liquid)
+        $(error Unsupported COIN - use liquid_regtest, liquid_testnet, liquid)
     endif
 endif
 
@@ -177,13 +139,7 @@ endif
 # Application icons following guidelines:
 # https://developers.ledger.com/docs/embedded-app/design-requirements/#device-icon
 
-ifneq (,$(findstring bitcoin,$(COIN)))
-# Bitcoin icons
-ICON_NANOS = icons/nanos_app_bitcoin.gif
-ICON_NANOX = icons/nanox_app_bitcoin.gif
-ICON_NANOSP = icons/nanox_app_bitcoin.gif
-ICON_STAX = icons/stax_app_bitcoin.gif
-else ifneq (,$(findstring liquid,$(COIN)))
+ifneq (,$(findstring liquid,$(COIN)))
 # Liquid icons
 ICON_NANOS = icons/nanos_app_liquid.gif
 ICON_NANOX = icons/nanox_app_liquid.gif
